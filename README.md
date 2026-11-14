@@ -70,6 +70,8 @@ RideWind is a planning aid. Forecast wind doesn't fully account for shelter from
 - [Data sources and privacy](docs/data-and-privacy.md): Open-Meteo usage and limits, attribution, map tiles, and what is stored in your browser.
 - [Deploying RideWind](docs/deployment.md): building the static site and publishing it with GitHub Pages.
 - [Maintaining RideWind](docs/maintaining.md): branch rules and how changes reach `main`.
+- [Security policy](SECURITY.md): how to report a vulnerability privately, and how RideWind handles your data.
+- [Accessibility](ACCESSIBILITY.md): what's supported, known gaps, and how to report a barrier.
 
 ## Development
 
@@ -108,7 +110,7 @@ public/samples/   The bundled sample routes
 
 ### Contributing
 
-There's no separate contributing guide yet. Changes reach `main` through pull requests, and the `test-build` check (tests plus a production build) must pass before merging. [Maintaining RideWind](docs/maintaining.md) explains the branch rules. To report a bug or suggest an idea, [open an issue](https://github.com/kchan1028/ridewind/issues).
+There's no separate contributing guide yet. Changes reach `main` through pull requests, and the `test-build` check (tests plus a production build) must pass before merging. [Maintaining RideWind](docs/maintaining.md) explains the branch rules. To report a bug or suggest an idea, [open an issue](https://github.com/kchan1028/ridewind/issues). Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## Credits and licence
 
