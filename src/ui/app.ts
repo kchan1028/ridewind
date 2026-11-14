@@ -22,6 +22,7 @@ import {
   wallTimeToUtc,
 } from '../lib/time';
 import {
+  defaultUnits,
   displayToKg,
   displayToKmh,
   formatDistance,
@@ -33,6 +34,7 @@ import {
   kmhToDisplay,
   massUnit,
   speedUnit,
+  type UnitSystem,
 } from '../lib/units';
 import { coordKey, fetchForecast, forecastCovers, type ForecastBundle, type LocationForecast } from '../lib/weather';
 import { compassPoint } from '../lib/wind';
@@ -994,6 +996,8 @@ function applySettingsToInputs(): void {
   speed.value = displaySpeed();
   setFieldError(speed, null);
   for (const r of document.querySelectorAll<HTMLInputElement>('input[name="units"]')) r.checked = r.value === u;
+  $('units-now').textContent = u === 'metric' ? 'Showing km, km/h and °C.' : 'Showing miles, mph and °F.';
+  $('units-switch').textContent = u === 'metric' ? 'Switch to miles' : 'Switch to km';
 
   const s = state.settings;
   for (const r of document.querySelectorAll<HTMLInputElement>('input[name="pace"]')) r.checked = r.value === s.paceMode;
@@ -1092,6 +1096,14 @@ function bindPaceForm(): void {
     });
   }
   $('compare-spacing').addEventListener('change', () => renderComparison());
+  // On phones the point-by-point table shows four columns; this reveals the rest.
+  $('points-toggle').addEventListener('click', () => {
+    const btn = $('points-toggle');
+    const all = btn.getAttribute('aria-pressed') !== 'true';
+    btn.setAttribute('aria-pressed', String(all));
+    btn.textContent = all ? 'Fewer columns' : 'Show all columns';
+    $('points-table').classList.toggle('show-all', all);
+  });
   let lastWidth = 0;
   new ResizeObserver(([entry]) => {
     const w = Math.round(entry?.contentRect.width ?? 0);
@@ -1120,6 +1132,14 @@ function downloadJson(filename: string, data: unknown): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function setUnits(u: UnitSystem): void {
+  state.settings.units = u;
+  persistSettings();
+  applySettingsToInputs();
+  renderRouteCard();
+  recompute();
+}
+
 function bindDataDialog(): void {
   const dialog = $<HTMLDialogElement>('data-dialog');
   const status = $('data-status');
@@ -1129,14 +1149,10 @@ function bindDataDialog(): void {
   });
 
   for (const r of document.querySelectorAll<HTMLInputElement>('input[name="units"]')) {
-    r.addEventListener('change', () => {
-      state.settings.units = r.value === 'imperial' ? 'imperial' : 'metric';
-      persistSettings();
-      applySettingsToInputs();
-      renderRouteCard();
-      recompute();
-    });
+    r.addEventListener('change', () => setUnits(r.value === 'imperial' ? 'imperial' : 'metric'));
   }
+  // The same choice, one tap away under Departure and pace.
+  $('units-switch').addEventListener('click', () => setUnits(units() === 'metric' ? 'imperial' : 'metric'));
 
   $('export-btn').addEventListener('click', async () => {
     let routes: store.SavedRoute[] = [];
@@ -1178,7 +1194,7 @@ function bindDataDialog(): void {
     } catch {
       /* storage unavailable: nothing saved */
     }
-    state.settings = { ...store.DEFAULT_SETTINGS };
+    state.settings = { ...store.DEFAULT_SETTINGS, units: defaultUnits() };
     state.savedId = null;
     applySettingsToInputs();
     renderRouteCard();

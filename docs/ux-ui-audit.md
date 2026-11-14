@@ -129,7 +129,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-2 · On a phone, the reversed direction is hidden behind a sideways scroll
 
-> **Status: partly fixed** in the comparison cards PR. Below 600 px each departure is a card with both directions stacked and labelled, with no sideways scrolling, and explicit table roles keep screen-reader semantics. Trimming the point-by-point table's columns on phones is still open.
+> **Status: fixed.** Below 600 px each departure in the comparison is a card with both directions stacked and labelled, with no sideways scrolling, and explicit table roles keep screen-reader semantics (comparison cards PR). The point-by-point table now shows Distance, Arrive, Head/tail and Rain on phones and fits a 375 px screen, with **Show all columns** for Wind, Gust, Cross and Temp.
 
 - **Where:** the comparison table inside `.table-wrap`.
 - **Observed:**
@@ -184,6 +184,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 - **Evidence:** [mobile-first-run.jpg](ux-ui-audit/mobile-first-run.jpg)
 
 ### P2-6 · Units are hidden in "Data & settings", and metric is always the default
+
+> **Status: fixed** in the units PR. Until the rider chooses, units follow the browser's locale (US, Liberia and Myanmar regions start in miles, mph and °F; everyone else in metric). Under Departure and pace a line says which units are showing, with a one-tap **Switch to miles / km**. The dialog keeps its name.
 
 - **Where:** `DEFAULT_SETTINGS.units = 'metric'` in `src/lib/storage.ts`; the control is in the dialog.
 - **Impact:** US and UK riders (mph) start in km/h and may not think to look under "Data". Speed validation then quotes km/h limits.
@@ -297,7 +299,7 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | 2 | Rain wording led by probability, in the verdict, KPI and comparison | P1-2 | High | S | Copy plus `verdict` facts; test the thresholds |
 | 3 | Inline field validation helper (`aria-invalid`, `aria-describedby`, keep the typed value) | P1-3 | High | S | One helper for speed and the six rider fields |
 | 4 | Collapsible, glanceable verdict bar (collapsed on scroll, larger text, 48 px stepper, "Updated X min ago" and Refresh) | P2-1, P2-3 (part), P2-8 (part) | High | M | The biggest change for use outdoors; check with VoiceOver |
-| 5 | Phone layout for the comparison (cards or a direction toggle) and reduced columns for the point-by-point table | P2-2 | Med–High | M | Keep the table on desktop |
+| 5 | ~~Phone layout for the comparison (cards or a direction toggle) and reduced columns for the point-by-point table~~ **Done** | P2-2 | Med–High | M | Keep the table on desktop |
 | 6 | Auto-refresh when the forecast is stale, plus a cached last forecast for saved routes (offline fallback) | P2-3 | Medium | M | Respect the OSM tile policy (no tile caching) |
 | 7 | Saved routes remember the direction and usual departure time | P2-4 | Medium | S–M | Schema version bump in `storage.ts` |
 | 8 | Units from the locale, plus an inline speed-unit switch | P2-6 | Medium | S | |

@@ -55,7 +55,7 @@ BASE_PATH=/ridewind/ npm run build
    - China Camp and Nicasio Valley
    - PRS (clockwise)
 2. **Choose when you'll leave.** Departure times use the route's own timezone. Use the date and time field, a preset, or the **−1 h / +1 h** buttons in the verdict.
-3. **Set your pace.** Choose **A constant average speed**, or **Power and bike setup** for the physics estimate. A route without elevation data asks you to look elevation up or explicitly estimate it as flat; it never quietly assumes a flat route.
+3. **Set your pace.** Units start in miles or kilometres to match your browser's language; **Switch to miles** (or **km**), just under the pace choice, changes them. Choose **A constant average speed**, or **Power and bike setup** for the physics estimate. A route without elevation data asks you to look elevation up or explicitly estimate it as flat; it never quietly assumes a flat route.
 4. **Read the result.** The verdict at the top (a bar along the bottom on phones) gives the answer: the wind headline, when you'll finish, daylight and any rain worth knowing about. Press **Details** for gusts, the wind breakdown, when the forecast was updated and **Refresh forecast**. Below it you'll find the ride-time and weather figures, charts along the route, the departure comparison and a point-by-point table.
 
 On 14 November 2026, the **Berkeley to Morgan Territory** sample at the default 25 km/h, leaving at the **Tomorrow 08:00** preset, gave this verdict:
