@@ -7,7 +7,7 @@ For each step, do what it says, listen, and mark the result in the table at the 
 ## Before you start
 
 - Use Safari, which works best with VoiceOver. Open the [live site](https://kchan1028.github.io/ridewind/) in a fresh window.
-- Download [no-elevation.gpx](voiceover-check/no-elevation.gpx). It's a made-up 25 km straight line with no elevation data.
+- Download [no-elevation.gpx](voiceover-check/no-elevation.gpx). It's a made-up 30 km straight line with no elevation data.
 - Turn VoiceOver on and off with **Cmd + F5**. "VO" below means **Control + Option** held together.
 
 | Keys | What they do |
