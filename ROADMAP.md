@@ -59,6 +59,7 @@ From the UX/UI audit's implementation plan:
 - [PR #61](https://github.com/kchan1028/ridewind/pull/61): the comparison lists start times up to the last one that finishes in daylight, with **Show later times** for the rest (the open part of step 1).
 - [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
 - [PR #59](https://github.com/kchan1028/ridewind/pull/59): one forecast message instead of three, one Start/Finish label on loops, and one temperature range for the figure and the chart (step 12).
+- [PR #49](https://github.com/kchan1028/ridewind/pull/49): on wide screens the side panel grows with the window and can be resized by dragging or with the keyboard, so the comparison fits without a sideways scroll (step 13, [#44](https://github.com/kchan1028/ridewind/issues/44)).
 
 The design review's P0 to P3 items have all shipped:
 
