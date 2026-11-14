@@ -12,7 +12,7 @@ The file is blank or damaged, often from an interrupted download. Export it agai
 **"That file isn't a GPX file."**
 RideWind only reads GPX. If you have a FIT or TCX file, convert it to GPX first. Most route planners can export GPX directly.
 
-**"This GPX only contains waypoints."** or **"No track or route points were found in this GPX file."**
+**"This GPX file only has waypoints."** or **"No track or route points were found in this GPX file."**
 RideWind needs track points (`<trkpt>`) or route points (`<rtept>`). Waypoints (`<wpt>`) mark single places, not a line to ride. Export the route as a track or route instead.
 
 **"This GPX has fewer than two distinct points"** or **"Every point in this GPX has missing or out-of-range coordinates."**

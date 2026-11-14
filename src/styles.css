@@ -50,7 +50,7 @@
   box-sizing: border-box;
 }
 
-/* The hidden attribute must win over component display rules (e.g. .btn's inline-flex). */
+/* The hidden attribute must win over component display rules (for example .btn's inline-flex). */
 [hidden] {
   display: none !important;
 }

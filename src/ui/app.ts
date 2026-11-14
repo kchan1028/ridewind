@@ -464,7 +464,7 @@ function recompute(): void {
   }
   const forecasts = forecastsForSamples();
   if (forecasts.some((f) => f === null)) {
-    // Sample positions changed (e.g. rounding after reversing): fetch for the new points.
+    // Sample positions changed (for example, rounding after reversing): fetch for the new points.
     void loadForecast();
     return;
   }
