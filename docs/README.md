@@ -6,3 +6,4 @@
 - [Maintaining RideWind](maintaining.md): branch rules and how changes reach `main`.
 - [Security policy](../SECURITY.md): private vulnerability reporting and how data is handled.
 - [Accessibility](../ACCESSIBILITY.md): what's supported and known gaps.
+- [UX/UI audit (November 2026)](ux-ui-audit.md): prioritised usability findings and an implementation plan.
