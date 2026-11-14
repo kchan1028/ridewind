@@ -43,7 +43,7 @@ RideWind aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. It has
 
 - **The map is visual.** Panning and zooming the map works with the keyboard (it's a Leaflet map), but the route and wind colours can only be seen. The verdict, wind bar key and point-by-point table carry the same information in text.
 - **Date and time entry** uses your browser's built-in picker, so how accessible it is depends on your browser.
-- **Not yet tested with a real screen reader or high contrast mode.** Checks so far are automated (contrast, target sizes, overflow, focus styles, labels on every control), manual keyboard use in Chromium, and reflow at 640 px and 320 px wide, which is what 200% and 400% zoom give on a 1280 px screen. It still needs testing with VoiceOver, NVDA or TalkBack, and in Windows high contrast mode ([#12](https://github.com/kchan1028/ridewind/issues/12)).
+- **Not yet tested with a real screen reader or high contrast mode.** Checks so far are automated (contrast, target sizes, overflow, focus styles, labels on every control), manual keyboard use in Chromium, and reflow at 640 px and 320 px wide, which is what 200% and 400% zoom give on a 1280 px screen. It still needs testing with VoiceOver, NVDA or TalkBack, and in Windows high contrast mode ([#12](https://github.com/kchan1028/ridewind/issues/12)). The [VoiceOver check](docs/voiceover-check.md) is a 15-minute script for the Mac part.
 
 ## Report a problem
 
