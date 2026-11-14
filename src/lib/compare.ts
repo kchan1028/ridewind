@@ -42,6 +42,12 @@ export function departureOptions(startMs: number, windowEndMs: number, rideMs: n
   return out;
 }
 
+/**
+ * Runs the full simulation and ride plan for every departure and route
+ * direction, one row per pair. Reuses each variant's forecasts, so it makes no
+ * network requests. Throws ELEVATION_MISSING for a power model on a route
+ * without elevation unless `assumeFlat` is set, the same as simulateRide().
+ */
 export function compareRides(variants: RouteVariant[], departures: number[], pace: PaceModel, assumeFlat = false): CompareRow[] {
   const rows: CompareRow[] = [];
   for (const departureMs of departures) {
