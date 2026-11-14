@@ -40,8 +40,8 @@ flowchart LR
 
 There are four core journeys:
 
-1. **Check a planned ride.** Load the route, keep the default departure, and read the verdict, for example *Mostly crosswind · gusts 43 km/h · rain up to 4.3 mm/h · finish 01:35 PM · sunset 04:57 PM*.
-2. **Choose the best time or direction.** Step the departure time an hour at a time, use a preset such as *Tomorrow 08:00*, or compare up to six times in both directions. RideWind marks the best option, and **Use** applies it.
+1. **Check a planned ride.** Load the route, keep the default departure, and read the verdict, for example *Mostly crosswind · gusts 43 km/h · rain up to 4.3 mm/h · finish 1:35 PM · sunset 4:57 PM*.
+2. **Choose the best time or direction.** Step the departure time an hour at a time, use a preset such as *Tomorrow 8:00 AM*, or compare up to six times in both directions. RideWind marks the best option, and **Use** applies it.
 3. **Get a realistic ride time.** Switch to **Power and bike setup**. If the route has no elevation, choose whether to look it up or to estimate it as flat.
 4. **Keep and move routes.** Save routes in the browser, and export them as a file to move them to another device.
 

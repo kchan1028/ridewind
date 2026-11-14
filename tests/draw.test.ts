@@ -61,6 +61,11 @@ describe('densify', () => {
     ];
     expect(densify(far, 100, 500).length).toBeLessThanOrEqual(500);
   });
+
+  it('stays within the cap for many long legs', () => {
+    const zigzag = Array.from({ length: 40 }, (_, i) => ({ lat: (i % 2) * 2, lon: i * 0.5 }));
+    for (const cap of [100, 333, 1000, 5000]) expect(densify(zigzag, 100, cap).length).toBeLessThanOrEqual(cap);
+  });
 });
 
 describe('buildDrawnRoute', () => {

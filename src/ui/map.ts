@@ -13,6 +13,10 @@ export const RAIN_STYLE: Record<Exclude<RainLevel, 'none'>, { weight: number; op
   heavy: { weight: 26, opacity: 0.75 },
 };
 const RAIN_COLOR = '#5b21b6';
+/** Dry points with at least this chance of rain still get an (outlined) tag. */
+const LIKELY_RAIN_CHANCE = 50;
+
+const overlaps = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
 /** Colours are paired with dash patterns so classes stay distinguishable without colour vision. */
 export const CLASS_STYLE: Record<SegmentClass, { color: string; dashArray?: string; weight: number; label: string }> = {
@@ -55,11 +59,13 @@ const ARROW_SPACING_PX = 44;
 export class RouteMap {
   private map: L.Map;
   private baseLine: L.Polyline | null = null;
+  /** Rain tags, heaviest first, so decluttering keeps the most important ones. */
+  private rainTags: Array<{ marker: L.Marker; mm: number }> = [];
   private routeLayer = L.layerGroup();
   private planLayer = L.layerGroup();
   private drawLayer = L.layerGroup();
   private drawOff: (() => void) | null = null;
-  /** Wind arrows (and their rain tags), shown inside planLayer only where they don't crowd each other. */
+  /** Wind arrows, shown inside planLayer only where they don't crowd each other. Rain tags declutter separately. */
   private arrowLayer = L.layerGroup();
   private arrowItems: Array<{ latlng: L.LatLng; layers: L.Layer[] }> = [];
 
@@ -73,7 +79,23 @@ export class RouteMap {
     this.map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     this.routeLayer.addTo(this.map);
     this.planLayer.addTo(this.map);
-    this.map.on('zoomend', () => this.placeArrows());
+    this.map.on('zoomend', () => {
+      this.placeArrows();
+      this.declutterRainTags();
+    });
+  }
+
+  /** Hides rain tags that would overlap a heavier tag or the Start/Finish labels at the current zoom. */
+  private declutterRainTags(): void {
+    const taken = [...this.map.getContainer().querySelectorAll('.endpoint-label')].map((el) => el.getBoundingClientRect());
+    for (const { marker } of this.rainTags) {
+      const el = marker.getElement();
+      if (!el) continue;
+      el.hidden = false;
+      const box = el.getBoundingClientRect();
+      if (taken.some((t) => overlaps(t, box))) el.hidden = true;
+      else taken.push(box);
+    }
   }
 
   showRoute(points: LatLon[]): void {
@@ -248,22 +270,30 @@ export class RouteMap {
         L.marker([r.sample.lat, r.sample.lon], { icon, keyboard: false, title: `Point ${i + 1} wind details` }).bindPopup(describePoint(i)),
       );
     });
-    // Raindrop tags beside each wet point, offset so they sit next to the wind arrow rather than on it.
-    plan.samples.forEach((r, i) => {
-      const mm = r.weather?.precipitation;
-      if (mm === null || mm === undefined || rainLevel(mm) === 'none') return;
-      const tag = document.createElement('span');
-      tag.className = `rain-tag rain-${rainLevel(mm)}`;
-      tag.append(rotatedSvg('0 0 12 16', 10, 'M6 1 C6 1 1 7.5 1 10.5 A5 5 0 0 0 11 10.5 C11 7.5 6 1 6 1 Z', 0), rainLabel(mm));
-      this.arrowItems[i]!.layers.push(
-        L.marker([r.sample.lat, r.sample.lon], {
-          icon: L.divIcon({ className: 'rain-tag-icon', html: tag, iconSize: undefined, iconAnchor: [-14, 24] }),
-          interactive: false,
-          keyboard: false,
-        }),
-      );
-    });
     this.arrowLayer.addTo(this.planLayer);
     this.placeArrows();
+    // Raindrop tags beside each wet (or likely wet) point, offset so they sit next to the wind arrow rather than on it.
+    // Overlapping tags are hidden by declutterRainTags(); every point's popup still shows rain.
+    this.rainTags = [];
+    plan.samples.forEach((r) => {
+      const mm = r.weather?.precipitation ?? null;
+      const chance = r.weather?.precipitationProbability ?? null;
+      const level = rainLevel(mm);
+      const likely = level === 'none' && chance !== null && chance >= LIKELY_RAIN_CHANCE;
+      if (level === 'none' && !likely) return;
+      const tag = document.createElement('span');
+      tag.className = `rain-tag rain-${likely ? 'chance' : level}`;
+      const pct = chance !== null ? `${Math.round(chance)}%` : '';
+      const label = likely ? `${pct} chance` : [rainLabel(mm!), pct].filter(Boolean).join(' · ');
+      tag.append(rotatedSvg('0 0 12 16', 10, 'M6 1 C6 1 1 7.5 1 10.5 A5 5 0 0 0 11 10.5 C11 7.5 6 1 6 1 Z', 0), label);
+      const marker = L.marker([r.sample.lat, r.sample.lon], {
+        icon: L.divIcon({ className: 'rain-tag-icon', html: tag, iconSize: undefined, iconAnchor: [-14, 24] }),
+        interactive: false,
+        keyboard: false,
+      }).addTo(this.planLayer);
+      this.rainTags.push({ marker, mm: mm ?? 0 });
+    });
+    this.rainTags.sort((a, b) => b.mm - a.mm);
+    this.declutterRainTags();
   }
 }

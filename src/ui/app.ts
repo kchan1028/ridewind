@@ -248,7 +248,11 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   $('verdict-facts').textContent = facts.join(' · ');
   $('verdict-age').textContent = `Forecast updated ${formatDateTime(fc.fetchedAt, deviceTimeZone())} (your device time).`;
   $('verdict').dataset.tone = tone;
-  $('depart-label').textContent = `Leave ${formatDayClock(state.departureMs!, tz)}`;
+  // "Leave" is hidden on phones (still read by screen readers) so the date fits the bottom bar.
+  const leave = document.createElement('span');
+  leave.className = 'depart-word';
+  leave.textContent = 'Leave ';
+  $('depart-label').replaceChildren(leave, formatDayClock(state.departureMs!, tz));
   const b = departureBounds();
   ($('dep-earlier') as HTMLButtonElement).disabled = !b || state.departureMs! - HOUR < b.min;
   ($('dep-later') as HTMLButtonElement).disabled = !b || state.departureMs! + HOUR > b.max;
@@ -496,10 +500,16 @@ function bindDrawing(): void {
     draft = [];
     renderDraft('All points cleared.');
   });
-  $('draw-cancel').addEventListener('click', () => {
+  const cancelDrawing = () => {
     stopDrawing();
     map.fit();
     $('draw-start').focus();
+  };
+  $('draw-cancel').addEventListener('click', cancelDrawing);
+  // Escape leaves draw mode too, unless it's closing something else first (a dialog, the date picker).
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape' || !drawing || ev.defaultPrevented || document.querySelector('dialog[open]')) return;
+    cancelDrawing();
   });
   $('draw-finish').addEventListener('click', finishDrawing);
   $('draw-name').addEventListener('keydown', (ev) => {
@@ -1080,19 +1090,11 @@ function describePoint(i: number): string {
 
 /* ---------- saved routes ---------- */
 
-/** Saved routes open by themselves once per visit, for a rider coming back with nothing loaded yet. */
-let savedAutoOpened = false;
-
 async function renderSaved(): Promise<void> {
   const list = $('saved-list');
   try {
     const routes = await store.listRoutes();
     $('saved-count').textContent = `(${routes.length})`;
-    document.body.classList.toggle('has-saved', routes.length > 0);
-    if (routes.length > 0 && !savedAutoOpened && !state.original) {
-      savedAutoOpened = true;
-      ($('saved') as HTMLDetailsElement).open = true;
-    }
     list.replaceChildren();
     if (routes.length === 0) {
       const li = document.createElement('li');
@@ -1137,6 +1139,12 @@ async function renderSaved(): Promise<void> {
       btns.append(load, del);
       li.append(text, btns);
       list.append(li);
+    }
+    // A returning rider with nothing loaded yet: show their saved routes straight away,
+    // so opening one is a single tap, and shorten the first-run introduction.
+    if (!state.route) {
+      $<HTMLDetailsElement>('saved').open = true;
+      $('intro').textContent = 'Open a saved route below, import a GPX file, draw a route on the map or try a sample.';
     }
   } catch (e) {
     $('saved-count').textContent = '';
