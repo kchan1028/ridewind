@@ -211,6 +211,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-8 · Secondary touch targets are below 44 px
 
+> **Status: fixed** in [#25](https://github.com/kchan1028/ridewind/pull/25). Buttons, presets, Use, Open and Delete are at least 44 px, −1 h / +1 h are 48 px, Open and Delete are 16 px apart, and the map zoom buttons are 44 px on touch screens.
+
 - **Observed sizes:**
   - Presets: 40 px.
   - −1 h / +1 h: 40 px. These are the main controls on the phone bar.
@@ -311,8 +313,8 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | 8 | Units from the locale, plus an inline speed-unit switch | P2-6 | Medium | S | |
 | 9 | ~~Compact first-run screen on the phone (short map, value sentence, two actions)~~ **Done** | P2-5 | Medium | S | |
 | 10 | Chart smoothing, axis units and tick thinning | P2-7 | Medium | S–M | |
-| 11 | Touch targets of at least 44 px and spacing between Open and Delete | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
-| 12 | De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range | P3-1 to P3-3 | Low | S | |
+| 11 | ~~Touch targets of at least 44 px and spacing between Open and Delete~~ **Done in #25** | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
+| 12 | ~~De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range~~ **Done in #59** | P3-1 to P3-3 | Low | S | |
 | 13 | ~~Wider, resizable desktop panel~~ **Done in #49** | P2-9 | Medium | S–M | No change below 900 px |
 
 Before step 4, run the riders' test from section 5, at least questions 2, 6 and 8, because the answers decide what the collapsed bar shows. After the changes, run a screen-reader pass (VoiceOver on iOS, NVDA), 200% zoom, and outdoor readability checks. `ACCESSIBILITY.md` lists all three as untested.
