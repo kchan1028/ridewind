@@ -15,6 +15,7 @@ RideWind aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. It has
 **Screen readers**
 - The verdict ("Mostly tailwind…") is announced in a polite live region when results arrive. So are the status line and the data-settings messages.
 - Forecast errors use `role="alert"`.
+- An out-of-range speed or rider setting shows its error right under the field. The field gets `aria-invalid`, the message is linked with `aria-describedby` and announced through a polite live region, and what you typed stays in the field for you to correct.
 - Toggle buttons such as **Reverse direction** and the departure presets report their state with `aria-pressed`.
 - Each chart is an image with a text summary, for example the elevation range and the headwind range.
 - The map has a text description that points to the table.

@@ -36,6 +36,7 @@ import {
 import { coordKey, fetchForecast, type ForecastBundle, type LocationForecast } from '../lib/weather';
 import { compassPoint } from '../lib/wind';
 import { renderCharts } from './charts';
+import { fieldErrorFor, setFieldError } from './field-error';
 import { CLASS_STYLE, RouteMap } from './map';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => {
@@ -835,7 +836,8 @@ function applySettingsToInputs(): void {
   // Round inward so every value the field allows also passes the km/h validation.
   speed.min = String(Math.ceil(kmhToDisplay(5, u)));
   speed.max = String(Math.floor(kmhToDisplay(60, u)));
-  speed.value = String(Math.round(kmhToDisplay(state.settings.speedKmh, u) * 2) / 2);
+  speed.value = displaySpeed();
+  setFieldError(speed, null);
   for (const r of document.querySelectorAll<HTMLInputElement>('input[name="units"]')) r.checked = r.value === u;
 
   const s = state.settings;
@@ -851,8 +853,14 @@ function applySettingsToInputs(): void {
     input.min = String(conv.toDisplay(lo));
     input.max = String(conv.toDisplay(hi));
     input.value = String(conv.toDisplay(s.rider[key]));
+    setFieldError(input, null);
   }
   ($('p-exposure') as HTMLSelectElement).value = s.exposure;
+}
+
+/** The saved average speed as shown in the speed field (display units, nearest 0.5). */
+function displaySpeed(): string {
+  return String(Math.round(kmhToDisplay(state.settings.speedKmh, units()) * 2) / 2);
 }
 
 /** Display conversion for a rider field: masses in kg/lb, speeds in km/h/mph, others unchanged. */
@@ -882,11 +890,12 @@ function bindPaceForm(): void {
       const [lo, hi] = RIDER_LIMITS[key];
       // Small tolerance so values rounded for display at the limits are accepted.
       if (!Number.isFinite(v) || v < lo * 0.995 || v > hi * 1.005) {
-        const label = document.querySelector(`label[for="${input.id}"]`)?.textContent ?? 'This value';
-        setStatus(`${label} must be between ${input.min} and ${input.max}.`, 'error');
-        applySettingsToInputs();
+        // Keep what the rider typed so they can correct it; results keep the last valid value.
+        const current = riderConverter(input).toDisplay(state.settings.rider[key]);
+        setFieldError(input, `Enter a number from ${input.min} to ${input.max}. Still using ${current}.`);
         return;
       }
+      setFieldError(input, null);
       state.settings.rider = { ...state.settings.rider, [key]: Math.min(hi, Math.max(lo, v)) };
       persistSettings();
       recompute();
@@ -1050,12 +1059,12 @@ export function initApp(): void {
   const applySpeed = (input: HTMLInputElement, strict: boolean) => {
     const kmh = displayToKmh(Number.parseFloat(input.value), units());
     if (!Number.isFinite(kmh) || kmh < 5 || kmh > 60) {
-      if (strict) {
-        setStatus(`Enter an average speed between ${input.min} and ${input.max} ${speedUnit(units())}.`, 'error');
-        applySettingsToInputs();
-      }
+      // Keep what the rider typed so they can correct it; results keep the last valid speed.
+      const unit = speedUnit(units());
+      if (strict) setFieldError(input, `Enter a speed from ${input.min} to ${input.max} ${unit}. Still using ${displaySpeed()} ${unit}.`);
       return;
     }
+    setFieldError(input, null);
     if (Math.abs(kmh - state.settings.speedKmh) < 1e-9) return;
     state.settings.speedKmh = kmh;
     persistSettings();
@@ -1064,6 +1073,8 @@ export function initApp(): void {
   };
   let speedTimer = 0;
   const speedInput = $<HTMLInputElement>('speed');
+  // Create the (empty) live regions up front so the first error is announced.
+  for (const input of [speedInput, ...document.querySelectorAll<HTMLInputElement>('[data-rider]')]) fieldErrorFor(input);
   speedInput.addEventListener('input', () => {
     window.clearTimeout(speedTimer);
     speedTimer = window.setTimeout(() => applySpeed(speedInput, false), 400);
