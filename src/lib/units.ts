@@ -37,3 +37,17 @@ export function formatTemp(c: number, u: UnitSystem): string {
 export function formatPrecip(mm: number, u: UnitSystem): string {
   return u === 'metric' ? `${fmt(mm, 1)} mm` : `${fmt(mm / 25.4, 2)} in`;
 }
+
+const LB_PER_KG = 2.20462;
+
+export function massUnit(u: UnitSystem): string {
+  return u === 'metric' ? 'kg' : 'lb';
+}
+
+export function kgToDisplay(kg: number, u: UnitSystem): number {
+  return u === 'metric' ? kg : kg * LB_PER_KG;
+}
+
+export function displayToKg(v: number, u: UnitSystem): number {
+  return u === 'metric' ? v : v / LB_PER_KG;
+}

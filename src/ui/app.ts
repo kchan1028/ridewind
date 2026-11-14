@@ -1,7 +1,11 @@
 import { AppError, isAppError } from '../lib/errors';
-import { cumulativeDistances, elevationStats, reverseRoute, sampleRoute, type Route, type Sample } from '../lib/geo';
+import { bestRow, compareRides, departureOptions, type CompareRow, type RouteVariant } from '../lib/compare';
+import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
+import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type Route, type Sample } from '../lib/geo';
 import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
+import { RIDER_LIMITS, type Exposure, type RiderParams } from '../lib/physics';
 import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
+import { simulateRide, type PaceModel, type Simulation } from '../lib/simulate';
 import * as store from '../lib/storage';
 import {
   deviceTimeZone,
@@ -14,17 +18,21 @@ import {
   wallTimeToUtc,
 } from '../lib/time';
 import {
+  displayToKg,
   displayToKmh,
   formatDistance,
   formatElevation,
   formatPrecip,
   formatSpeed,
   formatTemp,
+  kgToDisplay,
   kmhToDisplay,
+  massUnit,
   speedUnit,
 } from '../lib/units';
 import { coordKey, fetchForecast, type ForecastBundle, type LocationForecast } from '../lib/weather';
 import { compassPoint } from '../lib/wind';
+import { renderCharts } from './charts';
 import { CLASS_STYLE, RouteMap } from './map';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => {
@@ -48,6 +56,10 @@ interface State {
   tzFromForecast: boolean;
   departureMs: number | null;
   plan: RidePlan | null;
+  sim: Simulation | null;
+  /** The rider explicitly chose a flat-route power estimate for this route. */
+  assumeFlat: boolean;
+  elevationBusy: boolean;
   settings: store.Settings;
   abort: AbortController | null;
 }
@@ -65,6 +77,9 @@ const state: State = {
   tzFromForecast: false,
   departureMs: null,
   plan: null,
+  sim: null,
+  assumeFlat: false,
+  elevationBusy: false,
   settings: store.loadSettings(),
   abort: null,
 };
@@ -101,6 +116,8 @@ function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | 
   state.savedId = opts.savedId ?? null;
   state.forecast = null;
   state.departureMs = null;
+  state.assumeFlat = false;
+  state.sim = null;
   applyRoute();
   map.invalidateSize();
   map.fit();
@@ -144,6 +161,10 @@ function renderRouteCard(): void {
       note.hidden = false;
     } else note.hidden = true;
   }
+  const complete = hasCompleteElevation(r.points);
+  show('card-lookup-ele', !complete);
+  show('elevation-source', r.elevationSource === 'dem');
+  show('dem-credit', r.elevationSource === 'dem');
   const rev = $('reverse-btn');
   rev.setAttribute('aria-pressed', String(state.reversed));
   rev.textContent = state.reversed ? 'Reversed: ride original direction' : 'Reverse direction';
@@ -215,8 +236,53 @@ async function loadForecast(): Promise<void> {
 }
 
 function rideDurationMs(): number {
+  if (state.sim) return state.sim.durationMs;
   const totalKm = (state.cum[state.cum.length - 1] ?? 0) / 1000;
   return (totalKm / state.settings.speedKmh) * HOUR;
+}
+
+function currentPace(): PaceModel {
+  const s = state.settings;
+  return s.paceMode === 'power' ? { kind: 'power', rider: s.rider, exposure: s.exposure } : { kind: 'constant', speedKmh: s.speedKmh };
+}
+
+/** Shows the elevation choice when a power estimate can't run on this route's elevation. */
+function updateElevationGate(): void {
+  const r = state.route;
+  const needed = !!r && state.settings.paceMode === 'power' && !hasCompleteElevation(r.points);
+  show('elevation-gate', needed && !state.assumeFlat);
+  if (!needed || !r) return;
+  const pct = Math.round((1 - elevationStats(r.points).coverage) * 100);
+  const n = elevationLookupCoords(r.points, state.cum).coords.length;
+  $('elevation-gate-msg').textContent =
+    (pct >= 100 ? 'This route has no elevation data. ' : `Elevation is missing for ${Math.max(1, pct)}% of this route. `) +
+    `Power-based timing needs gradients. You can look up terrain elevation for ${n} points along the route (Copernicus DEM via Open-Meteo, about ${n} of the 10,000 free daily calls), or estimate as if the route were flat, which will be clearly labelled.`;
+}
+
+async function lookupElevation(): Promise<void> {
+  if (!state.original || state.elevationBusy) return;
+  state.elevationBusy = true;
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.lookup-ele');
+  buttons.forEach((b) => (b.disabled = true));
+  setStatus('Looking up elevation…');
+  try {
+    const orig = state.original;
+    const cum = cumulativeDistances(orig.points);
+    const { distances, coords } = elevationLookupCoords(orig.points, cum);
+    const ele = await fetchElevations(coords);
+    if (state.original !== orig) return; // route changed meanwhile
+    state.original = applyElevations(orig, cum, distances, ele);
+    state.assumeFlat = false;
+    state.sim = null;
+    applyRoute();
+    updateDepartureInput();
+    setStatus(`Added elevation for ${coords.length} points from the Copernicus terrain model. Save the route to keep it.`, 'ok');
+  } catch (e) {
+    setStatus(messageFor(e), 'error');
+  } finally {
+    state.elevationBusy = false;
+    buttons.forEach((b) => (b.disabled = false));
+  }
 }
 
 function departureBounds(): { min: number; max: number } | null {
@@ -276,21 +342,123 @@ function recompute(): void {
     void loadForecast();
     return;
   }
-  state.plan = planRide({
-    points: state.route.points,
-    cum: state.cum,
-    samples: state.samples,
-    forecasts,
-    departureMs: state.departureMs,
-    speedKmh: state.settings.speedKmh,
-  });
-  renderResults(state.plan);
+  updateElevationGate();
+  const pace = currentPace();
+  const base = { points: state.route.points, cum: state.cum, samples: state.samples, forecasts, departureMs: state.departureMs };
+  try {
+    state.sim = simulateRide({ ...base, pace, assumeFlat: state.assumeFlat });
+  } catch (e) {
+    if (isAppError(e) && e.code === 'ELEVATION_MISSING') {
+      state.sim = null;
+      state.plan = null;
+      map.clearPlan();
+      show('results', false);
+      return;
+    }
+    throw e;
+  }
+  state.plan = planRide({ ...base, elapsedAt: state.sim.elapsedAt });
+  renderResults(state.plan, state.sim);
   map.showPlan(state.plan, describePoint);
+}
+
+function variantFor(reversed: boolean): RouteVariant {
+  const route = reversed ? reverseRoute(state.original!) : state.original!;
+  const cum = cumulativeDistances(route.points);
+  const samples = sampleRoute(route.points, cum);
+  const byKey = new Map(state.forecast!.locations.map((l) => [l.key, l]));
+  return {
+    direction: reversed ? 'reverse' : 'forward',
+    points: route.points,
+    cum,
+    samples,
+    forecasts: samples.map((s) => byKey.get(coordKey(s)) ?? null),
+  };
+}
+
+function renderComparison(): void {
+  const body = $('compare-body');
+  body.replaceChildren();
+  const fc = state.forecast;
+  if (!fc || !state.original || state.departureMs === null) return;
+  const u = units();
+  const tz = state.tz;
+  const pace = currentPace();
+  const spacingH = Number(($('compare-spacing') as HTMLSelectElement).value) || 2;
+  const departures = departureOptions(state.departureMs, fc.windowEndMs, rideDurationMs() * 1.3, spacingH * HOUR, 6);
+  // Columns: the original GPX direction, then reversed.
+  const variants = [variantFor(false), variantFor(true)];
+  const rows = compareRides(variants, departures, pace, state.assumeFlat);
+  const best = bestRow(rows, pace);
+  $('compare-caption').textContent =
+    pace.kind === 'power'
+      ? 'Predicted ride time, share of distance into a headwind and highest chance of rain. Best is the shortest predicted time.'
+      : 'Share of distance into a headwind, average wind along the route and highest chance of rain. Best is the least headwind (times are equal at a constant speed).';
+  if (departures.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 3;
+    td.textContent = 'No later departures fit inside the forecast window.';
+    tr.append(td);
+    body.append(tr);
+    return;
+  }
+  const cell = (r: CompareRow | undefined, reverse: boolean) => {
+    const td = document.createElement('td');
+    if (!r) return td;
+    const lines: string[] = [];
+    if (pace.kind === 'power') lines.push(formatDuration(r.durationMs));
+    lines.push(`${Math.round(r.headwindShare * 100)}% headwind`);
+    if (pace.kind === 'constant' && r.meanHeadwind !== null)
+      lines.push(`avg ${formatSpeed(Math.abs(r.meanHeadwind), u)} ${r.meanHeadwind >= 0 ? 'head' : 'tail'}`);
+    if (r.precipProbabilityMax !== null) lines.push(`rain ${Math.round(r.precipProbabilityMax)}%`);
+    if (!r.fullyForecast) lines.push('partly outside forecast');
+    const txt = document.createElement('span');
+    txt.textContent = lines.join(' · ');
+    td.append(txt);
+    if (r === best) {
+      td.dataset.best = 'true';
+      const b = document.createElement('span');
+      b.className = 'badge badge-best';
+      b.textContent = 'Best';
+      td.prepend(b, ' ');
+    }
+    const isCurrent = r.departureMs === state.departureMs && reverse === state.reversed;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-small';
+    btn.textContent = isCurrent ? 'Selected' : 'Use';
+    btn.disabled = isCurrent;
+    btn.setAttribute('aria-label', `Use departure ${formatDateTime(r.departureMs, tz)}, ${reverse ? 'reversed' : 'original'} direction`);
+    btn.addEventListener('click', () => {
+      state.departureMs = r.departureMs;
+      if (state.reversed !== reverse) {
+        state.reversed = reverse;
+        applyRoute();
+      } else recompute();
+      updateDepartureInput();
+      setStatus(`Using ${formatDateTime(r.departureMs, tz)}, ${reverse ? 'reversed' : 'original'} direction.`, 'ok');
+    });
+    td.append(' ', btn);
+    return td;
+  };
+  for (const t of departures) {
+    const tr = document.createElement('tr');
+    const th = document.createElement('th');
+    th.scope = 'row';
+    th.textContent = formatDateTime(t, tz);
+    tr.append(
+      th,
+      cell(rows.find((r) => r.departureMs === t && r.direction === 'forward'), false),
+      cell(rows.find((r) => r.departureMs === t && r.direction === 'reverse'), true),
+    );
+    body.append(tr);
+  }
 }
 
 const CLASS_ORDER: SegmentClass[] = ['headwind', 'crosswind', 'tailwind', 'calm', 'unknown'];
 
-function renderResults(plan: RidePlan): void {
+function renderResults(plan: RidePlan, sim: Simulation): void {
   const u = units();
   const tz = state.tz;
   const fc = state.forecast!;
@@ -304,6 +472,9 @@ function renderResults(plan: RidePlan): void {
     );
   }
   if (state.departureMs! < Date.now() - HOUR) warn.push('This departure time is in the past.');
+  if (sim.assumedFlat) warn.push('Timing assumes a flat route because elevation is missing, so climbs and descents are not reflected.');
+  if (state.settings.paceMode === 'power' && sim.stepsWithoutWeather > 0 && plan.summary.samplesWithoutForecast === 0)
+    warn.push('Some sections had no wind forecast; still air was assumed there.');
   const w = $('window-warning');
   w.textContent = warn.join(' ');
   w.hidden = warn.length === 0;
@@ -341,8 +512,12 @@ function renderResults(plan: RidePlan): void {
 
   // KPIs
   const s = plan.summary;
+  const power = state.settings.paceMode === 'power';
   $('kpi-time').textContent = formatDuration(plan.durationMs);
-  $('kpi-finish').textContent = `Finish about ${formatClock(plan.finishMs, tz)} at ${formatSpeed(state.settings.speedKmh, u)}`;
+  $('kpi-time-tag').textContent = power ? (sim.assumedFlat ? 'Physics estimate · flat' : 'Physics estimate') : 'Estimate';
+  $('kpi-finish').textContent = power
+    ? `Finish about ${formatClock(plan.finishMs, tz)} · average ${formatSpeed(sim.avgSpeedKmh, u)} at ${state.settings.rider.powerW} W`
+    : `Finish about ${formatClock(plan.finishMs, tz)} at ${formatSpeed(state.settings.speedKmh, u)}`;
   $('kpi-wind').textContent =
     s.windSpeedMin === null ? dash : `${formatSpeed(s.windSpeedMin, u).split(' ')[0]}–${formatSpeed(s.windSpeedMax!, u)}`;
   $('kpi-gust').textContent = s.gustMax === null ? '' : `Gusts up to ${formatSpeed(s.gustMax, u)}`;
@@ -378,6 +553,9 @@ function renderResults(plan: RidePlan): void {
     });
     body.append(tr);
   });
+
+  renderCharts($('charts'), sim, { units: u, power });
+  renderComparison();
 
   $('data-stamp').textContent =
     `Forecast retrieved ${formatDateTime(fc.fetchedAt, deviceTimeZone())} (your device time) from Open-Meteo, ` +
@@ -513,6 +691,84 @@ function applySettingsToInputs(): void {
   speed.max = String(Math.floor(kmhToDisplay(60, u)));
   speed.value = String(Math.round(kmhToDisplay(state.settings.speedKmh, u) * 2) / 2);
   for (const r of document.querySelectorAll<HTMLInputElement>('input[name="units"]')) r.checked = r.value === u;
+
+  const s = state.settings;
+  for (const r of document.querySelectorAll<HTMLInputElement>('input[name="pace"]')) r.checked = r.value === s.paceMode;
+  show('speed-field', s.paceMode === 'constant');
+  show('power-fields', s.paceMode === 'power');
+  for (const span of document.querySelectorAll('.mass-unit')) span.textContent = massUnit(u);
+  for (const span of document.querySelectorAll('.speed-unit-2')) span.textContent = speedUnit(u);
+  for (const input of document.querySelectorAll<HTMLInputElement>('[data-rider]')) {
+    const key = input.dataset.rider as keyof RiderParams;
+    const conv = riderConverter(input);
+    const [lo, hi] = RIDER_LIMITS[key];
+    input.min = String(conv.toDisplay(lo));
+    input.max = String(conv.toDisplay(hi));
+    input.value = String(conv.toDisplay(s.rider[key]));
+  }
+  ($('p-exposure') as HTMLSelectElement).value = s.exposure;
+}
+
+/** Display conversion for a rider field: masses in kg/lb, speeds in km/h/mph, others unchanged. */
+function riderConverter(input: HTMLInputElement): { toDisplay: (v: number) => number; fromDisplay: (v: number) => number } {
+  const u = units();
+  const round = (v: number, step: number) => Math.round(v / step) * step;
+  if ('mass' in input.dataset) return { toDisplay: (v) => round(kgToDisplay(v, u), 0.5), fromDisplay: (v) => displayToKg(v, u) };
+  if ('speed' in input.dataset) return { toDisplay: (v) => Math.round(kmhToDisplay(v, u)), fromDisplay: (v) => displayToKmh(v, u) };
+  return { toDisplay: (v) => v, fromDisplay: (v) => v };
+}
+
+function bindPaceForm(): void {
+  for (const r of document.querySelectorAll<HTMLInputElement>('input[name="pace"]')) {
+    r.addEventListener('change', () => {
+      state.settings.paceMode = r.value === 'power' ? 'power' : 'constant';
+      persistSettings();
+      applySettingsToInputs();
+      state.sim = null;
+      recompute();
+      updateDepartureInput();
+    });
+  }
+  for (const input of document.querySelectorAll<HTMLInputElement>('[data-rider]')) {
+    input.addEventListener('change', () => {
+      const key = input.dataset.rider as keyof RiderParams;
+      const v = riderConverter(input).fromDisplay(Number.parseFloat(input.value));
+      const [lo, hi] = RIDER_LIMITS[key];
+      // Small tolerance so values rounded for display at the limits are accepted.
+      if (!Number.isFinite(v) || v < lo * 0.995 || v > hi * 1.005) {
+        const label = document.querySelector(`label[for="${input.id}"]`)?.textContent ?? 'This value';
+        setStatus(`${label} must be between ${input.min} and ${input.max}.`, 'error');
+        applySettingsToInputs();
+        return;
+      }
+      state.settings.rider = { ...state.settings.rider, [key]: Math.min(hi, Math.max(lo, v)) };
+      persistSettings();
+      recompute();
+      updateDepartureInput();
+    });
+  }
+  $('p-exposure').addEventListener('change', (ev) => {
+    const v = (ev.target as HTMLSelectElement).value;
+    state.settings.exposure = (v === 'open' || v === 'sheltered' ? v : 'mixed') as Exposure;
+    persistSettings();
+    recompute();
+  });
+  for (const b of document.querySelectorAll('.lookup-ele')) b.addEventListener('click', () => void lookupElevation());
+  $('assume-flat-btn').addEventListener('click', () => {
+    state.assumeFlat = true;
+    recompute();
+    updateDepartureInput();
+    setStatus('Estimating as if the route were flat. Results are labelled accordingly.', 'ok');
+  });
+  $('compare-spacing').addEventListener('change', () => renderComparison());
+  let lastWidth = 0;
+  new ResizeObserver(([entry]) => {
+    const w = Math.round(entry?.contentRect.width ?? 0);
+    if (w && Math.abs(w - lastWidth) > 8 && state.sim) {
+      lastWidth = w;
+      renderCharts($('charts'), state.sim, { units: units(), power: state.settings.paceMode === 'power' });
+    }
+  }).observe($('charts'));
 }
 
 function persistSettings(): void {
@@ -650,5 +906,6 @@ export function initApp(): void {
   });
 
   bindDataDialog();
+  bindPaceForm();
   void renderSaved();
 }

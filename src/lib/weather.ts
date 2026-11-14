@@ -74,7 +74,7 @@ function numArray(v: unknown, len: number): Num[] | null {
 }
 
 function bad(detail: string): AppError {
-  return new AppError('WEATHER_BAD_RESPONSE', 'The forecast service sent data RideWind could not read. Try again shortly.', { detail });
+  return new AppError('WEATHER_BAD_RESPONSE', 'Open-Meteo sent data RideWind could not read. Try again shortly.', { detail });
 }
 
 /** Validates and normalises an Open-Meteo JSON response (object for one location, array for several). */
@@ -147,23 +147,50 @@ export interface FetchForecastOptions {
   now?: () => number;
 }
 
-/** One request for every sample location. Throws AppError with a rider-facing message on failure. */
-export async function fetchForecast(coords: LatLon[], opts: FetchForecastOptions = {}): Promise<ForecastBundle> {
-  const fetchImpl = opts.fetchImpl ?? fetch;
-  const url = buildForecastUrl(coords, opts.forecastDays);
-  let res: Response;
-  try {
-    res = await fetchImpl(url, { signal: opts.signal, headers: { Accept: 'application/json' } });
-  } catch (e) {
-    if ((e as Error)?.name === 'AbortError') throw e;
-    throw new AppError('WEATHER_NETWORK', "Couldn't reach the forecast service. Check your connection and retry. Your route is still loaded.");
-  }
+/** Covers the whole request, including reading the body. */
+export const REQUEST_TIMEOUT_MS = 20_000;
 
+/**
+ * GET an Open-Meteo endpoint and return its JSON body, mapping failures to
+ * rider-facing AppErrors (network, timeout, rate limit, server error, rejected request).
+ */
+export async function openMeteoGet(
+  url: string,
+  opts: { fetchImpl?: typeof fetch; signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<unknown> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  // Our own controller so a stalled connection fails with a clear message instead of spinning forever.
+  const ctrl = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    ctrl.abort();
+  }, opts.timeoutMs ?? REQUEST_TIMEOUT_MS);
+  const onAbort = () => ctrl.abort();
+  if (opts.signal?.aborted) ctrl.abort();
+  opts.signal?.addEventListener('abort', onAbort);
+  const timeoutError = () =>
+    new AppError('WEATHER_NETWORK', "Open-Meteo didn't respond in time. Check your connection and retry. Your route is still loaded.");
+  let res: Response;
   let body: unknown = null;
   try {
-    body = await res.json();
-  } catch {
-    body = null;
+    try {
+      res = await fetchImpl(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    } catch (e) {
+      if (timedOut) throw timeoutError();
+      if ((e as Error)?.name === 'AbortError') throw e;
+      throw new AppError('WEATHER_NETWORK', "Couldn't reach Open-Meteo. Check your connection and retry. Your route is still loaded.");
+    }
+    try {
+      body = await res.json();
+    } catch (e) {
+      if (timedOut) throw timeoutError();
+      if ((e as Error)?.name === 'AbortError') throw e;
+      body = null;
+    }
+  } finally {
+    clearTimeout(timer);
+    opts.signal?.removeEventListener('abort', onAbort);
   }
   const reason = typeof (body as { reason?: unknown })?.reason === 'string' ? (body as { reason: string }).reason : undefined;
 
@@ -171,15 +198,21 @@ export async function fetchForecast(coords: LatLon[], opts: FetchForecastOptions
     throw rateLimited(parseRetryAfter(res.headers.get('retry-after')), reason);
   }
   if (res.status >= 500) {
-    throw new AppError('WEATHER_UNAVAILABLE', 'The forecast service is temporarily unavailable. Try again in a few minutes. Your route is still loaded.', {
+    throw new AppError('WEATHER_UNAVAILABLE', 'Open-Meteo is temporarily unavailable. Try again in a few minutes. Your route is still loaded.', {
       detail: `HTTP ${res.status}`,
     });
   }
   if (!res.ok || (body as { error?: unknown })?.error === true) {
-    throw new AppError('WEATHER_REJECTED', 'The forecast service could not provide data for this route.', {
+    throw new AppError('WEATHER_REJECTED', 'Open-Meteo could not provide data for this route.', {
       detail: reason ?? `HTTP ${res.status}`,
     });
   }
   if (body === null) throw bad('response was not JSON');
+  return body;
+}
+
+/** One request for every sample location. Throws AppError with a rider-facing message on failure. */
+export async function fetchForecast(coords: LatLon[], opts: FetchForecastOptions = {}): Promise<ForecastBundle> {
+  const body = await openMeteoGet(buildForecastUrl(coords, opts.forecastDays), opts);
   return parseForecastResponse(body, coords, (opts.now ?? Date.now)());
 }
