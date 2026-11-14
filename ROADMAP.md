@@ -18,10 +18,11 @@ Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-imp
 
 | Item | Status | Size |
 | --- | --- | --- |
-| Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | In review | 1 to 2 days |
-| Saved routes remember the direction and usual departure time | In review | Up to 2 days |
-| Pick units from the browser's locale, with a speed-unit switch next to the field | Proposed | Under half a day |
-| A shorter first screen on phones, with a one-line explanation and two actions | Proposed | Under half a day |
+| Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | Done, [#50](https://github.com/kchan1028/ridewind/pull/50) | 1 to 2 days |
+| Load the app itself without a connection (a service worker for RideWind's own files, never map tiles) | In review | Under a day |
+| Saved routes remember the direction and usual departure time | Done, [#43](https://github.com/kchan1028/ridewind/pull/43) | Up to 2 days |
+| Pick units from the browser's locale, with a speed-unit switch next to the field | Done, [#53](https://github.com/kchan1028/ridewind/pull/53) | Under half a day |
+| A shorter first screen on phones, with a one-line explanation and two actions | Done, [#54](https://github.com/kchan1028/ridewind/pull/54) | Under half a day |
 
 ## Later
 

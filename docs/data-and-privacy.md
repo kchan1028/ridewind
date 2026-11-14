@@ -32,7 +32,7 @@ If you change how the app uses Open-Meteo, for example to add commercial use or 
 
 ## Map tiles
 
-The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap.org/{z}/{x}/{y}.png`. Under the [OSMF tile usage policy](https://operations.osmfoundation.org/policies/tiles/), light interactive use is fine as long as attribution stays visible and the app does no bulk downloading, prefetching or offline caching. RideWind does none of these. The page's referrer policy (`strict-origin-when-cross-origin`) still sends the Referer header the policy asks for. If the app ever gets heavy traffic, switch to a tile provider with its own terms.
+The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap.org/{z}/{x}/{y}.png`. Under the [OSMF tile usage policy](https://operations.osmfoundation.org/policies/tiles/), light interactive use is fine as long as attribution stays visible and the app does no bulk downloading, prefetching or offline caching. RideWind does none of these: its service worker caches only RideWind's own page and files, never map tiles, so the map is blank offline while the rest of the app works. The page's referrer policy (`strict-origin-when-cross-origin`) still sends the Referer header the policy asks for. If the app ever gets heavy traffic, switch to a tile provider with its own terms.
 
 ## Your data stays in your browser
 
@@ -40,6 +40,7 @@ The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap
 | --- | --- | --- |
 | Settings (speed, units, pace model, rider and bike setup, exposure) | `localStorage` | Key `ridewind:settings:v1` |
 | Saved routes | IndexedDB database `ridewind` | Only saved when you press **Save on this device** |
+| RideWind's own page and files | Cache Storage (`ridewind-shell-v1`), via the service worker | So the app opens without a connection. Nothing personal: the same files everyone downloads |
 | Forecast | Memory; for saved routes, also IndexedDB with the route | The last forecast is kept with a saved route so it opens without a connection. It isn't included in exports |
 
 - Nothing syncs between devices or browsers. To move data, use **Data & settings → Export data** on one device and **Import data** on the other.
