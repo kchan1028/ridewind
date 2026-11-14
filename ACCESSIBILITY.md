@@ -36,7 +36,7 @@ RideWind aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. It has
 
 **Touch and small screens**
 - All buttons and form fields are at least 44 px tall, including the departure presets, **Open**, **Delete** and **Use**, as are the map zoom buttons on touch screens. The **−1 h / +1 h** buttons are 48 px.
-- Down to 320 px wide there's no horizontal scrolling; wide tables scroll inside their own frame. Below 600 px the departure comparison is shown as one card per departure instead, and it keeps its table roles (`role="table"`, `row`, `cell`) so screen readers still read it as a table.
+- Down to 320 px wide there's no horizontal scrolling; wide tables scroll inside their own frame. Below 600 px the point-by-point table shows four columns (Distance, Arrive, Head/tail and Rain) so it fits without scrolling, and **Show all columns** (a toggle button with `aria-pressed`) brings back the others. The departure comparison is shown as one card per departure instead, and it keeps its table roles (`role="table"`, `row`, `cell`) so screen readers still read it as a table.
 - On phones, the verdict and the departure buttons sit in a bar at the bottom of the screen, within thumb reach. The bar shows a one-line summary in 16 px bold text; **Details** (a button with `aria-expanded`) opens the full facts, the wind key and the forecast time. The page reserves the bar's exact height, so nothing is hidden behind it.
 
 ## Known limitations

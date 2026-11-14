@@ -18,7 +18,6 @@ Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-imp
 
 | Item | Status | Size |
 | --- | --- | --- |
-| Fewer columns in the point-by-point table on phones (the rest of audit step 5) | Proposed | Under a day |
 | Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | In review | 1 to 2 days |
 | Saved routes remember the direction and usual departure time | In review | Up to 2 days |
 | Pick units from the browser's locale, with a speed-unit switch next to the field | Proposed | Under half a day |
@@ -62,6 +61,7 @@ From the UX/UI audit's implementation plan:
 - [PR #28](https://github.com/kchan1028/ridewind/pull/28): speed and rider errors show under the field and keep what you typed (step 3).
 - [PR #36](https://github.com/kchan1028/ridewind/pull/36): a glanceable verdict bar with Details, forecast age and Refresh (step 4).
 - [PR #40](https://github.com/kchan1028/ridewind/pull/40): the departure comparison as cards on phones, with both directions visible (most of step 5).
+- The point-by-point table shows Distance, Arrive, Head/tail and Rain on phones, with **Show all columns** for the rest (the rest of step 5).
 - [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
 
 The design review's P0 to P3 items have all shipped:
