@@ -1,5 +1,5 @@
 import { AppError, isAppError } from '../lib/errors';
-import { bestRow, compareRides, departureOptions, type CompareRow, type RouteVariant } from '../lib/compare';
+import { BEST_MARGIN, bestChoice, compareRides, departureOptions, type CompareRow, type RouteVariant } from '../lib/compare';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
 import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type Route, type Sample } from '../lib/geo';
 import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
@@ -517,11 +517,22 @@ function renderComparison(): void {
   // Columns: the original GPX direction, then reversed.
   const variants = [variantFor(false), variantFor(true)];
   const rows = compareRides(variants, departures, pace, state.assumeFlat);
-  const best = bestRow(rows, pace);
+  const choice = bestChoice(rows, pace);
+  const best = choice.kind === 'best' ? choice.row : null;
+  const outcome =
+    choice.kind === 'similar'
+      ? pace.kind === 'power'
+        ? ` No clear best: the daylight options are within ${BEST_MARGIN.durationMs / 60_000} minutes of each other.`
+        : ` No clear best: average wind differs by less than ${formatSpeed(BEST_MARGIN.meanHeadwindKmh, u)} between the daylight options.`
+      : choice.kind === 'none'
+        ? ' No option here is fully forecast and in daylight, so none is marked Best.'
+        : '';
   $('compare-caption').textContent =
-    pace.kind === 'power'
-      ? 'Predicted ride time, share of distance into a headwind and highest chance of rain. Best is the shortest predicted time.'
-      : 'Share of distance into a headwind, average wind along the route and highest chance of rain. Best is the least headwind (times are equal at a constant speed).';
+    (pace.kind === 'power'
+      ? 'Predicted ride time, finish time, share of distance into a headwind and highest chance of rain. Best is the shortest predicted time'
+      : 'Finish time, share of distance into a headwind, average wind along the route and highest chance of rain. Best is the least headwind (times are equal at a constant speed)') +
+    ', among rides that start and finish in daylight and differ enough to notice.' +
+    outcome;
   if (departures.length === 0) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
@@ -536,6 +547,9 @@ function renderComparison(): void {
     if (!r) return td;
     const lines: string[] = [];
     if (pace.kind === 'power') lines.push(formatDuration(r.durationMs));
+    lines.push(`finish ${formatClock(r.finishMs, tz)}`);
+    if (r.daylight === 'ends-after-sunset') lines.push('after sunset');
+    else if (r.daylight === 'starts-before-sunrise') lines.push('before sunrise');
     lines.push(`${Math.round(r.headwindShare * 100)}% headwind`);
     if (pace.kind === 'constant' && r.meanHeadwind !== null)
       lines.push(`avg ${formatSpeed(Math.abs(r.meanHeadwind), u)} ${r.meanHeadwind >= 0 ? 'head' : 'tail'}`);
