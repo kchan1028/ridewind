@@ -34,6 +34,7 @@
     --head: #ff6b7d;
     --cross: #f2b544;
     --tail: #6fb3ee;
+    --cross-fill: #f2b544;
     --warn-bg: #3a2f10;
     --warn-line: #a88420;
     --err-bg: #3b1b1d;
@@ -127,6 +128,7 @@ a {
   stroke-linecap: round;
 }
 .brand-name {
+  margin: 0;
   font-weight: 800;
   font-size: 1.2rem;
   letter-spacing: -0.02em;
@@ -244,12 +246,12 @@ h2 {
   align-items: center;
   gap: 10px;
   margin: 0 0 12px;
-  font-size: 1.05rem;
-  letter-spacing: -0.01em;
+  font-size: 1.25rem;
+  letter-spacing: -0.015em;
 }
 h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .step-num {
   display: inline-grid;
@@ -375,8 +377,12 @@ input:disabled {
 .radio {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 36px;
+  gap: 10px;
+  min-height: 44px;
+}
+.radio input {
+  width: 18px;
+  height: 18px;
 }
 
 /* ---------- route card ---------- */
@@ -434,9 +440,10 @@ input:disabled {
 .saved summary {
   cursor: pointer;
   font-weight: 600;
-  min-height: 32px;
+  min-height: 44px;
   display: flex;
   align-items: center;
+  gap: 0.35em;
 }
 .saved-list {
   list-style: none;
@@ -462,7 +469,7 @@ input:disabled {
 }
 .saved-actions {
   display: flex;
-  gap: 6px;
+  gap: 16px;
   flex-shrink: 0;
 }
 
@@ -1100,5 +1107,148 @@ select {
   }
   body.has-verdict {
     padding-bottom: 190px;
+  }
+}
+
+/* ---------- review P2/P3 polish ---------- */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Provenance as a quiet inline label: solid dot = forecast data, hollow dot = RideWind's estimate. */
+.src {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.src::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+}
+.src-fc::before {
+  background: currentColor;
+}
+
+.verdict-head {
+  font-size: 1.5rem;
+}
+.direction-note {
+  margin-top: 4px;
+}
+
+/* Departure presets */
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.chip {
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chip[aria-pressed='true'] {
+  border-color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 10%, var(--surface));
+}
+
+/* Press feedback; hover only where a real pointer exists */
+.btn,
+.chip {
+  transition: transform 120ms var(--ease-out);
+}
+.btn:active:not(:disabled),
+.chip:active {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+@media not (hover: hover) {
+  .btn:hover {
+    background: var(--surface);
+  }
+  .btn-primary:hover {
+    background: var(--ink);
+  }
+}
+.btn[data-flash] {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+/* Results and dialog arrive with a short fade instead of popping in */
+#results:not([hidden]) {
+  animation: rw-fade-in 160ms var(--ease-out);
+}
+dialog[open] {
+  animation: rw-dialog-in 180ms var(--ease-out);
+}
+@keyframes rw-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rw-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+/* Danger zone, kept apart from export/import */
+.danger-zone {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.danger-zone .btn {
+  margin-top: 8px;
+}
+
+/* Larger map controls on touch screens */
+@media (pointer: coarse), (max-width: 899px) {
+  /* #map outranks leaflet.css, which loads after this file. */
+  #map .leaflet-bar a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    font-size: 22px;
+  }
+}
+
+/* Dark mode: soften the bright map tiles a little */
+@media (prefers-color-scheme: dark) {
+  .leaflet-tile-pane {
+    filter: brightness(0.82) contrast(1.05);
+  }
+}
+
+/* Reduced motion: keep opacity fades, drop movement and scaling */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled),
+  .chip:active {
+    transform: none;
+  }
+  #results:not([hidden]),
+  dialog[open] {
+    animation: rw-fade-in 120ms linear !important;
   }
 }

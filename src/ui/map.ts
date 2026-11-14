@@ -97,7 +97,8 @@ export class RouteMap {
         iconSize: [26, 26],
         iconAnchor: [13, 13],
       });
-      L.marker([r.sample.lat, r.sample.lon], { icon, keyboard: true, title: `Point ${i + 1} wind details` })
+      // Not a tab stop: the point-by-point table carries the same data for keyboard users.
+      L.marker([r.sample.lat, r.sample.lon], { icon, keyboard: false, title: `Point ${i + 1} wind details` })
         .bindPopup(describePoint(i))
         .addTo(this.planLayer);
     });
