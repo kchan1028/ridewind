@@ -281,7 +281,7 @@ Severity uses the audit's scale: **P0** blocks the task, **P1** is a major probl
 | W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Comparison resolved on live ([PR #40](https://github.com/kchan1028/ridewind/pull/40)); the point-by-point table still scrolls sideways |
 | W10 | Phone: the first screen is an empty map | P2 | P2-5 | Still present on live |
 | W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Resolved on live ([PR #25](https://github.com/kchan1028/ridewind/pull/25)) |
-| W12 | One forecast error shown three times | P3 | P3-1 | Still present on live; [#57](https://github.com/kchan1028/ridewind/issues/57) |
+| W12 | One forecast error shown three times | P3 | P3-1 | Fixed: [#57](https://github.com/kchan1028/ridewind/issues/57) |
 | W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#34](https://github.com/kchan1028/ridewind/issues/34)) |
 | W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#35](https://github.com/kchan1028/ridewind/issues/35)) |
 | W15 | A comparison row that finishes late in the evening is labelled "before sunrise" | P3 | *New* | Still present on live; [#58](https://github.com/kchan1028/ridewind/issues/58) |
