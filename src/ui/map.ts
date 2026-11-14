@@ -1,13 +1,18 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { bearingAtDistance, cumulativeDistances, haversineM, pointAtDistance, type LatLon } from '../lib/geo';
-import type { RidePlan, SegmentClass } from '../lib/ride';
+import { rainLevel, type RainLevel, type RidePlan, type SegmentClass } from '../lib/ride';
 
 /** Start and finish closer than this are treated as one point (a loop). */
 const LOOP_END_M = 200;
 
-/** Wide translucent band drawn under wet sections; its width keeps it readable without colour vision. */
-export const RAIN_STYLE = { color: '#7b4fd6', weight: 18, opacity: 0.4 };
+/** Band drawn under wet sections; it widens and darkens with rain strength, so width alone tells the levels apart. */
+export const RAIN_STYLE: Record<Exclude<RainLevel, 'none'>, { weight: number; opacity: number }> = {
+  light: { weight: 14, opacity: 0.45 },
+  moderate: { weight: 20, opacity: 0.6 },
+  heavy: { weight: 26, opacity: 0.75 },
+};
+const RAIN_COLOR = '#5b21b6';
 
 /** Colours are paired with dash patterns so classes stay distinguishable without colour vision. */
 export const CLASS_STYLE: Record<SegmentClass, { color: string; dashArray?: string; weight: number; label: string }> = {
@@ -118,11 +123,11 @@ export class RouteMap {
     this.planLayer.clearLayers();
   }
 
-  showPlan(plan: RidePlan, describePoint: (index: number) => string): void {
+  showPlan(plan: RidePlan, describePoint: (index: number) => string, rainLabel: (mmPerH: number) => string): void {
     this.planLayer.clearLayers();
     for (const seg of plan.segments) {
-      if (!seg.rain) continue;
-      L.polyline(seg.latlngs, { ...RAIN_STYLE, lineCap: 'round', interactive: false }).addTo(this.planLayer);
+      if (seg.rain === 'none') continue;
+      L.polyline(seg.latlngs, { ...RAIN_STYLE[seg.rain], color: RAIN_COLOR, lineCap: 'round', interactive: false }).addTo(this.planLayer);
     }
     for (const seg of plan.segments) {
       const s = CLASS_STYLE[seg.windClass];
@@ -144,6 +149,19 @@ export class RouteMap {
       L.marker([r.sample.lat, r.sample.lon], { icon, keyboard: false, title: `Point ${i + 1} wind details` })
         .bindPopup(describePoint(i))
         .addTo(this.planLayer);
+    });
+    // Raindrop tags beside each wet point, offset so they sit next to the wind arrow rather than on it.
+    plan.samples.forEach((r) => {
+      const mm = r.weather?.precipitation;
+      if (mm === null || mm === undefined || rainLevel(mm) === 'none') return;
+      const tag = document.createElement('span');
+      tag.className = `rain-tag rain-${rainLevel(mm)}`;
+      tag.append(rotatedSvg('0 0 12 16', 10, 'M6 1 C6 1 1 7.5 1 10.5 A5 5 0 0 0 11 10.5 C11 7.5 6 1 6 1 Z', 0), rainLabel(mm));
+      L.marker([r.sample.lat, r.sample.lon], {
+        icon: L.divIcon({ className: 'rain-tag-icon', html: tag, iconSize: undefined, iconAnchor: [-14, 24] }),
+        interactive: false,
+        keyboard: false,
+      }).addTo(this.planLayer);
     });
   }
 }
