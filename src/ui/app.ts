@@ -34,7 +34,7 @@ import {
   massUnit,
   speedUnit,
 } from '../lib/units';
-import { coordKey, fetchForecast, type ForecastBundle, type LocationForecast } from '../lib/weather';
+import { coordKey, fetchForecast, forecastCovers, type ForecastBundle, type LocationForecast } from '../lib/weather';
 import { compassPoint } from '../lib/wind';
 import { renderCharts } from './charts';
 import { fieldErrorFor, setFieldError } from './field-error';
@@ -78,6 +78,10 @@ interface State {
   abort: AbortController | null;
   /** Usual departure time ("HH:MM", route-local) from a saved route, applied once its forecast loads. */
   pendingDepartTime: string | null;
+  /** The last forecast kept with this saved route, used when a new one can't be fetched. */
+  cachedForecast: ForecastBundle | null;
+  /** True while the shown forecast is that saved copy rather than a fresh one. */
+  forecastFromCache: boolean;
 }
 
 const state: State = {
@@ -100,6 +104,8 @@ const state: State = {
   settings: store.loadSettings(),
   abort: null,
   pendingDepartTime: null,
+  cachedForecast: null,
+  forecastFromCache: false,
 };
 
 let map: RouteMap;
@@ -184,7 +190,8 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   if (rain && rain.fact !== 'dry' && (chance === null || chance >= LOW_RAIN_CHANCE)) key.push(rain.fact);
   const fc = state.forecast!;
   const ageMs = Date.now() - fc.fetchedAt;
-  if (ageMs >= STALE_FORECAST_MS) key.push(`forecast ${Math.floor(ageMs / HOUR)} h old`);
+  if (state.forecastFromCache) key.push(`saved forecast from ${formatDayClock(fc.fetchedAt, deviceTimeZone())}`);
+  else if (ageMs >= STALE_FORECAST_MS) key.push(`forecast ${Math.floor(ageMs / HOUR)} h old`);
 
   if (elevationChoicePending()) key.push(`timed at ${formatSpeed(state.settings.speedKmh, u)} average`);
 
@@ -244,10 +251,15 @@ function show(id: string, visible: boolean): void {
 /* ---------- route ---------- */
 
 /** Starts over with a new route: resets per-route state, draws it and fetches its forecast. */
-function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | null; prefs?: store.RoutePrefs } = {}): void {
+function loadRoute(
+  route: Route,
+  opts: { isSample?: boolean; savedId?: string | null; prefs?: store.RoutePrefs; cachedForecast?: ForecastBundle | null } = {},
+): void {
   state.original = route;
   state.reversed = opts.prefs?.reversed ?? false;
   state.pendingDepartTime = opts.prefs?.departTime ?? null;
+  state.cachedForecast = opts.cachedForecast ?? null;
+  state.forecastFromCache = false;
   state.isSample = !!opts.isSample;
   state.savedId = opts.savedId ?? null;
   state.forecast = null;
@@ -374,19 +386,27 @@ async function loadForecast(): Promise<void> {
     const fc = await fetchForecast(state.samples, { signal: ctrl.signal });
     if (ctrl.signal.aborted) return;
     state.forecast = fc;
+    state.forecastFromCache = false;
+    state.cachedForecast = fc;
     state.tzFromForecast = isValidTimeZone(fc.timezone);
     state.tz = state.tzFromForecast ? fc.timezone : deviceTimeZone();
     if ($('status').textContent === loadingMsg) setStatus(`Forecast ready for “${name}”.`, 'ok');
+    // Keep it with the saved route so the route still opens without a connection.
+    if (state.savedId) void store.saveRouteForecast(state.savedId, fc).catch(() => {});
   } catch (e) {
     if ((e as Error)?.name === 'AbortError' || ctrl.signal.aborted) return;
-    state.forecast = null;
-    state.tzFromForecast = false;
-    state.tz = deviceTimeZone();
     const msg = messageFor(e);
-    $('wx-error-msg').textContent = msg;
-    show('wx-error', true);
-    setStatus(msg, 'error');
-    setVerdictMode('error', 'Forecast unavailable', msg);
+    const cached = state.cachedForecast;
+    // Offline or failing: fall back to the forecast saved with this route, if it covers these points.
+    if (cached && forecastCovers(cached, state.samples)) {
+      state.forecast = cached;
+      state.forecastFromCache = true;
+      state.tzFromForecast = isValidTimeZone(cached.timezone);
+      state.tz = state.tzFromForecast ? cached.timezone : deviceTimeZone();
+      setStatus(`${msg} Showing the forecast saved ${formatDateTime(cached.fetchedAt, deviceTimeZone())} (your device time) instead.`, 'error');
+    } else {
+      showForecastError(msg);
+    }
   } finally {
     if (state.abort === ctrl) {
       state.abort = null;
@@ -396,6 +416,17 @@ async function loadForecast(): Promise<void> {
   chooseDefaultDeparture();
   updateDepartureInput();
   recompute();
+}
+
+function showForecastError(msg: string): void {
+  state.forecast = null;
+  state.forecastFromCache = false;
+  state.tzFromForecast = false;
+  state.tz = deviceTimeZone();
+  $('wx-error-msg').textContent = msg;
+  show('wx-error', true);
+  setStatus(msg, 'error');
+  setVerdictMode('error', 'Forecast unavailable', msg);
 }
 
 function rideDurationMs(): number {
@@ -716,6 +747,10 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
     );
   }
   if (state.departureMs! < Date.now() - HOUR) warn.push('This departure time is in the past.');
+  if (state.forecastFromCache)
+    warn.push(
+      `A new forecast couldn't be loaded, so this is the one saved ${formatDateTime(fc.fetchedAt, deviceTimeZone())} (your device time). Use Refresh forecast to try again.`,
+    );
   if (sim.assumedFlat) warn.push('Timing assumes a flat route because elevation is missing, so climbs and descents are not reflected.');
   if (currentPace().kind === 'power' && sim.stepsWithoutWeather > 0 && plan.summary.samplesWithoutForecast === 0)
     warn.push('Some sections had no wind forecast; still air was assumed there.');
@@ -880,7 +915,7 @@ async function renderSaved(): Promise<void> {
       load.setAttribute('aria-label', `Open ${r.name}`);
       load.addEventListener('click', () => {
         setStatus(`Opened “${r.name}”.`, 'ok');
-        loadRoute(store.unpackRoute(r), { savedId: r.id, prefs: r.prefs });
+        loadRoute(store.unpackRoute(r), { savedId: r.id, prefs: r.prefs, cachedForecast: store.validCachedForecast(r.forecast) });
       });
       const del = document.createElement('button');
       del.type = 'button';
@@ -919,7 +954,9 @@ async function saveCurrentRoute(): Promise<void> {
       reversed: state.reversed,
       ...(state.departureMs !== null && state.tzFromForecast ? { departTime: utcToWallTime(state.departureMs, state.tz).slice(11, 16) } : {}),
     };
-    const saved = store.packRoute(state.original, state.savedId ?? undefined, undefined, prefs);
+    const packed = store.packRoute(state.original, state.savedId ?? undefined, undefined, prefs);
+    // Keep the current forecast too, so the route still opens without a connection.
+    const saved = state.forecast ? { ...packed, forecast: state.forecast } : packed;
     await store.saveRoute(saved);
     state.savedId = saved.id;
     flashButton($('save-btn') as HTMLButtonElement, 'Saved ✓', 'Update saved copy');
@@ -1180,9 +1217,18 @@ export function initApp(): void {
     verdictExpanded = !verdictExpanded;
     applyVerdictExpanded(verdictExpanded);
   });
-  // Coming back to a tab left open: refresh the summary so an old forecast is flagged.
+  // Coming back to a tab left open: get a new forecast if this one is over an hour old (and we're online);
+  // otherwise refresh the summary so an old forecast is flagged.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && state.plan && state.sim) renderVerdict(state.plan, state.sim);
+    if (document.visibilityState !== 'visible') return;
+    const fc = state.forecast;
+    const stale = !!fc && (state.forecastFromCache || Date.now() - fc.fetchedAt >= STALE_FORECAST_MS);
+    if (stale && navigator.onLine !== false && !state.abort) void loadForecast();
+    else if (state.plan && state.sim) renderVerdict(state.plan, state.sim);
+  });
+  // Back online after showing a saved forecast: fetch a fresh one.
+  window.addEventListener('online', () => {
+    if (state.forecastFromCache && !state.abort) void loadForecast();
   });
   // On phones the verdict is a fixed bottom bar; reserve exactly its height so nothing hides behind it.
   new ResizeObserver(([entry]) => {

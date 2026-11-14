@@ -62,6 +62,12 @@ export function coordKey(p: LatLon): string {
   return `${p.lat.toFixed(3)},${p.lon.toFixed(3)}`;
 }
 
+/** Whether a forecast has data for every one of these points (for example, after reversing a route). */
+export function forecastCovers(bundle: ForecastBundle, points: LatLon[]): boolean {
+  const keys = new Set(bundle.locations.map((l) => l.key));
+  return points.every((p) => keys.has(coordKey(p)));
+}
+
 export function buildForecastUrl(coords: LatLon[], forecastDays = FORECAST_DAYS): string {
   const params = new URLSearchParams({
     latitude: coords.map((c) => c.lat.toFixed(3)).join(','),
