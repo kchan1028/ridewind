@@ -207,8 +207,8 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
     const title = document.createElement('span');
     title.textContent = p.title;
     const tag = document.createElement('span');
-    tag.className = `tag ${p.tag === 'Forecast' ? 'tag-fc' : 'tag-est'}`;
-    tag.textContent = p.tag;
+    tag.className = `src ${p.tag === 'Forecast' ? 'src-fc' : 'src-est'}`;
+    tag.textContent = p.tag.toLowerCase();
     cap.append(title, ' ', tag);
     const svg = el('svg', { width, height: p.height + PAD.t + PAD.b, role: 'img', 'aria-label': `${p.title}: ${p.summary}` });
     const g = el('g', { transform: `translate(${PAD.l},${PAD.t})` }, svg);

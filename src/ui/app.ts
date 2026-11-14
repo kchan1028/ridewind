@@ -178,6 +178,7 @@ function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | 
   state.departureMs = null;
   state.assumeFlat = false;
   state.sim = null;
+  $('save-btn').textContent = state.savedId ? 'Update saved copy' : 'Save on this device';
   applyRoute();
   map.invalidateSize();
   map.fit();
@@ -225,9 +226,11 @@ function renderRouteCard(): void {
   show('card-lookup-ele', !complete);
   show('elevation-source', r.elevationSource === 'dem');
   show('dem-credit', r.elevationSource === 'dem');
-  const rev = $('reverse-btn');
-  rev.setAttribute('aria-pressed', String(state.reversed));
-  rev.textContent = state.reversed ? 'Reversed: ride original direction' : 'Reverse direction';
+  show('legend', true);
+  $('reverse-btn').setAttribute('aria-pressed', String(state.reversed));
+  $('direction-note').textContent = state.reversed
+    ? 'Riding in reverse: from the file’s finish back to its start.'
+    : 'Riding in the file’s direction.';
 }
 
 async function importGpxFile(file: File): Promise<void> {
@@ -393,6 +396,53 @@ function updateDepartureInput(): void {
   }
   if (b) note += ` Forecast available until ${formatDateTime(state.forecast!.windowEndMs, tz)}.`;
   $('tz-note').textContent = note;
+  renderPresets();
+}
+
+/** Quick departure choices in the route's timezone, limited to the forecast window. */
+function departurePresets(): Array<{ label: string; ms: number }> {
+  const b = departureBounds();
+  if (!b) return [];
+  const tz = state.tz;
+  const today = utcToWallTime(Date.now(), tz).slice(0, 10);
+  const [y, m, d] = today.split('-').map(Number) as [number, number, number];
+  const dateAt = (addDays: number) => {
+    const dt = new Date(Date.UTC(y, m - 1, d + addDays));
+    return { iso: dt.toISOString().slice(0, 10), weekday: dt.getUTCDay() };
+  };
+  const out: Array<{ label: string; ms: number }> = [{ label: 'Next hour', ms: Math.ceil(Date.now() / HOUR) * HOUR }];
+  out.push({ label: 'Tomorrow 08:00', ms: wallTimeToUtc(`${dateAt(1).iso}T08:00`, tz) });
+  // The coming weekend morning that isn't tomorrow: Saturday, else Sunday.
+  for (let k = 2; k <= 7; k++) {
+    const day = dateAt(k);
+    if (day.weekday === 6 || day.weekday === 0) {
+      const name = day.weekday === 6 ? 'Sat' : 'Sun';
+      out.push({ label: `${name} ${Number(day.iso.slice(8, 10))}, 09:00`, ms: wallTimeToUtc(`${day.iso}T09:00`, tz) });
+      break;
+    }
+  }
+  return out.filter((p) => p.ms >= b.min && p.ms <= b.max);
+}
+
+function renderPresets(): void {
+  const box = $('dep-presets');
+  const presets = state.forecast ? departurePresets() : [];
+  box.hidden = presets.length === 0;
+  box.replaceChildren(
+    ...presets.map((p) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip';
+      btn.textContent = p.label;
+      btn.setAttribute('aria-pressed', String(p.ms === state.departureMs));
+      btn.addEventListener('click', () => {
+        state.departureMs = p.ms;
+        updateDepartureInput();
+        recompute();
+      });
+      return btn;
+    }),
+  );
 }
 
 /* ---------- results ---------- */
@@ -578,7 +628,7 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
   const s = plan.summary;
   const power = state.settings.paceMode === 'power';
   $('kpi-time').textContent = formatDuration(plan.durationMs);
-  $('kpi-time-tag').textContent = power ? (sim.assumedFlat ? 'Physics estimate · flat' : 'Physics estimate') : 'Estimate';
+  $('kpi-time-tag').textContent = power ? (sim.assumedFlat ? 'physics estimate, flat' : 'physics estimate') : 'estimate';
   $('kpi-finish').textContent = power
     ? `Finish about ${formatClock(plan.finishMs, tz)} · average ${formatSpeed(sim.avgSpeedKmh, u)} at ${state.settings.rider.powerW} W`
     : `Finish about ${formatClock(plan.finishMs, tz)} at ${formatSpeed(state.settings.speedKmh, u)}`;
@@ -737,11 +787,21 @@ async function saveCurrentRoute(): Promise<void> {
     const saved = store.packRoute(state.original, state.savedId ?? undefined);
     await store.saveRoute(saved);
     state.savedId = saved.id;
-    setStatus(`Saved “${saved.name}” in this browser.`, 'ok');
+    flashButton($('save-btn') as HTMLButtonElement, 'Saved ✓', 'Update saved copy');
     void renderSaved();
   } catch (e) {
     setStatus(messageFor(e), 'error');
   }
+}
+
+/** Confirms an action on the control itself, then settles on a follow-up label. */
+function flashButton(btn: HTMLButtonElement, flash: string, after: string): void {
+  btn.textContent = flash;
+  btn.dataset.flash = 'true';
+  window.setTimeout(() => {
+    btn.textContent = after;
+    delete btn.dataset.flash;
+  }, 1800);
 }
 
 /* ---------- settings & data ---------- */
@@ -958,18 +1018,31 @@ export function initApp(): void {
     }
   });
 
-  $<HTMLInputElement>('speed').addEventListener('change', (ev) => {
-    const input = ev.target as HTMLInputElement;
+  // Apply valid speeds as you type (debounced); only complain once you leave the field.
+  const applySpeed = (input: HTMLInputElement, strict: boolean) => {
     const kmh = displayToKmh(Number.parseFloat(input.value), units());
     if (!Number.isFinite(kmh) || kmh < 5 || kmh > 60) {
-      setStatus(`Enter an average speed between ${input.min} and ${input.max} ${speedUnit(units())}.`, 'error');
-      applySettingsToInputs();
+      if (strict) {
+        setStatus(`Enter an average speed between ${input.min} and ${input.max} ${speedUnit(units())}.`, 'error');
+        applySettingsToInputs();
+      }
       return;
     }
+    if (Math.abs(kmh - state.settings.speedKmh) < 1e-9) return;
     state.settings.speedKmh = kmh;
     persistSettings();
     updateDepartureInput();
     recompute();
+  };
+  let speedTimer = 0;
+  const speedInput = $<HTMLInputElement>('speed');
+  speedInput.addEventListener('input', () => {
+    window.clearTimeout(speedTimer);
+    speedTimer = window.setTimeout(() => applySpeed(speedInput, false), 400);
+  });
+  speedInput.addEventListener('change', () => {
+    window.clearTimeout(speedTimer);
+    applySpeed(speedInput, true);
   });
 
   bindDataDialog();
