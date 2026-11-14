@@ -1,7 +1,10 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { bearingAtDistance, cumulativeDistances, pointAtDistance, type LatLon } from '../lib/geo';
+import { bearingAtDistance, cumulativeDistances, haversineM, pointAtDistance, type LatLon } from '../lib/geo';
 import type { RidePlan, SegmentClass } from '../lib/ride';
+
+/** Start and finish closer than this are treated as one point (a loop). */
+const LOOP_END_M = 200;
 
 /** Wide translucent band drawn under wet sections; its width keeps it readable without colour vision. */
 export const RAIN_STYLE = { color: '#7b4fd6', weight: 18, opacity: 0.4 };
@@ -86,13 +89,20 @@ export class RouteMap {
         keyboard: false,
       }).addTo(this.routeLayer);
     }
-    // Permanent labels; for loops, push them to opposite sides so they don't overlap.
-    L.circleMarker([end.lat, end.lon], { radius: 8, color: '#14213d', weight: 3, fillColor: '#ffffff', fillOpacity: 1, interactive: false })
-      .bindTooltip('Finish', { permanent: true, direction: 'right', offset: [8, 0], className: 'endpoint-label' })
-      .addTo(this.routeLayer);
-    L.circleMarker([start.lat, start.lon], { radius: 8, color: '#ffffff', weight: 3, fillColor: '#14213d', fillOpacity: 1, interactive: false })
-      .bindTooltip('Start', { permanent: true, direction: 'left', offset: [-8, 0], className: 'endpoint-label endpoint-start' })
-      .addTo(this.routeLayer);
+    // A loop that ends where it starts gets one label instead of two overlapping ones.
+    if (haversineM(start, end) <= LOOP_END_M) {
+      L.circleMarker([start.lat, start.lon], { radius: 8, color: '#ffffff', weight: 3, fillColor: '#14213d', fillOpacity: 1, interactive: false })
+        .bindTooltip('Start / Finish', { permanent: true, direction: 'top', offset: [0, -8], className: 'endpoint-label endpoint-start' })
+        .addTo(this.routeLayer);
+    } else {
+      // Otherwise, push the labels to opposite sides so they don't overlap.
+      L.circleMarker([end.lat, end.lon], { radius: 8, color: '#14213d', weight: 3, fillColor: '#ffffff', fillOpacity: 1, interactive: false })
+        .bindTooltip('Finish', { permanent: true, direction: 'right', offset: [8, 0], className: 'endpoint-label' })
+        .addTo(this.routeLayer);
+      L.circleMarker([start.lat, start.lon], { radius: 8, color: '#ffffff', weight: 3, fillColor: '#14213d', fillOpacity: 1, interactive: false })
+        .bindTooltip('Start', { permanent: true, direction: 'left', offset: [-8, 0], className: 'endpoint-label endpoint-start' })
+        .addTo(this.routeLayer);
+    }
     this.fit();
   }
 
