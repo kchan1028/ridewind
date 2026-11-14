@@ -4,7 +4,7 @@ Date: 14 November 2026 · Build: `main` at `0d5ebd5` · Scope: review and plan o
 
 ## Method and tooling
 
-- **Impeccable** (design skill): loaded, along with its `audit` and `critique` references, and its project-context step ran. It reported **no `PRODUCT.md`** in this repo, so the product truth here comes from `README.md`, `ACCESSIBILITY.md`, `docs/` and the code. The critique was run in **one context** (degraded: the skill asks for two isolated assessment agents). Its detector (`impeccable detect`) was run over `index.html`, `src/styles.css` and `src/ui/`.
+- **Impeccable** (design skill): loaded, along with its `audit` and `critique` references, and its project-context step ran. At the audited commit there was **no `PRODUCT.md`**, so the product truth here comes from `README.md`, `ACCESSIBILITY.md`, `docs/` and the code. [`PRODUCT.md`](../PRODUCT.md) and [`ROADMAP.md`](../ROADMAP.md) were added afterwards. The critique was run in **one context** (degraded: the skill asks for two isolated assessment agents). Its detector (`impeccable detect`) was run over `index.html`, `src/styles.css` and `src/ui/`.
 - **Awesome Design**: two skills share the name (`awesome-design` and `anthropic-skills:awesome-design`). Both were read, and both are installers that copy the VoltAgent brand `DESIGN.md` library into a project. Neither has an audit procedure. Because this audit doesn't change the design direction, no brand library was copied into the repo and no brand system was applied.
 - **Perspectives:** a product designer, a UX/UI designer and an avid cyclist. The cyclist perspective is used to raise hypotheses. It is no substitute for testing with riders (see [Questions for cyclist testing](#5-unverified-assumptions-and-questions-for-cyclist-testing)).
 - **Evidence labels:** **Observed** means reproduced in the running app. **Source** means read in the code but not exercised. **Assumption** means it needs user research.
@@ -63,6 +63,8 @@ Impeccable's heuristic score is **26/40 (Acceptable)**: a solid foundation, with
 Severity: **P0** blocks the task; **P1** is a major problem or misleading result; **P2** causes real friction and has a workaround; **P3** is polish. Within each band, findings are ordered by user impact.
 
 ### P1-1 · "Best" departure ignores daylight and trivial differences
+
+> **Status: fixed** in [#23](https://github.com/kchan1028/ridewind/pull/23). Dark rides are never Best, each option shows its finish time, and near-equal options get "No clear best". Capping rows at sunset is still open.
 
 - **Where:** Compare departures and directions. `bestRow` in [`src/lib/compare.ts:74`](../src/lib/compare.ts); rows are built in [`src/ui/app.ts:486`](../src/ui/app.ts).
 - **Observed:**
@@ -263,7 +265,7 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 
 | # | Change | Fixes | Impact | Effort | Notes |
 |---|---|---|---|---|---|
-| 1 | Daylight-aware, threshold-based comparison: a finish time per row, dark rows flagged and excluded from Best, "No clear winner" | P1-1 | High | S–M | Reuse `rideDaylight`; add unit tests in `tests/compare` |
+| 1 | ~~Daylight-aware, threshold-based comparison~~ **Done in #23** | P1-1 | High | S–M | Row cap at sunset still open |
 | 2 | Rain wording led by probability, in the verdict, KPI and comparison | P1-2 | High | S | Copy plus `verdict` facts; test the thresholds |
 | 3 | Inline field validation helper (`aria-invalid`, `aria-describedby`, keep the typed value) | P1-3 | High | S | One helper for speed and the six rider fields |
 | 4 | Collapsible, glanceable verdict bar (collapsed on scroll, larger text, 48 px stepper, "Updated X min ago" and Refresh) | P2-1, P2-3 (part), P2-8 (part) | High | M | The biggest change for use outdoors; check with VoiceOver |
