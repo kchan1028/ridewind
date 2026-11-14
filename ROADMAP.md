@@ -1,22 +1,44 @@
 # RideWind roadmap
 
-**Status, 14 November 2026:** eight of the nine proposed items have shipped, with the owner choosing the approach for each. One is still open, and nothing below has a date.
+**Status, 14 November 2026:** the first nine roadmap items have all shipped except screen reader testing. The open work now comes from the [UX/UI audit](docs/ux-ui-audit.md) and the bugs found in testing. Items marked *Proposed* are recommendations the owner hasn't approved, and nothing on this page has a date.
 
-Each item links to its [GitHub issue](https://github.com/kchan1028/ridewind/issues), where the detailed work is tracked. For what the product is and isn't meant to do, see [PRODUCT.md](PRODUCT.md).
+Each item links to its [GitHub issue](https://github.com/kchan1028/ridewind/issues) or pull request, where the detailed work is tracked. For what the product is and isn't meant to do, see [PRODUCT.md](PRODUCT.md).
 
 ## Now
 
-| Item | Status | What's left | Source |
-| --- | --- | --- | --- |
-| Test with screen readers and in Windows high contrast mode | Open, [#12](https://github.com/kchan1028/ridewind/issues/12) | Reflow at 200% and 400% zoom and control labels have been checked. It still needs a person to try VoiceOver, NVDA or TalkBack, and Windows high contrast mode. | [Accessibility](ACCESSIBILITY.md#known-limitations) |
+Bugs and checks that are open on GitHub.
+
+| Item | Status | Tracked in |
+| --- | --- | --- |
+| Glanceable verdict bar with Details, forecast age and Refresh (audit step 4) | In review | [PR #36](https://github.com/kchan1028/ridewind/pull/36) |
+| Keyboard focus is lost after **Use**, a departure preset or **Retry forecast** | Open bug | [#31](https://github.com/kchan1028/ridewind/issues/31) |
+| The comparison restarts at the chosen departure, so earlier options disappear | Open bug | [#32](https://github.com/kchan1028/ridewind/issues/32) |
+| No wind verdict for a route without elevation in power mode | Open | [#33](https://github.com/kchan1028/ridewind/issues/33) |
+| The status line keeps an out-of-date "Using …" message | Open bug | [#34](https://github.com/kchan1028/ridewind/issues/34) |
+| The sample menu goes back to "Try a sample route…" after a sample loads | Open bug | [#35](https://github.com/kchan1028/ridewind/issues/35) |
+| Test with screen readers and in Windows high contrast mode. Zoom and reflow are done. | Open | [#12](https://github.com/kchan1028/ridewind/issues/12) |
 
 ## Next
 
-Nothing is planned yet. New ideas start as [issues](https://github.com/kchan1028/ridewind/issues).
+Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-implementation-plan), in its order of impact for the effort. None has an issue yet.
+
+| Item | Status | Size |
+| --- | --- | --- |
+| Phone layout for the departure comparison, and fewer columns in the point-by-point table | Proposed | 1 to 2 days |
+| Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | Proposed | 1 to 2 days |
+| Saved routes remember the direction and usual departure time | Proposed | Up to 2 days |
+| Pick units from the browser's locale, with a speed-unit switch next to the field | Proposed | Under half a day |
+| A shorter first screen on phones, with a one-line explanation and two actions | Proposed | Under half a day |
 
 ## Later
 
-Nothing is planned yet.
+| Item | Status | Size |
+| --- | --- | --- |
+| Smoother charts, units on the axes and fewer tick labels | Proposed | Up to 2 days |
+| Tidy-ups: no repeated status messages, one combined Start/Finish label on loops, one series for the temperature range | Proposed | Under half a day |
+| Limit the comparison to departures that finish before sunset | Proposed | Not sized |
+
+The audit says to run the riders' test in the [usability testing plan](docs/usability-testing.md) before the verdict bar ships, because the answers decide what the bar shows.
 
 ## Done
 
@@ -30,6 +52,13 @@ Roadmap items shipped in November 2026:
 - [#18](https://github.com/kchan1028/ridewind/issues/18): up to 40 forecast points per route, keeping 5 km spacing on rides up to about 195 km.
 - [#19](https://github.com/kchan1028/ridewind/issues/19): RideWind shows a notice instead of the app when another site puts it in a frame.
 - [#20](https://github.com/kchan1028/ridewind/issues/20): an optional planned stop time that moves later arrival times and the finish.
+
+From the UX/UI audit's implementation plan:
+
+- [PR #23](https://github.com/kchan1028/ridewind/pull/23): **Best** departure skips rides that end in the dark and calls that are too close to split (step 1).
+- [PR #27](https://github.com/kchan1028/ridewind/pull/27): the rain summary leads with the chance of rain, not the rate (step 2).
+- [PR #28](https://github.com/kchan1028/ridewind/pull/28): speed and rider errors show under the field and keep what you typed (step 3).
+- [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
 
 The design review's P0 to P3 items have all shipped:
 
