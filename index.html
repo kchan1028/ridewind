@@ -287,11 +287,12 @@
             <form class="draw-search" id="draw-search" role="search" novalidate>
               <label for="draw-search-q">Find a place</label>
               <div class="draw-search-row">
-                <input type="search" id="draw-search-q" maxlength="200" placeholder="Address, town or landmark" autocomplete="off" enterkeyhint="search" />
+                <input type="search" id="draw-search-q" maxlength="200" placeholder="Address, town or landmark" autocomplete="off" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="draw-search-results" aria-describedby="draw-search-credit" />
                 <button type="submit" class="btn btn-small">Search</button>
               </div>
               <p class="draw-search-status" id="draw-search-status" aria-live="polite"></p>
-              <ul class="draw-search-results" id="draw-search-results" aria-label="Search results" hidden></ul>
+              <ul class="draw-search-results" id="draw-search-results" role="listbox" aria-label="Places" hidden></ul>
+              <p class="draw-search-credit" id="draw-search-credit"></p>
               <div class="draw-place" id="draw-place" hidden>
                 <p id="draw-place-name"></p>
                 <div class="actions">
