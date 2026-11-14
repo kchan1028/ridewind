@@ -257,6 +257,8 @@ function loadRoute(
   opts: { isSample?: boolean; savedId?: string | null; prefs?: store.RoutePrefs; cachedForecast?: ForecastBundle | null } = {},
 ): void {
   state.original = route;
+  // First route: leave the compact first-run layout so the map gets its full height.
+  document.body.classList.remove('no-route');
   state.reversed = opts.prefs?.reversed ?? false;
   state.pendingDepartTime = opts.prefs?.departTime ?? null;
   state.cachedForecast = opts.cachedForecast ?? null;
