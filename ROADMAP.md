@@ -56,6 +56,7 @@ From the UX/UI audit's implementation plan:
 - [PR #53](https://github.com/kchan1028/ridewind/pull/53): units follow the browser's locale, with a one-tap switch by the pace (step 8).
 - [PR #54](https://github.com/kchan1028/ridewind/pull/54): a compact first screen on phones (step 9).
 - [PR #56](https://github.com/kchan1028/ridewind/pull/56): clearer charts. The wind line is smoothed over 2 km, the wind and speed charts name their unit, and narrow screens get three distance labels instead of five (step 10).
+- [PR #61](https://github.com/kchan1028/ridewind/pull/61): the comparison lists start times up to the last one that finishes in daylight, with **Show later times** for the rest (the open part of step 1).
 - [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
 - [PR #59](https://github.com/kchan1028/ridewind/pull/59): one forecast message instead of three, one Start/Finish label on loops, and one temperature range for the figure and the chart (step 12).
 
