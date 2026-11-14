@@ -18,10 +18,7 @@ All of the audit's Next items have shipped. New ideas start as [issues](https://
 
 ## Later
 
-| Item | Status | Size |
-| --- | --- | --- |
-| Tidy-ups: no repeated status messages, one combined Start/Finish label on loops, one series for the temperature range | Proposed | Under half a day |
-| Limit the comparison to departures that finish before sunset | Proposed | Not sized |
+Nothing is planned yet.
 
 The audit asked for the riders' test in the [usability testing plan](docs/usability-testing.md) to decide what the verdict bar shows. The bar shipped first, so that test should now check it.
 
@@ -58,8 +55,9 @@ From the UX/UI audit's implementation plan:
 - [PR #43](https://github.com/kchan1028/ridewind/pull/43): saved routes remember the direction and usual departure time (step 7).
 - [PR #53](https://github.com/kchan1028/ridewind/pull/53): units follow the browser's locale, with a one-tap switch by the pace (step 8).
 - [PR #54](https://github.com/kchan1028/ridewind/pull/54): a compact first screen on phones (step 9).
-- Clearer charts: the wind line is smoothed over 2 km, the wind and speed charts name their unit, and narrow screens get three distance labels instead of five (step 10).
+- [PR #56](https://github.com/kchan1028/ridewind/pull/56): clearer charts. The wind line is smoothed over 2 km, the wind and speed charts name their unit, and narrow screens get three distance labels instead of five (step 10).
 - [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
+- [PR #59](https://github.com/kchan1028/ridewind/pull/59): one forecast message instead of three, one Start/Finish label on loops, and one temperature range for the figure and the chart (step 12).
 
 The design review's P0 to P3 items have all shipped:
 
