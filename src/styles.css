@@ -1458,3 +1458,21 @@ input[aria-invalid='true'] {
 .units-line .hint {
   margin: 0;
 }
+
+/* Point-by-point table on phones: Distance, Arrive, Head/tail and Rain, with the rest behind a toggle */
+.points-toggle {
+  display: none;
+  margin-left: auto;
+}
+@media (max-width: 599px) {
+  .points-toggle {
+    display: inline-flex;
+  }
+  .points-table:not(.show-all) :is(th, td):nth-child(n + 4):nth-child(-n + 7) {
+    display: none;
+  }
+  .points-table:not(.show-all) :is(th, td) {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}

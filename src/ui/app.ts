@@ -1094,6 +1094,14 @@ function bindPaceForm(): void {
     });
   }
   $('compare-spacing').addEventListener('change', () => renderComparison());
+  // On phones the point-by-point table shows four columns; this reveals the rest.
+  $('points-toggle').addEventListener('click', () => {
+    const btn = $('points-toggle');
+    const all = btn.getAttribute('aria-pressed') !== 'true';
+    btn.setAttribute('aria-pressed', String(all));
+    btn.textContent = all ? 'Fewer columns' : 'Show all columns';
+    $('points-table').classList.toggle('show-all', all);
+  });
   let lastWidth = 0;
   new ResizeObserver(([entry]) => {
     const w = Math.round(entry?.contentRect.width ?? 0);
