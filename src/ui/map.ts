@@ -4,6 +4,9 @@ import { bearingAtDistance, cumulativeDistances, pointAtDistance, type LatLon } 
 import type { RidePlan, SegmentClass } from '../lib/ride';
 
 /** Colours are paired with dash patterns so classes stay distinguishable without colour vision. */
+/** Wide translucent band drawn under wet sections; its width keeps it readable without colour vision. */
+export const RAIN_STYLE = { color: '#7b4fd6', weight: 18, opacity: 0.4 };
+
 export const CLASS_STYLE: Record<SegmentClass, { color: string; dashArray?: string; weight: number; label: string }> = {
   headwind: { color: '#c8102e', weight: 6, label: 'Headwind' },
   crosswind: { color: '#d98e04', dashArray: '10 7', weight: 6, label: 'Crosswind' },
@@ -107,6 +110,10 @@ export class RouteMap {
 
   showPlan(plan: RidePlan, describePoint: (index: number) => string): void {
     this.planLayer.clearLayers();
+    for (const seg of plan.segments) {
+      if (!seg.rain) continue;
+      L.polyline(seg.latlngs, { ...RAIN_STYLE, lineCap: 'round', interactive: false }).addTo(this.planLayer);
+    }
     for (const seg of plan.segments) {
       const s = CLASS_STYLE[seg.windClass];
       L.polyline(seg.latlngs, { color: s.color, weight: s.weight, dashArray: s.dashArray, opacity: 0.95, lineCap: 'butt', interactive: false }).addTo(

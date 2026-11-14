@@ -782,6 +782,10 @@ function describePoint(i: number): string {
       );
     }
   } else lines.push('No forecast for this arrival time');
+  if (wx?.precipitation != null) {
+    const chance = wx.precipitationProbability != null ? `, ${Math.round(wx.precipitationProbability)}% chance` : '';
+    lines.push(wx.precipitation < 0.05 ? `Dry${chance} <em>(forecast)</em>` : `Rain ${formatPrecip(wx.precipitation, u)}/h${chance} <em>(forecast)</em>`);
+  }
   return lines.join('<br>');
 }
 
