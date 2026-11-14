@@ -145,7 +145,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-3 · Forecast age is hidden, and nothing survives a reload with poor signal
 
-> **Status: partly fixed** in the glanceable verdict PR. **Details** shows when the forecast was updated, with **Refresh forecast**, and the summary line adds "forecast N h old" after an hour, rechecked when you return to the tab. The offline cache and auto-refresh are still open.
+> **Status: fixed.** Auto-refresh and the offline fallback landed in the offline forecast PR: coming back to a tab with a forecast over an hour old fetches a new one, and a saved route keeps its last forecast and uses it, clearly labelled, when a new one can't be loaded. An offline app shell (service worker) is still not built. Earlier, in the glanceable verdict PR: **Details** shows when the forecast was updated, with **Refresh forecast**, and the summary line adds "forecast N h old" after an hour, rechecked when you return to the tab. The offline cache and auto-refresh are still open.
 
 - **Where:** `#data-stamp` at the bottom of the results; the forecast is held only in memory (see `docs/data-and-privacy.md`). Offline behaviour was checked in source: there is no service worker or manifest.
 - **Observed:**

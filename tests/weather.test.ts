@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AppError } from '../src/lib/errors';
-import { buildForecastUrl, coordKey, fetchForecast, openMeteoGet, parseForecastResponse } from '../src/lib/weather';
+import { buildForecastUrl, coordKey, fetchForecast, forecastCovers, openMeteoGet, parseForecastResponse, type ForecastBundle } from '../src/lib/weather';
 
 const coords = [
   { lat: 52.93331, lon: 5.03721 },
@@ -157,5 +157,17 @@ describe('fetchForecast error handling', () => {
   it('rethrows aborts untouched', async () => {
     const abort = new DOMException('aborted', 'AbortError');
     await expect(fetchForecast(coords, { fetchImpl: async () => Promise.reject(abort) })).rejects.toBe(abort);
+  });
+});
+
+describe('forecastCovers', () => {
+  const bundle = { locations: [{ key: coordKey({ lat: 52.933, lon: 5.037 }) }] } as unknown as ForecastBundle;
+
+  it('is true when every point has a forecast location', () => {
+    expect(forecastCovers(bundle, [{ lat: 52.93331, lon: 5.03721 }])).toBe(true);
+  });
+
+  it('is false when a point is missing, for example after reversing', () => {
+    expect(forecastCovers(bundle, [{ lat: 52.93331, lon: 5.03721 }, { lat: 53.1, lon: 5.2 }])).toBe(false);
   });
 });
