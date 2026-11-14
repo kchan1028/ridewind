@@ -79,6 +79,13 @@ export function formatClock(utcMs: number, tz: string): string {
   return new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: '2-digit', minute: '2-digit' }).format(utcMs);
 }
 
+/** Short day and time, e.g. "Sat 14, 11:00 AM": enough to tell days apart within the forecast window. */
+export function formatDayClock(utcMs: number, tz: string): string {
+  const parts = new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'short', day: 'numeric' }).formatToParts(utcMs);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${part('weekday')} ${part('day')}, ${formatClock(utcMs, tz)}`;
+}
+
 export function formatDateTime(utcMs: number, tz: string): string {
   return new Intl.DateTimeFormat(undefined, {
     timeZone: tz,
