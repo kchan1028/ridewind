@@ -75,7 +75,7 @@ The default needs **no credentials**. Two optional build-time settings change it
 
 `VITE_` variables are compiled into the public JavaScript, so **never put a secret key in them**. To use Stadia Maps, register the site's domain in the Stadia dashboard (domain authentication needs no key in the page) and build with `VITE_ROUTING_URL=https://api.stadiamaps.com/route/v1`. To use a keyed service such as openrouteservice or GraphHopper, keep the key in a small server-side proxy (for example a Cloudflare Worker) that answers in the Valhalla format, and point `VITE_ROUTING_URL` at the proxy. No such proxy is built.
 
-**Before deploying with the FOSSGIS default**, the site needs an easily found contact email for its operator, which the FOSSGIS terms require. RideWind doesn't show one yet; see the [roadmap](../ROADMAP.md).
+**Operator contact:** the FOSSGIS terms require an easily found contact email for the site's operator. RideWind's footer shows one (in `index.html`). Keep it there while the FOSSGIS default is in use.
 
 ## Where the code is
 
