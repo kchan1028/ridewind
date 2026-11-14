@@ -1405,3 +1405,15 @@ input[aria-invalid='true'] {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* Units at a glance, with a one-tap switch */
+.units-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.units-line .hint {
+  margin: 0;
+}

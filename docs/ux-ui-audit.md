@@ -183,6 +183,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-6 · Units are hidden in "Data & settings", and metric is always the default
 
+> **Status: fixed** in the units PR. Until the rider chooses, units follow the browser's locale (US, Liberia and Myanmar regions start in miles, mph and °F; everyone else in metric). Under Departure and pace a line says which units are showing, with a one-tap **Switch to miles / km**. The dialog keeps its name.
+
 - **Where:** `DEFAULT_SETTINGS.units = 'metric'` in `src/lib/storage.ts`; the control is in the dialog.
 - **Impact:** US and UK riders (mph) start in km/h and may not think to look under "Data". Speed validation then quotes km/h limits.
 - **Fix:**

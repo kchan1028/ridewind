@@ -2,7 +2,7 @@ import { AppError } from './errors';
 import type { Route, TrackPoint } from './geo';
 import { DEFAULT_RIDER, validRiderParams, type Exposure, type RiderParams } from './physics';
 import { MAX_STOP_MINUTES } from './simulate';
-import type { UnitSystem } from './units';
+import { defaultUnits, type UnitSystem } from './units';
 import type { ForecastBundle } from './weather';
 
 export type PaceMode = 'constant' | 'power';
@@ -30,7 +30,8 @@ const SETTINGS_KEY = 'ridewind:settings:v1';
 function validSettings(v: unknown): Settings {
   const o = (v ?? {}) as Partial<Settings>;
   const speed = typeof o.speedKmh === 'number' && o.speedKmh >= 5 && o.speedKmh <= 80 ? o.speedKmh : DEFAULT_SETTINGS.speedKmh;
-  const units: UnitSystem = o.units === 'imperial' ? 'imperial' : 'metric';
+  // No saved choice yet: start from the browser's locale.
+  const units: UnitSystem = o.units === 'imperial' || o.units === 'metric' ? o.units : defaultUnits();
   const paceMode: PaceMode = o.paceMode === 'power' ? 'power' : 'constant';
   const exposure: Exposure = o.exposure === 'open' || o.exposure === 'sheltered' ? o.exposure : 'mixed';
   const stopMinutes =
