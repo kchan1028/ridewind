@@ -75,15 +75,32 @@ export function deviceTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }
 
+/*
+ * Every time and date on the page goes through these, so they share one style:
+ * the locale's own clock ("3:36 PM" or "15:36", no leading zero on 12-hour
+ * clocks) and one short date ("Sat, Nov 14").
+ */
+
 export function formatClock(utcMs: number, tz: string): string {
-  return new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: '2-digit', minute: '2-digit' }).format(utcMs);
+  return new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(utcMs);
 }
 
-/** Short day and time, e.g. "Sat 14, 11:00 AM": enough to tell days apart within the forecast window. */
-export function formatDayClock(utcMs: number, tz: string): string {
-  const parts = new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'short', day: 'numeric' }).formatToParts(utcMs);
-  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
-  return `${part('weekday')} ${part('day')}, ${formatClock(utcMs, tz)}`;
+/** A wall-clock "HH:mm" (for example a saved usual departure) in the locale's clock style. */
+export function formatWallClock(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number) as [number, number];
+  return formatClock(Date.UTC(2000, 0, 1, h, m), 'UTC');
+}
+
+/** Short date, e.g. "Sat, Nov 14"; the year is added when it isn't the current one. */
+export function formatDate(utcMs: number, tz: string, nowMs = Date.now()): string {
+  const year = (t: number) => new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric' }).format(t);
+  return new Intl.DateTimeFormat(undefined, {
+    timeZone: tz,
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    ...(year(utcMs) !== year(nowMs) ? { year: 'numeric' as const } : {}),
+  }).format(utcMs);
 }
 
 export function formatDateTime(utcMs: number, tz: string): string {
@@ -92,9 +109,14 @@ export function formatDateTime(utcMs: number, tz: string): string {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
   }).format(utcMs);
+}
+
+/** Day and time, e.g. "Sat, Nov 14, 11:00 AM". Kept as its own name for the verdict and status lines. */
+export function formatDayClock(utcMs: number, tz: string): string {
+  return formatDateTime(utcMs, tz);
 }
 
 export function formatOffset(tz: string, utcMs: number): string {

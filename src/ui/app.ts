@@ -13,8 +13,10 @@ import * as store from '../lib/storage';
 import {
   deviceTimeZone,
   formatClock,
+  formatDate,
   formatDateTime,
   formatDayClock,
+  formatWallClock,
   formatDuration,
   formatOffset,
   isValidTimeZone,
@@ -211,7 +213,9 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   const b = departureBounds();
   ($('dep-earlier') as HTMLButtonElement).disabled = !b || state.departureMs! - HOUR < b.min;
   ($('dep-later') as HTMLButtonElement).disabled = !b || state.departureMs! + HOUR > b.max;
-  announce(`${headline}. ${facts.join(', ')}.`);
+  // The facts are fragments ("net 1 mph tailwind, …"); read as a sentence, the first word needs a capital.
+  const sentence = facts.join(', ');
+  announce(`${headline}. ${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`);
 }
 
 function shiftDeparture(deltaMs: number): void {
@@ -858,7 +862,7 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
       c ? `${formatSpeed(Math.abs(c.crosswind), u)} ${Math.abs(c.crosswind) < 0.5 ? '' : c.crosswind > 0 ? 'from right' : 'from left'}`.trim() : noData(),
       wx?.temperature != null ? formatTemp(wx.temperature, u) : noData(),
       wx?.precipitation != null
-        ? `${formatPrecip(wx.precipitation, u)}${wx.precipitationProbability != null ? ` · ${Math.round(wx.precipitationProbability)}%` : ''}`
+        ? `${formatPrecip(wx.precipitation, u)}/h${wx.precipitationProbability != null ? ` · ${Math.round(wx.precipitationProbability)}%` : ''}`
         : noData(),
     ];
     cells.forEach((content, ci) => {
@@ -949,8 +953,8 @@ async function renderSaved(): Promise<void> {
       name.textContent = r.name;
       const meta = document.createElement('span');
       meta.className = 'hint';
-      const usual = [r.prefs?.reversed ? 'reversed' : '', r.prefs?.departTime ? `usually ${r.prefs.departTime}` : ''].filter(Boolean);
-      meta.textContent = [`Saved ${new Date(r.savedAt).toLocaleDateString()}`, ...usual].join(' · ');
+      const usual = [r.prefs?.reversed ? 'reversed' : '', r.prefs?.departTime ? `usually ${formatWallClock(r.prefs.departTime)}` : ''].filter(Boolean);
+      meta.textContent = [`Saved ${formatDate(r.savedAt, deviceTimeZone())}`, ...usual].join(' · ');
       const load = document.createElement('button');
       load.type = 'button';
       load.className = 'btn btn-small';
