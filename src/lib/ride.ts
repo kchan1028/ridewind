@@ -51,6 +51,8 @@ export interface RideSummary {
   meanHeadwind: number | null;
   /** Samples whose arrival time fell outside the forecast window. */
   samplesWithoutForecast: number;
+  /** Metres of route with forecast rain (at least RAIN_MM_PER_H) when the rider gets there. */
+  wetDistanceM: number;
 }
 
 export interface RidePlan {
@@ -123,6 +125,7 @@ export function planRide(input: PlanInput): RidePlan {
   const segments: SegmentResult[] = [];
   let headwindWeighted = 0;
   let weightedM = 0;
+  let wetDistanceM = 0;
 
   for (const chunk of chunkRoute(points, cum)) {
     const lengthM = cum[chunk.endIndex]! - cum[chunk.startIndex]!;
@@ -136,6 +139,7 @@ export function planRide(input: PlanInput): RidePlan {
     }
     distanceByClass[cls] += lengthM;
     const rain = rainLevel(w?.precipitation);
+    if (rain !== 'none') wetDistanceM += lengthM;
 
     const latlngs = points.slice(chunk.startIndex, chunk.endIndex + 1).map((p) => [p.lat, p.lon] as [number, number]);
     const prev = segments[segments.length - 1];
@@ -163,6 +167,7 @@ export function planRide(input: PlanInput): RidePlan {
       precipProbabilityMax: minMax(ws.map((w) => w?.precipitationProbability ?? null)).max,
       meanHeadwind: weightedM > 0 ? headwindWeighted / weightedM : null,
       samplesWithoutForecast: sampleResults.filter((s) => s.weather === null).length,
+      wetDistanceM,
     },
   };
 }

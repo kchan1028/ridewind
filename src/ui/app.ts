@@ -838,8 +838,8 @@ function renderComparison(): void {
           : '';
   $('compare-caption').textContent =
     (pace.kind === 'power'
-      ? 'Predicted ride time, finish time, share of distance into a headwind and highest chance of rain. Best is the shortest predicted time'
-      : 'Finish time, share of distance into a headwind, average wind along the route and highest chance of rain. Best is the least headwind (times are equal at a constant speed)') +
+      ? 'Predicted ride time, finish time, share of distance into a headwind, highest chance of rain and distance ridden in forecast rain. Best is the shortest predicted time'
+      : 'Finish time, share of distance into a headwind, average wind along the route, highest chance of rain and distance ridden in forecast rain. Best is the least headwind (times are equal at a constant speed)') +
     `, among rides that start and finish in daylight, preferring those under a ${BEST_MAX_RAIN_CHANCE}% chance of rain, and that differ enough to notice.` +
     outcome;
   if (departures.length === 0) {
@@ -869,6 +869,7 @@ function renderComparison(): void {
     if (pace.kind === 'constant' && r.meanHeadwind !== null)
       lines.push(`avg ${formatSpeed(Math.abs(r.meanHeadwind), u)} ${r.meanHeadwind >= 0 ? 'head' : 'tail'}`);
     if (r.precipProbabilityMax !== null) lines.push(`${Math.round(r.precipProbabilityMax)}% chance of rain`);
+    lines.push(r.wetDistanceM >= 100 ? `${formatDistance(r.wetDistanceM, u)} in rain` : 'no rain forecast on route');
     if (!r.fullyForecast) lines.push('partly outside forecast');
     const txt = document.createElement('span');
     txt.textContent = lines.join(' · ');

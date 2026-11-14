@@ -25,6 +25,8 @@ export interface CompareRow {
   meanHeadwind: number | null;
   gustMax: number | null;
   precipProbabilityMax: number | null;
+  /** Metres of route with forecast rain at arrival time. */
+  wetDistanceM: number;
   /** True when every sampled point had a forecast at its arrival time. */
   fullyForecast: boolean;
   /** Whether the ride stays in daylight, from the start point's sunrise and sunset. */
@@ -96,6 +98,7 @@ export function compareRides(variants: RouteVariant[], departures: number[], pac
         meanHeadwind: plan.summary.meanHeadwind,
         gustMax: plan.summary.gustMax,
         precipProbabilityMax: plan.summary.precipProbabilityMax,
+        wetDistanceM: plan.summary.wetDistanceM,
         fullyForecast: plan.summary.samplesWithoutForecast === 0,
         daylight: rideDaylight(departureMs, departureMs + sim.durationMs, v.forecasts[0]?.sun).kind,
       });
