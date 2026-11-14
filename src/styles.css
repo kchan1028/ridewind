@@ -418,7 +418,8 @@ legend {
   font-size: 0.875rem;
 }
 input[type='datetime-local'],
-input[type='number'] {
+input[type='number'],
+input[type='text'] {
   width: 100%;
   max-width: 320px;
   min-height: 44px;
@@ -1553,5 +1554,83 @@ input[aria-invalid='true'] {
   }
   .compare tr.compare-new-day {
     border-top: 2px solid var(--ink-soft);
+  }
+}
+
+/* ---------- draw a route ---------- */
+.draw-bar {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.draw-bar:focus:not(:focus-visible) {
+  outline: none;
+}
+.draw-title,
+.draw-status {
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+}
+.draw-status {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.draw-finish {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.draw-finish label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.draw-finish input {
+  flex: 1 1 6rem;
+  min-width: 0;
+  width: auto;
+}
+#map.is-drawing {
+  cursor: crosshair;
+}
+/* Centre crosshair: where Enter or "Add point at centre" puts the next point. Above map panes, below controls. */
+#map.is-drawing::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  z-index: 650;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--ink), var(--ink)) center / 2px 100% no-repeat,
+    linear-gradient(var(--ink), var(--ink)) center / 100% 2px no-repeat;
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+}
+body.drawing .legend {
+  display: none;
+}
+/* Phones: while drawing, the map leads with room to tap, and the verdict bar steps aside. */
+@media (max-width: 899px) {
+  body.drawing .layout {
+    grid-template-areas: 'map' 'panel';
+  }
+  body.drawing .map-pane {
+    height: auto;
+    min-height: 0;
+  }
+  body.drawing #map {
+    flex: none;
+    height: 55vh;
+    min-height: 260px;
+  }
+  body.drawing .verdict {
+    display: none;
+  }
+  body.drawing.has-verdict {
+    padding-bottom: 16px;
   }
 }
