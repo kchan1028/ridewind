@@ -14,14 +14,7 @@ Bugs and checks that are open on GitHub.
 
 ## Next
 
-Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-implementation-plan), in its order of impact for the effort. None has an issue yet.
-
-| Item | Status | Size |
-| --- | --- | --- |
-| Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | In review | 1 to 2 days |
-| Saved routes remember the direction and usual departure time | In review | Up to 2 days |
-| Pick units from the browser's locale, with a speed-unit switch next to the field | Proposed | Under half a day |
-| A shorter first screen on phones, with a one-line explanation and two actions | Proposed | Under half a day |
+All of the audit's Next items have shipped. New ideas start as [issues](https://github.com/kchan1028/ridewind/issues).
 
 ## Later
 
@@ -61,6 +54,10 @@ From the UX/UI audit's implementation plan:
 - [PR #36](https://github.com/kchan1028/ridewind/pull/36): a glanceable verdict bar with Details, forecast age and Refresh (step 4).
 - [PR #40](https://github.com/kchan1028/ridewind/pull/40): the departure comparison as cards on phones, with both directions visible (most of step 5).
 - The point-by-point table shows Distance, Arrive, Head/tail and Rain on phones, with **Show all columns** for the rest (the rest of step 5).
+- [PR #50](https://github.com/kchan1028/ridewind/pull/50): old forecasts refresh automatically, and saved routes keep their last forecast for use offline (step 6).
+- [PR #43](https://github.com/kchan1028/ridewind/pull/43): saved routes remember the direction and usual departure time (step 7).
+- [PR #53](https://github.com/kchan1028/ridewind/pull/53): units follow the browser's locale, with a one-tap switch by the pace (step 8).
+- [PR #54](https://github.com/kchan1028/ridewind/pull/54): a compact first screen on phones (step 9).
 - Clearer charts: the wind line is smoothed over 2 km, the wind and speed charts name their unit, and narrow screens get three distance labels instead of five (step 10).
 - [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
 
