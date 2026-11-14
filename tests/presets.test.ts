@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { departurePresets } from '../src/lib/presets';
+import { departurePresets, nextDepartureAt } from '../src/lib/presets';
 import { utcToWallTime } from '../src/lib/time';
 
 const wide = { min: 0, max: Number.MAX_SAFE_INTEGER };
@@ -33,5 +33,21 @@ describe('departurePresets', () => {
     const now = Date.UTC(2026, 10, 14, 15, 20);
     const p = departurePresets(now, tz, { min: now, max: now + 24 * 3600_000 });
     expect(p.map((x) => x.label)).toEqual(['Next hour', 'Tomorrow 08:00']);
+  });
+});
+
+describe('nextDepartureAt', () => {
+  const at = (w: string) => Date.parse(`${w}:00Z`) - 3600_000; // Amsterdam is UTC+1 in November
+
+  it('uses today when the time is still ahead', () => {
+    expect(wall(nextDepartureAt('08:00', at('2026-11-14T06:30'), tz))).toBe('2026-11-14T08:00');
+  });
+
+  it('rolls to tomorrow once the time has passed', () => {
+    expect(wall(nextDepartureAt('08:00', at('2026-11-14T09:15'), tz))).toBe('2026-11-15T08:00');
+  });
+
+  it('rolls to tomorrow at exactly that time', () => {
+    expect(wall(nextDepartureAt('08:00', at('2026-11-14T08:00'), tz))).toBe('2026-11-15T08:00');
   });
 });

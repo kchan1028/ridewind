@@ -227,6 +227,12 @@ a {
   stroke: var(--calm);
   stroke-dasharray: 2 5;
 }
+.lg-rain {
+  stroke: #7b4fd6;
+  stroke-opacity: 0.45;
+  stroke-width: 12;
+  stroke-linecap: round;
+}
 .lg-unknown {
   stroke: var(--unknown);
   stroke-width: 3;
