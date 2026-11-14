@@ -26,7 +26,7 @@ Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-imp
 | --- | --- | --- |
 | Phone layout for the departure comparison, and fewer columns in the point-by-point table | Proposed | 1 to 2 days |
 | Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | Proposed | 1 to 2 days |
-| Saved routes remember the direction and usual departure time | Proposed | Up to 2 days |
+| Saved routes remember the direction and usual departure time | In review | Up to 2 days |
 | Pick units from the browser's locale, with a speed-unit switch next to the field | Proposed | Under half a day |
 | A shorter first screen on phones, with a one-line explanation and two actions | Proposed | Under half a day |
 

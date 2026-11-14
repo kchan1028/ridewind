@@ -12,6 +12,7 @@ import {
   saveRoute,
   saveSettings,
   unpackRoute,
+  validRoutePrefs,
 } from '../src/lib/storage';
 
 const route = {
@@ -87,5 +88,34 @@ describe('export / import', () => {
     ['bad coordinates', '{"app":"ridewind","version":1,"routes":[{"id":"a","name":"x","points":[[100,0,null],[1,1,null]]}]}'],
   ])('rejects %s', (_l, text) => {
     expect(() => parseImport(text)).toThrow(expect.objectContaining({ code: 'IMPORT_INVALID' }));
+  });
+});
+
+describe('route preferences', () => {
+  const pts: Array<{ lat: number; lon: number; ele: number | null }> = [
+    { lat: 37.8, lon: -122.3, ele: 10 },
+    { lat: 37.9, lon: -122.2, ele: 20 },
+  ];
+  const r = { name: 'Loop', source: 'track' as const, points: pts };
+
+  it('keeps direction and usual time when packing', () => {
+    expect(packRoute(r, 'x', 1, { reversed: true, departTime: '08:00' }).prefs).toEqual({ reversed: true, departTime: '08:00' });
+  });
+
+  it('stores nothing when there is nothing to remember', () => {
+    expect(packRoute(r, 'x', 1, { reversed: false }).prefs).toBeUndefined();
+    expect(packRoute(r, 'x', 1).prefs).toBeUndefined();
+  });
+
+  it('drops malformed values', () => {
+    expect(validRoutePrefs({ reversed: 'yes', departTime: '25:00' })).toBeUndefined();
+    expect(validRoutePrefs({ reversed: true, departTime: '8am' })).toEqual({ reversed: true });
+    expect(validRoutePrefs(null)).toBeUndefined();
+  });
+
+  it('round-trips through export and import', () => {
+    const saved = packRoute(r, 'x', 1, { reversed: true, departTime: '07:30' });
+    const back = parseImport(JSON.stringify(buildExport(DEFAULT_SETTINGS, [saved])));
+    expect(back.routes[0]!.prefs).toEqual({ reversed: true, departTime: '07:30' });
   });
 });
