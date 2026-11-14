@@ -8,8 +8,8 @@ export interface TrackPoint {
 export interface Route {
   name: string;
   points: TrackPoint[];
-  /** Whether the points came from <trkpt> or <rtept>. */
-  source: 'track' | 'route';
+  /** Whether the points came from <trkpt> or <rtept>, or were drawn on the map. */
+  source: 'track' | 'route' | 'drawn';
   /** Where elevation came from. Absent means the GPX file (possibly with gaps). */
   elevationSource?: 'file' | 'dem';
 }
