@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bestChoice, compareRides, daylightCutoff, departureOptions, type CompareRow, type RouteVariant } from '../src/lib/compare';
+import { bestChoice, compareRides, daylightCutoff, departureOptions, nextDayDepartures, type CompareRow, type RouteVariant } from '../src/lib/compare';
 import { cumulativeDistances, sampleRoute, type TrackPoint } from '../src/lib/geo';
 import { DEFAULT_RIDER } from '../src/lib/physics';
 import type { PaceModel } from '../src/lib/simulate';
@@ -132,5 +132,23 @@ describe('daylightCutoff', () => {
   });
   it('lists everything when nothing finishes in daylight', () => {
     expect(daylightCutoff([row(1, 'starts-before-sunrise'), row(2, 'ends-after-sunset')], [1, 2])).toBe(2);
+  });
+});
+
+describe('nextDayDepartures', () => {
+  // Day 0 sunset 17:00; day 1 sunrise 07:00, sunset 17:00 (Unix seconds).
+  const sun = { sunrise: [7 * 3600, 31 * 3600], sunset: [17 * 3600, 41 * 3600] };
+  const S = (h: number) => h * H;
+  it("starts at the first grid time after the next sunrise and stops before that day's sunset", () => {
+    // Last listed departure 22:00, 2 h grid: 24:00, 26:00 … first after 31:00 (07:00) is 32:00.
+    expect(nextDayDepartures(S(22), sun, S(100), S(3), S(2), 6)).toEqual([S(32), S(34), S(36), S(38)]);
+  });
+  it('respects the count and the forecast window', () => {
+    expect(nextDayDepartures(S(22), sun, S(100), S(3), S(2), 2)).toEqual([S(32), S(34)]);
+    expect(nextDayDepartures(S(22), sun, S(36), S(3), S(2), 6)).toEqual([S(32)]);
+  });
+  it('is empty without sun times or a later sunrise', () => {
+    expect(nextDayDepartures(S(22), null, S(100), S(3), S(2), 6)).toEqual([]);
+    expect(nextDayDepartures(S(40), sun, S(100), S(3), S(2), 6)).toEqual([]);
   });
 });

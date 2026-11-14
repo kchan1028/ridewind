@@ -1,5 +1,5 @@
 import { AppError, isAppError } from '../lib/errors';
-import { BEST_MARGIN, bestChoice, compareRides, daylightCutoff, departureOptions, type CompareRow, type RouteVariant } from '../lib/compare';
+import { BEST_MARGIN, bestChoice, compareRides, daylightCutoff, departureOptions, nextDayDepartures, type CompareRow, type RouteVariant } from '../lib/compare';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
 import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type Route, type Sample } from '../lib/geo';
 import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
@@ -684,7 +684,17 @@ function renderComparison(): void {
   const departures = departureOptions(state.compareFromMs ?? state.departureMs, fc.windowEndMs, rideDurationMs() * 1.3, spacingH * HOUR, 6);
   // Columns: the original GPX direction, then reversed.
   const variants = [variantFor(false), variantFor(true)];
-  const rows = compareRides(variants, departures, pace, state.assumeFlat);
+  const todayRows = compareRides(variants, departures, pace, state.assumeFlat);
+  // When some of these finish after dark, fill the list with the next day's daylight
+  // departures, so a plan made at midday in winter still has options to compare.
+  const cutoff = daylightCutoff(todayRows, departures);
+  const nextDay =
+    cutoff < departures.length
+      ? nextDayDepartures(departures[departures.length - 1]!, forecastsForSamples()[0]?.sun, fc.windowEndMs, rideDurationMs() * 1.3, spacingH * HOUR, departures.length - cutoff)
+      : [];
+  const nextRows = compareRides(variants, nextDay, pace, state.assumeFlat).filter((r) => r.daylight === 'daylight');
+  const nextShown = nextDay.filter((t) => nextRows.some((r) => r.departureMs === t));
+  const rows = [...todayRows, ...nextRows];
   const choice = bestChoice(rows, pace);
   const best = choice.kind === 'best' ? choice.row : null;
   const outcome =
@@ -769,17 +779,22 @@ function renderComparison(): void {
   };
   // Departures that would only finish after dark wait behind "Show later times",
   // unless the rider has opened them or one of them is the departure in use.
-  const cutoff = daylightCutoff(rows, departures);
+  // Next-day rows come after them, in time order.
   const hidden = departures.length - cutoff;
   const selectedLate = departures.indexOf(state.departureMs ?? -1) >= cutoff;
   const showAll = state.showLateDepartures || selectedLate;
   const more = $('compare-more');
   more.hidden = hidden === 0 || selectedLate;
   more.setAttribute('aria-expanded', String(showAll));
-  more.textContent = showAll ? 'Hide later times' : `Show ${hidden} later ${hidden === 1 ? 'time' : 'times'} (finish after dark)`;
-  for (const t of showAll ? departures : departures.slice(0, cutoff)) {
+  const darkTimes = `${hidden} ${hidden === 1 ? 'time' : 'times'}`;
+  more.textContent = showAll
+    ? nextShown.length ? 'Hide times that finish after dark' : 'Hide later times'
+    : nextShown.length ? `Show ${darkTimes} that finish after dark` : `Show ${hidden} later ${hidden === 1 ? 'time' : 'times'} (finish after dark)`;
+  const listed = [...(showAll ? departures : departures.slice(0, cutoff)), ...nextShown];
+  for (const t of listed) {
     const tr = document.createElement('tr');
     tr.setAttribute('role', 'row');
+    if (t === nextShown[0]) tr.className = 'compare-new-day';
     const th = document.createElement('th');
     th.scope = 'row';
     th.setAttribute('role', 'rowheader');
