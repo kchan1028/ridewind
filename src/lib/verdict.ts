@@ -31,3 +31,34 @@ export function windVerdict(distanceByClass: Record<SegmentClass, number>): { he
   if (share(headwind) >= 0.25 && share(tailwind) >= 0.25) return { headline: 'Headwind one way, tailwind the other', tone: 'mixed' };
   return { headline: 'Mixed winds', tone: 'mixed' };
 }
+
+/** Below this highest chance (%), forecast rain is called a low chance. */
+export const LOW_RAIN_CHANCE = 20;
+
+export interface RainSummary {
+  /** Short phrase for the one-line verdict. */
+  fact: string;
+  /** Headline value for the rain figure. */
+  value: string;
+  /** Supporting line under the rain figure ('' when there's nothing to add). */
+  sub: string;
+}
+
+/**
+ * Rain wording for a ride, leading with how likely rain is and giving the
+ * amount as what to expect if it does rain. A model can forecast a heavy rate
+ * at a low chance; stating the rate alone overstates the risk.
+ * `rate` formats a rate in mm/h for display, e.g. "4.0 mm/h".
+ */
+export function rainSummary(maxMmH: number | null, maxChance: number | null, rate: (mmH: number) => string): RainSummary | null {
+  if (maxMmH === null) return null;
+  const c = maxChance === null ? null : Math.round(maxChance);
+  if (maxMmH < 0.05) {
+    if (c !== null && c >= 30) return { fact: `${c}% chance of rain`, value: 'Dry', sub: `Highest chance ${c}%` };
+    return { fact: 'dry', value: 'Dry', sub: c === null ? '' : `Highest chance ${c}%` };
+  }
+  const r = rate(maxMmH);
+  if (c === null) return { fact: `rain up to ${r}`, value: `Up to ${r}`, sub: '' };
+  if (c < LOW_RAIN_CHANCE) return { fact: `low chance of rain (${c}%)`, value: 'Low chance', sub: `${c}%, up to ${r} if it rains` };
+  return { fact: `${c}% chance of rain, up to ${r}`, value: `${c}% chance`, sub: `Up to ${r} if it rains` };
+}
