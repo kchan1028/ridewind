@@ -1,6 +1,6 @@
 # Data sources and privacy
 
-Where RideWind's data comes from, what leaves your browser, and what stays on your device.
+Your route file never leaves your browser. RideWind sends only up to 40 route points, rounded to about 100 m, to Open-Meteo for the forecast, and requests map tiles from OpenStreetMap. Settings and saved routes stay on your device. The details are below.
 
 ## Weather data and attribution
 

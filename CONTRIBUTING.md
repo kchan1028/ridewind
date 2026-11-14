@@ -1,35 +1,60 @@
 # Contributing to RideWind
 
-Bug reports, ideas and pull requests are welcome. RideWind is a small personal project with one maintainer, so it's worth opening an issue before starting anything large.
+Thanks for helping. RideWind is a personal project with one maintainer, so the quickest way to get a change in is a small, focused pull request that passes CI and explains what it changes for riders.
 
-Setup and the list of npm commands are in the [README](README.md#quick-start).
+## Before you start
 
-## Report a bug or suggest an idea
+- **Bugs:** [open a bug report](https://github.com/kchan1028/ridewind/issues/new/choose). Include the steps, what you expected, what happened and your browser. A GPX file that shows the problem helps a lot, but strip anything personal first.
+- **Ideas and larger changes:** open an issue before you write code, so we can agree on the approach. RideWind deliberately has no backend, no accounts and no tracking, so changes that need any of those are unlikely to be accepted.
+- **Security problems:** don't open a public issue. Follow [SECURITY.md](SECURITY.md).
+- **Accessibility barriers:** these are treated as bugs. See [ACCESSIBILITY.md](ACCESSIBILITY.md).
 
-[Open an issue](https://github.com/kchan1028/ridewind/issues). For a bug, include:
+## Make the change
 
-- what you did and what you expected to happen
-- your browser and device
-- the route, if you can share it. A sample route that shows the problem is even better, since GPX files can reveal where you live or ride.
+1. Fork the repository and create a branch from `main`.
+2. Set up and run the app with the steps in [docs/development.md](docs/development.md).
+3. Make your change. [docs/architecture.md](docs/architecture.md) shows where things live and has a table of common changes.
+4. Add or update tests in `tests/` for any change to `src/lib/`.
+5. Run the same checks as CI:
 
-Report security problems privately as described in [SECURITY.md](SECURITY.md), not in a public issue. Accessibility barriers are bugs, so report them as issues too ([ACCESSIBILITY.md](ACCESSIBILITY.md) explains what to include).
+   ```bash
+   npm test
+   npm run build
+   ```
 
-## Propose a change
+   Both must finish without errors. `npm test` ends with a summary such as `Tests 158 passed (158)`, and `npm run build` ends with `✓ built in …ms`.
+6. For anything visible, check it in the browser as described in [Check a change](docs/development.md#check-a-change).
+7. Open a pull request against `main` and fill in the template.
 
-1. Check the [roadmap](ROADMAP.md) and the [open issues](https://github.com/kchan1028/ridewind/issues). If there's no issue for your change, open one first so we can agree on the approach.
-2. Fork the repository and make your change on a branch.
-3. Open a pull request against `main` that links the issue and says how you checked the change.
+## Project conventions
 
-### What a pull request needs
+- **Keep calculations separate from the page.** Logic goes in `src/lib/` as plain functions with tests. Code that touches the page goes in `src/ui/`. GPX parsing is the one exception, because it needs `DOMParser`.
+- **TypeScript is strict.** `tsconfig.json` turns on `strict`, `noUnusedLocals`, `noUnusedParameters` and `noUncheckedIndexedAccess`. Fix type errors rather than silencing them.
+- **No UI framework.** Markup is in `index.html` and behaviour in `src/ui/app.ts`.
+- **Few dependencies.** The only runtime dependency is Leaflet, pinned to an exact version. If you need another, say why in the pull request.
+- **Be honest about data.** Label values as forecast (from Open-Meteo) or estimate (RideWind's own maths). Never fill a missing forecast or missing elevation with a made-up value.
+- **Respect the free services.** If a change sends more requests to Open-Meteo or OpenStreetMap, say how many in the pull request and update [docs/data-and-privacy.md](docs/data-and-privacy.md).
+- **Errors are for riders.** Throw an `AppError` with a clear, plain message. See [`src/lib/errors.ts`](src/lib/errors.ts).
+- **Accessibility counts.** Use native controls, keep keyboard access and visible focus, and never show meaning by colour alone.
+- **Comments explain why.** Explain a choice or a constraint, not what the next line does.
+- **Commit messages** start with a type, as in the existing history: `feat:`, `fix:`, `docs:` or `chore:`.
 
-- **The `test-build` check must pass.** It runs `npm test` and `npm run build` (which type-checks first). Run both locally before you push.
-- **Tests for new calculations.** Anything in `src/lib/` should come with Vitest tests in `tests/`.
-- **Docs that match.** If you change what the app does, update the README or the page in `docs/` that describes it.
-- **Product fit.** Read [PRODUCT.md](PRODUCT.md). Changes that add accounts, a backend, tracking or commercial use of Open-Meteo won't be merged.
-- **No personal data.** Don't commit real GPX files, API keys or anything that identifies a rider.
+## Documentation
 
-Pull requests are merged by squash or rebase once the check passes. [Maintaining RideWind](docs/maintaining.md) explains the branch rules.
+If your change affects how RideWind works, update the page that covers it. Each topic has one home:
 
-## Licence
+| Topic | Page |
+| --- | --- |
+| What RideWind does and how to start | [README.md](README.md) |
+| Setup, commands, tests, debugging | [docs/development.md](docs/development.md) |
+| How the code fits together | [docs/architecture.md](docs/architecture.md) |
+| How estimates are calculated | [docs/model.md](docs/model.md) |
+| Outside services, limits, stored data | [docs/data-and-privacy.md](docs/data-and-privacy.md) |
+| Building and publishing | [docs/deployment.md](docs/deployment.md) |
+| Problems and fixes | [docs/troubleshooting.md](docs/troubleshooting.md) |
 
-By contributing, you agree that your work is released under the project's [MIT License](LICENSE).
+## How pull requests are merged
+
+`main` only changes through pull requests. The `test-build` check must pass on the latest commit, and pull requests are merged by squash or rebase so the history stays linear. Only the owner can merge. [docs/maintaining.md](docs/maintaining.md) has the full branch rules.
+
+Workflows on pull requests from forks need the maintainer's approval before they run, so CI may not start straight away.

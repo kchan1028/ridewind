@@ -32,6 +32,12 @@ function rotatedSvg(viewBox: string, size: number, d: string, degrees: number): 
   return svg;
 }
 
+/**
+ * The Leaflet map. showRoute() draws the plain route when it loads; showPlan()
+ * adds the wind-coloured sections and arrows once a forecast is matched, and
+ * clearPlan() removes them again. Tiles come from tile.openstreetmap.org, which
+ * the Content Security Policy in src/lib/csp.ts must allow.
+ */
 export class RouteMap {
   private map: L.Map;
   private baseLine: L.Polyline | null = null;

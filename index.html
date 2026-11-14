@@ -3,11 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="RideWind: forecast wind, headwinds and tailwinds along your cycling route." />
+    <meta name="description" content="Load a GPX route and a departure time. RideWind shows the headwind, tailwind, gusts, rain and temperature you'll meet at each point of the ride." />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="theme-color" content="#14213d" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>RideWind</title>
+    <link rel="canonical" href="https://kchan1028.github.io/ridewind/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="RideWind: wind forecast along your cycling route" />
+    <meta property="og:description" content="See the headwind, tailwind and rain you'll ride into, matched to when you reach each part of your GPX route." />
+    <meta property="og:url" content="https://kchan1028.github.io/ridewind/" />
+    <meta name="twitter:card" content="summary" />
+    <title>RideWind: wind forecast along your cycling route</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "RideWind",
+        "url": "https://kchan1028.github.io/ridewind/",
+        "applicationCategory": "SportsApplication",
+        "operatingSystem": "Any (runs in a web browser)",
+        "description": "A free browser app for cyclists. Load a GPX route and a departure time to see the forecast headwind, tailwind, gusts, rain and temperature at each point, timed to when you get there.",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#controls">Skip to ride controls</a>
@@ -59,7 +78,7 @@
             <select id="sample-select" class="sample-select">
               <option value="" selected>Try a sample route…</option>
               <option value="morgan-territory.gpx">Berkeley to Morgan Territory</option>
-              <option value="china-camp-nicasio.gpx">China Camp – Nicasio Valley</option>
+              <option value="china-camp-nicasio.gpx">China Camp and Nicasio Valley</option>
               <option value="prs-cw.gpx">PRS (clockwise)</option>
             </select>
           </div>
@@ -221,13 +240,13 @@
         </section>
 
         <section class="step about" aria-labelledby="h-about">
-          <h2 id="h-about">Reading these numbers</h2>
+          <h2 id="h-about">How to read these numbers</h2>
           <ul>
-            <li><span class="src src-fc">forecast</span> values come directly from Open-Meteo weather models for the hour you're estimated to arrive. Wind is the model's 10 m wind, not wind at handlebar height.</li>
-            <li><span class="src src-est">estimate</span> and <em>calculated</em> values are RideWind's own arithmetic: arrival times assume a constant average speed, and the headwind and crosswind components come from that forecast wind and the route's direction.</li>
-            <li>Forecast wind does not fully account for shelter from buildings, trees, hedges, cuttings or local terrain. Exposed roads may feel stronger wind, and sheltered ones weaker.</li>
-            <li>Headwind means the wind is within 45° of straight on, tailwind within 45° of directly behind, and anything else is crosswind. These are rough planning guides, not race advice.</li>
-            <li>The power estimate uses a published steady-state cycling model (Martin et al., 1998) with your settings, gradient, air density and the wind along your direction of travel. It ignores unplanned stops, traffic, corners, accelerations and fatigue, so treat it as an approximation. In a check against five real rides it came within about 11%. It is not a race prediction.</li>
+            <li><span class="src src-fc">forecast</span> values come straight from Open-Meteo for the hour you should reach that point. Wind is measured 10 m above the ground, so it's usually stronger than what you feel on the bike.</li>
+            <li><span class="src src-est">estimate</span> and <em>calculated</em> values are RideWind's own maths. Arrival times come from your average speed or your power settings. Headwind and crosswind come from the forecast wind and the direction you're riding.</li>
+            <li>The forecast doesn't know about shelter from buildings, trees, hedges or hills. Open roads can feel windier than shown, and sheltered ones calmer.</li>
+            <li>Headwind means the wind is within 45° of straight in your face, tailwind within 45° of straight behind you, and anything else is crosswind. Use these to plan a ride, not to race.</li>
+            <li>The power estimate uses a published cycling model (Martin and others, 1998) with your settings, the slope, the air density and the wind along your direction. It leaves out unplanned stops, traffic, corners, speeding up and getting tired, so treat it as a rough guide. In a check against five real rides it came within about 11%.</li>
           </ul>
         </section>
 
