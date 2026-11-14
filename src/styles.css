@@ -176,7 +176,8 @@ a {
   .layout {
     flex: 1;
     min-height: 0;
-    grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+    /* Grows with the window; a width set with the handle overrides it. */
+    grid-template-columns: var(--panel-width, clamp(360px, 38vw, 640px)) minmax(0, 1fr);
     grid-template-areas: 'panel map';
   }
   .map-pane {
@@ -187,6 +188,46 @@ a {
     overflow-y: auto;
     border-right: 1px solid var(--line);
     padding: 20px 24px 32px;
+  }
+}
+
+/* ---------- panel resize handle (wide screens) ---------- */
+.panel-resizer {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  width: 10px;
+  z-index: 1000; /* above Leaflet panes */
+  cursor: col-resize;
+  touch-action: none;
+}
+.panel-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: transparent;
+  transition: background-color 150ms ease-out;
+}
+.panel-resizer:hover::after,
+.panel-resizer:focus-visible::after,
+.is-resizing .panel-resizer::after {
+  background: var(--focus);
+}
+.panel-resizer:focus-visible {
+  outline-offset: -3px;
+}
+.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+@media (min-width: 900px) {
+  .panel-resizer {
+    display: block;
   }
 }
 

@@ -41,6 +41,7 @@ import { compassPoint } from '../lib/wind';
 import { renderCharts } from './charts';
 import { fieldErrorFor, setFieldError } from './field-error';
 import { CLASS_STYLE, RouteMap } from './map';
+import { initPanelResize } from './panel-resize';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => {
   const el = document.getElementById(id);
@@ -1198,6 +1199,13 @@ function bindDataDialog(): void {
 /** Entry point, called once from main.ts: builds the map, restores settings and attaches every event handler. */
 export function initApp(): void {
   map = new RouteMap($('map'));
+  initPanelResize(document.querySelector<HTMLElement>('.layout')!, $('controls'), $('panel-resizer'));
+  // The map pane changes size when the panel is resized; Leaflet only listens to the window.
+  let mapResizeFrame = 0;
+  new ResizeObserver(() => {
+    cancelAnimationFrame(mapResizeFrame);
+    mapResizeFrame = requestAnimationFrame(() => map.invalidateSize());
+  }).observe($('map'));
   applySettingsToInputs();
 
   $<HTMLInputElement>('gpx-input').addEventListener('change', (ev) => {

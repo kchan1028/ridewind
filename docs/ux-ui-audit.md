@@ -224,9 +224,9 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-9 · The desktop panel can't grow, so the comparison is cramped
 
-> **Status: open**, tracked in [#44](https://github.com/kchan1028/ridewind/issues/44).
+> **Status: fixed** in [#49](https://github.com/kchan1028/ridewind/pull/49) ([#44](https://github.com/kchan1028/ridewind/issues/44)). From 900 px the panel is `clamp(360px, 38vw, 640px)` (547 px at 1440, where the comparison fits without a sideways scroll), with a drag and keyboard handle whose width is remembered. The point-by-point table still scrolls sideways at the default width.
 
-- **Where:** `.layout` at 900 px and up in [`src/styles.css:179`](../src/styles.css): `grid-template-columns: minmax(360px, 440px) minmax(0, 1fr)`.
+- **Where:** `.layout` at 900 px and up in [`src/styles.css:179`](../src/styles.css): `grid-template-columns: minmax(360px, 440px) minmax(0, 1fr)` (before #49).
 - **Observed:**
   - The panel stops at 440 px however wide the window is; the map takes all the extra width.
   - The departure comparison scrolls sideways and the Reversed column is cut off.
@@ -305,6 +305,6 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | 10 | Chart smoothing, axis units and tick thinning | P2-7 | Medium | S–M | |
 | 11 | Touch targets of at least 44 px and spacing between Open and Delete | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
 | 12 | De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range | P3-1 to P3-3 | Low | S | |
-| 13 | Wider, resizable desktop panel ([#44](https://github.com/kchan1028/ridewind/issues/44)) | P2-9 | Medium | S–M | No change below 900 px |
+| 13 | ~~Wider, resizable desktop panel~~ **Done in #49** | P2-9 | Medium | S–M | No change below 900 px |
 
 Before step 4, run the riders' test from section 5, at least questions 2, 6 and 8, because the answers decide what the collapsed bar shows. After the changes, run a screen-reader pass (VoiceOver on iOS, NVDA), 200% zoom, and outdoor readability checks. `ACCESSIBILITY.md` lists all three as untested.
