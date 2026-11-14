@@ -272,17 +272,17 @@ Severity uses the audit's scale: **P0** blocks the task, **P1** is a major probl
 | W1 | **Best** goes to rides that finish in the dark, and to differences of a minute or two | P1 | P1-1 | Fixed on `main` by [PR #23](https://github.com/kchan1028/ridewind/pull/23); not deployed |
 | W2 | The verdict states a rain amount without its chance | P1 | P1-2 | Fixed on `main` by [PR #27](https://github.com/kchan1028/ridewind/pull/27); not deployed |
 | W3 | Speed error appears far from the field and the typed value is reverted | P1 | P1-3 | Fix open in [PR #28](https://github.com/kchan1028/ridewind/pull/28) |
-| W4 | Keyboard focus is lost after **Use**, a preset, or **Retry forecast** | P2 | *New* | Open |
-| W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Open |
-| W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Open |
+| W4 | Keyboard focus is lost after **Use**, a preset, or **Retry forecast** | P2 | *New* | Open: [#31](https://github.com/kchan1028/ridewind/issues/31) |
+| W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Open: [#32](https://github.com/kchan1028/ridewind/issues/32) |
+| W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Open: [#33](https://github.com/kchan1028/ridewind/issues/33) |
 | W7 | A saved route forgets its direction and departure | P2 | P2-4 | Open |
 | W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Open |
 | W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Open |
 | W10 | Phone: the first screen is an empty map | P2 | P2-5 | Open |
 | W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Fix open in [PR #25](https://github.com/kchan1028/ridewind/pull/25) |
 | W12 | One forecast error shown three times | P3 | P3-1 | Open |
-| W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Open |
-| W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Open |
+| W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Open: [#34](https://github.com/kchan1028/ridewind/issues/34) |
+| W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Open: [#35](https://github.com/kchan1028/ridewind/issues/35) |
 
 #### W1 · Best goes to dark rides and to trivial differences (P1)
 
@@ -400,7 +400,7 @@ These held up and are worth keeping:
 
 1. Deploy `main`, then rerun W1 and W2 on the live site and log the results in the [retesting log](#retesting-log) as walkthrough rechecks, not participant retests.
 2. Add W4, W5 and W6 to the participant tasks: T4 covers W5, T5 covers W6, and a keyboard or screen-reader participant covers W4.
-3. Open GitHub issues for W4, W5, W6, W13 and W14, labelled as found in an expert walkthrough. W4 is an accessibility defect and doesn't need participant evidence. The others can wait for validation, under the rule above, before they go on the roadmap.
+3. Issues are open for the new findings: [#31](https://github.com/kchan1028/ridewind/issues/31) (W4), [#32](https://github.com/kchan1028/ridewind/issues/32) (W5), [#33](https://github.com/kchan1028/ridewind/issues/33) (W6), [#34](https://github.com/kchan1028/ridewind/issues/34) (W13) and [#35](https://github.com/kchan1028/ridewind/issues/35) (W14). Each says it came from an expert walkthrough. W4 is an accessibility defect and doesn't need participant evidence. The others should be validated, under the rule above, before they go on the roadmap.
 
 ## Completed research
 
