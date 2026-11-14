@@ -127,6 +127,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-2 · On a phone, the reversed direction is hidden behind a sideways scroll
 
+> **Status: partly fixed** in the comparison cards PR. Below 600 px each departure is a card with both directions stacked and labelled, with no sideways scrolling, and explicit table roles keep screen-reader semantics. Trimming the point-by-point table's columns on phones is still open.
+
 - **Where:** the comparison table inside `.table-wrap`.
 - **Observed:**
   - At 375 px the table is **778 px wide** inside a 374 px frame for the point-by-point table, and 463 px for the comparison.

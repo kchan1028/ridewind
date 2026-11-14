@@ -199,16 +199,17 @@
                 </select>
               </div>
               <div class="table-wrap" tabindex="0" role="region" aria-labelledby="compare-caption">
-                <table class="samples compare">
+                <!-- Explicit roles keep table semantics when phones restyle the rows as cards. -->
+                <table class="samples compare" role="table">
                   <caption id="compare-caption"></caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Depart</th>
-                      <th scope="col">Original direction</th>
-                      <th scope="col">Reversed</th>
+                  <thead role="rowgroup">
+                    <tr role="row">
+                      <th scope="col" role="columnheader">Depart</th>
+                      <th scope="col" role="columnheader">Original direction</th>
+                      <th scope="col" role="columnheader">Reversed</th>
                     </tr>
                   </thead>
-                  <tbody id="compare-body"></tbody>
+                  <tbody id="compare-body" role="rowgroup"></tbody>
                 </table>
               </div>
             </div>
