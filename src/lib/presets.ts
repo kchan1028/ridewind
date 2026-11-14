@@ -1,4 +1,4 @@
-import { formatClock, formatDayClock, utcToWallTime, wallTimeToUtc } from './time';
+import { formatDateTime, formatWallClock, utcToWallTime, wallTimeToUtc } from './time';
 
 const HOUR = 3600_000;
 
@@ -32,17 +32,15 @@ export function departurePresets(nowMs: number, tz: string, bounds: { min: numbe
     const dt = new Date(Date.UTC(y, m - 1, d + addDays));
     return { iso: dt.toISOString().slice(0, 10), weekday: dt.getUTCDay() };
   };
-  const tomorrow8 = wallTimeToUtc(`${dateAt(1).iso}T08:00`, tz);
-  // Labels use the same clock and date style as the rest of the page.
   const out: DeparturePreset[] = [
     { label: 'Next hour', ms: Math.ceil(nowMs / HOUR) * HOUR },
-    { label: `Tomorrow ${formatClock(tomorrow8, tz)}`, ms: tomorrow8 },
+    { label: `Tomorrow ${formatWallClock('08:00')}`, ms: wallTimeToUtc(`${dateAt(1).iso}T08:00`, tz) },
   ];
   for (let k = 2; k <= 7; k++) {
     const day = dateAt(k);
     if (day.weekday === 6 || day.weekday === 0) {
       const ms = wallTimeToUtc(`${day.iso}T09:00`, tz);
-      out.push({ label: formatDayClock(ms, tz), ms });
+      out.push({ label: formatDateTime(ms, tz), ms });
       break;
     }
   }

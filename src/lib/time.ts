@@ -75,38 +75,46 @@ export function deviceTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }
 
-/**
- * Time of day in the locale's own clock: "3:36 PM" for 12-hour locales (no
- * leading zero), "15:36" for 24-hour ones. Every time on the page uses this.
+/*
+ * Every time and date on the page goes through these, so they share one style:
+ * the locale's own clock ("3:36 PM" or "15:36", no leading zero on 12-hour
+ * clocks) and one short date ("Sat, Nov 14").
  */
+
 export function formatClock(utcMs: number, tz: string): string {
   return new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(utcMs);
 }
 
-/** A stored "HH:MM" wall time (such as a saved route's usual departure) in the locale's clock. */
+/** A wall-clock "HH:mm" (for example a saved usual departure) in the locale's clock style. */
 export function formatWallClock(hhmm: string): string {
   const [h, m] = hhmm.split(':').map(Number) as [number, number];
   return formatClock(Date.UTC(2000, 0, 1, h, m), 'UTC');
 }
 
-/** The one date style used on the page, e.g. "Sat, Nov 14". */
-export function formatShortDate(utcMs: number, tz?: string): string {
-  return new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' }).format(utcMs);
-}
-
-/** Date and time, e.g. "Sat, Nov 14, 11:00 AM". */
-export function formatDateTime(utcMs: number, tz: string): string {
+/** Short date, e.g. "Sat, Nov 14"; the year is added when it isn't the current one. */
+export function formatDate(utcMs: number, tz: string, nowMs = Date.now()): string {
+  const year = (t: number) => new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric' }).format(t);
   return new Intl.DateTimeFormat(undefined, {
     timeZone: tz,
     weekday: 'short',
     month: 'short',
     day: 'numeric',
+    ...(year(utcMs) !== year(nowMs) ? { year: 'numeric' as const } : {}),
+  }).format(utcMs);
+}
+
+export function formatDateTime(utcMs: number, tz: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    timeZone: tz,
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
     hour: 'numeric',
     minute: '2-digit',
   }).format(utcMs);
 }
 
-/** Same as formatDateTime; kept as a name for the places that show a departure. */
+/** Day and time, e.g. "Sat, Nov 14, 11:00 AM". Kept as its own name for the verdict and status lines. */
 export function formatDayClock(utcMs: number, tz: string): string {
   return formatDateTime(utcMs, tz);
 }
