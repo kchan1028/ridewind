@@ -103,6 +103,7 @@ function setVerdictMode(mode: VerdictMode, head: string, facts: string): void {
   const v = $('verdict');
   v.hidden = false;
   v.dataset.mode = mode;
+  if (mode !== 'ready') delete v.dataset.tone;
   document.body.classList.add('has-verdict');
   $('verdict-head').textContent = head;
   $('verdict-facts').textContent = facts;
