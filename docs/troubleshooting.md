@@ -60,8 +60,8 @@ RideWind fetches the forecast once per route and keeps it until you reload the p
 
 ## Timing and estimates
 
-**Power mode shows "Elevation needed for power timing" instead of results.**
-Power timing needs gradients. Press **Look up elevation**, or press **Estimate as if flat** to accept a clearly labelled flat-road estimate.
+**In power mode, the verdict says "timed at … average" and asks about elevation.**
+Power timing needs gradients, and this route has no elevation (or only some). Until you choose, RideWind times the ride at your average speed so you still get the wind verdict. Press **Look up elevation**, or **Estimate as if flat** to accept a clearly labelled flat-road estimate. Both buttons are in the verdict.
 
 **The ride time seems wrong.**
 Check the settings under **Departure and pace**. In power mode, your power, weight, drag area (CdA) and exposure have the biggest effect. Neither mode includes stops, so add your café time yourself. How the estimate works is in [model.md](model.md).
