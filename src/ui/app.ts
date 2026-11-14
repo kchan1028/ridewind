@@ -155,6 +155,44 @@ function setVerdictMode(mode: VerdictMode, head: string, message: string): void 
 }
 
 /** Shows the details (all facts, wind key, forecast time) instead of the one-line summary. */
+/**
+ * On phones, shrink the bottom bar to one row (hour buttons around the
+ * headline and the finish line) once the rider has scrolled past the summary
+ * figures into the detail, and give the full bar back near the top. It stays
+ * full while Details is open or keyboard focus is inside the bar (a tap on the
+ * hour buttons doesn't count, so the bar doesn't jump under the rider's finger).
+ */
+function bindCompactVerdict(): void {
+  const v = $('verdict');
+  const kpis = document.querySelector<HTMLElement>('.kpis');
+  const phone = window.matchMedia('(max-width: 899px)');
+  let queued = false;
+  const update = (): void => {
+    queued = false;
+    const compact =
+      phone.matches &&
+      !!kpis &&
+      kpis.offsetParent !== null &&
+      v.dataset.mode === 'ready' &&
+      v.dataset.expanded !== 'true' &&
+      $('verdict-elevation').hidden &&
+      !v.querySelector(':focus-visible') &&
+      kpis.getBoundingClientRect().bottom < 0;
+    if (compact) v.dataset.compact = 'true';
+    else delete v.dataset.compact;
+  };
+  const queue = (): void => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(update);
+  };
+  window.addEventListener('scroll', queue, { passive: true });
+  window.addEventListener('resize', queue);
+  v.addEventListener('focusin', queue);
+  v.addEventListener('focusout', queue);
+  new MutationObserver(queue).observe(v, { attributes: true, subtree: true, attributeFilter: ['data-mode', 'data-expanded', 'hidden'] });
+}
+
 function applyVerdictExpanded(expanded: boolean): void {
   const toggle = $('verdict-toggle');
   toggle.setAttribute('aria-expanded', String(expanded));
@@ -1303,6 +1341,7 @@ export function initApp(): void {
     const h = Math.ceil(entry?.borderBoxSize?.[0]?.blockSize ?? $('verdict').offsetHeight);
     document.body.style.setProperty('--verdict-h', `${h}px`);
   }).observe($('verdict'));
+  bindCompactVerdict();
   // Same single request as a normal load; the departure time and settings are kept.
   $('refresh-forecast').addEventListener('click', () => void loadForecast());
   $('dep-earlier').addEventListener('click', () => shiftDeparture(-HOUR));
