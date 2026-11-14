@@ -6,6 +6,10 @@ RideWind shows you the wind you'll actually ride into. Load a GPX route and pick
 
 It runs entirely in your browser. There's no account and no server, and your route file is never uploaded.
 
+![RideWind with the Berkeley to Morgan Territory sample loaded. The verdict reads "Mostly crosswind" with gusts, ride time, finish and sunset times, above a bar showing 19% headwind, 59% crosswind, 11% tailwind and 10% calm. The map colours the route red, striped amber and blue by wind type, with arrows showing where the wind blows.](docs/screenshot.webp)
+
+*The Berkeley to Morgan Territory sample on 14 November 2026. Forecasts change, so yours will differ.*
+
 **[Open RideWind](https://kchan1028.github.io/ridewind/)**, then choose a route from **Try a sample route…** to see it working in a few seconds. · [Documentation](docs/README.md) · [Report an issue](https://github.com/kchan1028/ridewind/issues)
 
 ![How RideWind works: load a route, pick up to 40 points about 5 km apart, work out when you reach each one, take the forecast for that hour, then label each section headwind, crosswind or tailwind and give a verdict.](docs/how-it-works.svg)
