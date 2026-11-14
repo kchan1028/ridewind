@@ -1,5 +1,5 @@
 import type { SimStep, Simulation } from '../lib/simulate';
-import { formatDistance, kmhToDisplay, speedUnit, type UnitSystem } from '../lib/units';
+import { formatDistance, formatPrecip, kmhToDisplay, speedUnit, type UnitSystem } from '../lib/units';
 import { classifyWind } from '../lib/wind';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -227,13 +227,13 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
       tag: 'Forecast',
       height: 80,
       data: {
-        heading: `Temperature (${unit}) and rain (mm/h)`,
+        heading: `Temperature (${unit}) and rain (${u === 'metric' ? 'mm' : 'in'}/h)`,
         value: (s) => {
           const t = s.weather?.temperature;
-          return t === null || t === undefined ? 'no forecast' : `${fmt(toU(t))} · ${(s.weather?.precipitation ?? 0).toFixed(1)}`;
+          return t === null || t === undefined ? 'no forecast' : `${fmt(toU(t))} · ${formatPrecip(s.weather?.precipitation ?? 0, u).replace(/ (mm|in)$/, '')}`;
         },
       },
-      summary: `Temperature from ${fmt(Math.min(...kt.map(toU)))} to ${fmt(Math.max(...kt.map(toU)))}${unit}. ${rainMax > 0.05 ? `Rain up to ${rainMax.toFixed(1)} mm per hour.` : 'No rain forecast.'}`,
+      summary: `Temperature from ${fmt(Math.min(...kt.map(toU)))} to ${fmt(Math.max(...kt.map(toU)))}${unit}. ${rainMax > 0.05 ? `Rain up to ${formatPrecip(rainMax, u)} per hour.` : 'No rain forecast.'}`,
       draw(g, xs, _w, h) {
         if (rainMax > 0.05) {
           for (let i = 0; i < steps.length; i++) {
@@ -242,7 +242,7 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
             const bh = (r / Math.max(rainMax, 1)) * h * 0.6;
             el('rect', { x: xs(steps[i]!.startM), y: h - bh, width: Math.max(0.5, xs(steps[i]!.endM) - xs(steps[i]!.startM)), height: bh, class: 'ch-rain' }, g);
           }
-          text(g, xs(total), 11, `rain bars, max ${rainMax.toFixed(1)} mm/h`, 'ch-note');
+          text(g, xs(total), 11, `rain bars, max ${formatPrecip(rainMax, u)}/h`, 'ch-note');
         }
         const y = yAxis(g, lo, hi, h, (v) => `${fmt(v)}${unit}`);
         let run: Array<[number, number]> = [];
