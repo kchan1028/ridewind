@@ -46,7 +46,9 @@ export function drawnDistanceM(points: readonly LatLon[]): number {
 export function densify(points: readonly LatLon[], spacingM = DRAWN_SPACING_M, maxPoints = MAX_DENSIFIED_POINTS): LatLon[] {
   if (points.length < 2) return points.map((p) => ({ ...p }));
   const total = drawnDistanceM(points);
-  const spacing = Math.max(spacingM, total / Math.max(1, maxPoints - points.length));
+  // n corners plus at most total / spacing filled points per leg, rounded up, stays within maxPoints.
+  // The small margin absorbs floating-point error in the per-leg rounding.
+  const spacing = Math.max(spacingM, (total / Math.max(1, maxPoints - points.length)) * (1 + 1e-9));
   const out: LatLon[] = [{ ...points[0]! }];
   for (let i = 1; i < points.length; i++) {
     const a = points[i - 1]!;
