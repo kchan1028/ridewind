@@ -1319,6 +1319,7 @@ dialog[open] {
 }
 .framed-notice .btn {
   text-decoration: none;
+}
 
 /* Inline field errors: empty until a value is out of range */
 .field-error {
