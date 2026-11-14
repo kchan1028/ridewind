@@ -16,8 +16,8 @@ It runs entirely in your browser. There's no account and no server, and your rou
 
 ## Why use it
 
-- See where the wind will hit you at the time you'll be there. The map is coloured by wind type, and one line sums up the ride, such as *Mostly crosswind · gusts 43 km/h · rain up to 4.3 mm/h · finish 01:35 PM · sunset 04:57 PM*.
-- Pick a better time or direction. Move the start an hour earlier or later, use a preset like *Tomorrow 08:00*, or compare up to six start times in both directions. RideWind marks the best one that stays in daylight, or says when they're too close to call.
+- See where the wind will hit you at the time you'll be there. The map is coloured by wind type, and one line sums up the ride, such as *Mostly crosswind · gusts 43 km/h · rain up to 4.3 mm/h · finish 1:35 PM · sunset 4:57 PM*.
+- Pick a better time or direction. Move the start an hour earlier or later, use a preset like *Tomorrow 8:00 AM*, or compare up to six start times in both directions. RideWind marks the best one that stays in daylight, or says when they're too close to call.
 - Base the timing on your power if you want to. Instead of a flat average speed, RideWind can use your power, weight, position on the bike, tyres, the slope and the wind. As a sanity check, a 200 W rider at 84 kg (rider plus bike) comes out at about 33 km/h on a calm, flat road.
 - Keep your rides private. Settings and saved routes stay in your browser. Only coordinates rounded to about 100 m go to the weather service, and timestamps and other recorded data in your GPX file are thrown away.
 
@@ -60,12 +60,12 @@ BASE_PATH=/ridewind/ npm run build
 3. **Set your pace.** Units start in miles or kilometres to match your browser's language; **Switch to miles** (or **km**), just under the pace choice, changes them. Choose **A constant average speed**, or **Power and bike setup** for the physics estimate. A route without elevation data asks you to look elevation up or explicitly estimate it as flat; it never quietly assumes a flat route.
 4. **Read the result.** The verdict at the top (a bar along the bottom on phones) gives the answer: the wind headline, when you'll finish, daylight and any rain worth knowing about. Press **Details** for gusts, the wind breakdown, when the forecast was updated and **Refresh forecast**. Below it you'll find the ride-time and weather figures, charts along the route, the departure comparison and a point-by-point table.
 
-On 14 November 2026, the **Berkeley to Morgan Territory** sample at the default 25 km/h, leaving at the **Tomorrow 08:00** preset, gave this verdict:
+On 14 November 2026, the **Berkeley to Morgan Territory** sample at the default 25 km/h, leaving at the **Tomorrow 8:00 AM** preset, gave this verdict:
 
 ```
 Berkeley to Morgan Territory · 139.8 km
 Mostly crosswind
-gusts 43 km/h · rain up to 4.3 mm/h · 5 h 36 min, finish 01:35 PM · sunset 04:57 PM
+gusts 43 km/h · rain up to 4.3 mm/h · 5 h 36 min, finish 1:35 PM · sunset 4:57 PM
 ```
 
 Forecasts change, so your numbers will differ. To keep a route, press **Save on this device**. It also remembers the direction and the time of day you picked, and puts them back when you open the route. Data is never synced; to move it to another device, use **Data & settings → Export data** and then **Import data**.

@@ -248,7 +248,11 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   $('verdict-facts').textContent = facts.join(' · ');
   $('verdict-age').textContent = `Forecast updated ${formatDateTime(fc.fetchedAt, deviceTimeZone())} (your device time).`;
   $('verdict').dataset.tone = tone;
-  $('depart-label').textContent = `Leave ${formatDayClock(state.departureMs!, tz)}`;
+  // "Leave" is hidden on phones (still read by screen readers) so the date fits the bottom bar.
+  const leave = document.createElement('span');
+  leave.className = 'depart-word';
+  leave.textContent = 'Leave ';
+  $('depart-label').replaceChildren(leave, formatDayClock(state.departureMs!, tz));
   const b = departureBounds();
   ($('dep-earlier') as HTMLButtonElement).disabled = !b || state.departureMs! - HOUR < b.min;
   ($('dep-later') as HTMLButtonElement).disabled = !b || state.departureMs! + HOUR > b.max;
@@ -1129,6 +1133,12 @@ async function renderSaved(): Promise<void> {
       btns.append(load, del);
       li.append(text, btns);
       list.append(li);
+    }
+    // A returning rider with nothing loaded yet: show their saved routes straight away,
+    // so opening one is a single tap, and shorten the first-run introduction.
+    if (!state.route) {
+      $<HTMLDetailsElement>('saved').open = true;
+      $('intro').textContent = 'Open a saved route below, import a GPX file, draw a route on the map or try a sample.';
     }
   } catch (e) {
     $('saved-count').textContent = '';

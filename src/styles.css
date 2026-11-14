@@ -1697,3 +1697,15 @@ body.drawing .legend {
     padding-bottom: 16px;
   }
 }
+
+/* Phones: the departure label drops the visible word "Leave" so the date stays on one line */
+@media (max-width: 599px) {
+  .depart-word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
