@@ -2,6 +2,22 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { bearingAtDistance, cumulativeDistances, haversineM, pointAtDistance, type LatLon } from '../lib/geo';
 import { rainLevel, type RainLevel, type RidePlan, type SegmentClass } from '../lib/ride';
+import type { EditorRoute, LegMode } from '../lib/route-editor';
+
+export interface EditorHandlers {
+  onMapTap(p: LatLon): void;
+  onCentreKey(): void;
+  onSelect(index: number): void;
+  onDragEnd(index: number, p: LatLon): void;
+}
+
+/** Leg styles in the editor: colour and pattern both differ, so they don't rely on colour alone. */
+export const EDITOR_STYLE: Record<LegMode | 'pending', L.PolylineOptions> = {
+  routed: { color: '#14213d', weight: 5, opacity: 0.95 },
+  manual: { color: '#b45309', weight: 5, opacity: 1, dashArray: '1 9', lineCap: 'round' },
+  pending: { color: '#5f6b7a', weight: 3, opacity: 0.8, dashArray: '6 6' },
+};
+
 
 /** Start and finish closer than this are treated as one point (a loop). */
 const LOOP_END_M = 200;
@@ -64,7 +80,14 @@ export class RouteMap {
   private routeLayer = L.layerGroup();
   private planLayer = L.layerGroup();
   private drawLayer = L.layerGroup();
+  /** Straight-line sections of a finished drawn route, marked on top of the wind colours. */
+  private manualLayer = L.layerGroup();
   private drawOff: (() => void) | null = null;
+  private handlers: EditorHandlers | null = null;
+  private dragging = false;
+  private deferred: { r: EditorRoute; selected: number | null } | null = null;
+  private preview: L.Polyline | null = null;
+  private routingCredit: string | null = null;
   /** Wind arrows, shown inside planLayer only where they don't crowd each other. Rain tags declutter separately. */
   private arrowLayer = L.layerGroup();
   private arrowItems: Array<{ latlng: L.LatLng; layers: L.Layer[] }> = [];
@@ -79,6 +102,7 @@ export class RouteMap {
     this.map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     this.routeLayer.addTo(this.map);
     this.planLayer.addTo(this.map);
+    this.manualLayer.addTo(this.map);
     this.map.on('zoomend', () => {
       this.placeArrows();
       this.declutterRainTags();
@@ -98,9 +122,14 @@ export class RouteMap {
     }
   }
 
-  showRoute(points: LatLon[]): void {
+  showRoute(points: LatLon[], manualRanges: Array<{ start: number; end: number }> = []): void {
     this.routeLayer.clearLayers();
     this.planLayer.clearLayers();
+    this.manualLayer.clearLayers();
+    for (const m of manualRanges) {
+      const latlngs = points.slice(m.start, m.end + 1).map((p) => [p.lat, p.lon] as [number, number]);
+      L.polyline(latlngs, { color: '#ffffff', weight: 3, opacity: 0.95, dashArray: '1 7', lineCap: 'round', interactive: false }).addTo(this.manualLayer);
+    }
     const latlngs = points.map((p) => [p.lat, p.lon] as [number, number]);
     this.baseLine = L.polyline(latlngs, { color: '#14213d', weight: 9, opacity: 0.25, interactive: false }).addTo(this.routeLayer);
     L.polyline(latlngs, { color: '#14213d', weight: 3, opacity: 0.8, interactive: false }).addTo(this.routeLayer);
@@ -152,31 +181,36 @@ export class RouteMap {
   }
 
   /**
-   * Draw mode: the current route is hidden, and each click or tap on the map, or
-   * Enter or Space while the map has focus (adding at the centre crosshair),
-   * calls `onAdd`. Double-click zoom is off so a quick second tap adds a point.
+   * Draw mode: the current route is hidden and the editor's layer shown. A
+   * click or tap on the map calls `onMapTap`; Enter or Space while the map has
+   * focus calls `onCentreKey` (the centre crosshair). Control points are
+   * draggable markers: a tap selects one, a drag moves it. Dragging the map
+   * anywhere else pans it, so panning never edits the route. Double-click zoom
+   * is off so a quick second tap adds a point.
    */
-  startDrawing(onAdd: (p: LatLon) => void): void {
+  startDrawing(handlers: EditorHandlers): void {
     this.stopDrawing();
     const container = this.map.getContainer();
+    this.handlers = handlers;
     this.map.removeLayer(this.routeLayer);
     this.map.removeLayer(this.planLayer);
+    this.map.removeLayer(this.manualLayer);
     this.drawLayer.clearLayers().addTo(this.map);
     this.map.doubleClickZoom.disable();
     container.classList.add('is-drawing');
     const label = container.getAttribute('aria-label') ?? '';
     container.setAttribute(
       'aria-label',
-      'Map for drawing a route. Use the arrow keys to move the map and press Enter to add a point at the centre crosshair.',
+      'Map for drawing a route. Use the arrow keys to move the map and press Enter to add a point at the centre crosshair. Tab to a route point to select it.',
     );
     const onClick = (e: L.LeafletMouseEvent) => {
       const ll = e.latlng.wrap();
-      onAdd({ lat: ll.lat, lon: ll.lng });
+      handlers.onMapTap({ lat: ll.lat, lon: ll.lng });
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.target !== container || (e.key !== 'Enter' && e.key !== ' ')) return;
       e.preventDefault();
-      onAdd(this.center());
+      handlers.onCentreKey();
     };
     this.map.on('click', onClick);
     container.addEventListener('keydown', onKey);
@@ -189,6 +223,10 @@ export class RouteMap {
       this.map.removeLayer(this.drawLayer);
       this.routeLayer.addTo(this.map);
       this.planLayer.addTo(this.map);
+      this.manualLayer.addTo(this.map);
+      this.handlers = null;
+      this.dragging = false;
+      this.deferred = null;
     };
   }
 
@@ -203,22 +241,107 @@ export class RouteMap {
     return { lat: c.lat, lon: c.lng };
   }
 
-  /** Redraws the draft: straight legs between the points, with the first point marked. */
-  showDraft(points: LatLon[]): void {
+  /** Centres the map on a point without changing the zoom. */
+  panTo(p: LatLon): void {
+    this.map.panTo([p.lat, p.lon]);
+  }
+
+  /** Zooms to show the drawing. */
+  fitDrawing(r: EditorRoute): void {
+    const pts = r.legs.flatMap((l) => l.points ?? []);
+    const all = (pts.length ? pts : r.controls).map((p) => [p.lat, p.lon] as [number, number]);
+    if (all.length > 1) this.map.fitBounds(L.latLngBounds(all), { padding: [32, 32] });
+    else if (all.length === 1) this.map.panTo(all[0]!);
+  }
+
+  /**
+   * Redraws the drawing: legs that follow roads as solid lines, straight legs
+   * drawn by hand as dotted amber lines, and legs still waiting for the router
+   * as faint dashed lines. While a point is being dragged the redraw waits
+   * until the drag ends, so a routing answer can't pull the marker away.
+   */
+  showEditor(r: EditorRoute, selected: number | null): void {
+    if (this.dragging) {
+      this.deferred = { r, selected };
+      return;
+    }
     this.drawLayer.clearLayers();
-    const latlngs = points.map((p) => [p.lat, p.lon] as [number, number]);
-    if (latlngs.length > 1) L.polyline(latlngs, { color: '#14213d', weight: 4, opacity: 0.9, dashArray: '8 6', interactive: false }).addTo(this.drawLayer);
-    latlngs.forEach((ll, i) => {
-      const first = i === 0;
-      L.circleMarker(ll, {
-        radius: first ? 8 : 5,
-        color: first ? '#ffffff' : '#14213d',
-        weight: first ? 3 : 2,
-        fillColor: first ? '#14213d' : '#ffffff',
-        fillOpacity: 1,
-        interactive: false,
-      }).addTo(this.drawLayer);
+    r.legs.forEach((leg, i) => {
+      const a = r.controls[i]!;
+      const b = r.controls[i + 1]!;
+      if (!leg.points) {
+        L.polyline(
+          [
+            [a.lat, a.lon],
+            [b.lat, b.lon],
+          ],
+          { ...EDITOR_STYLE.pending, interactive: false, className: 'leg-pending' },
+        ).addTo(this.drawLayer);
+        return;
+      }
+      const latlngs = leg.points.map((p) => [p.lat, p.lon] as [number, number]);
+      L.polyline(latlngs, { color: '#ffffff', weight: 9, opacity: 0.85, interactive: false }).addTo(this.drawLayer);
+      L.polyline(latlngs, { ...EDITOR_STYLE[leg.mode], interactive: false }).addTo(this.drawLayer);
     });
+    const n = r.controls.length;
+    const loop = n > 2 && haversineM(r.controls[0]!, r.controls[n - 1]!) < 2;
+    r.controls.forEach((p, i) => {
+      const role = i === 0 ? 'start' : i === n - 1 ? 'end' : 'via';
+      const el = document.createElement('span');
+      el.className = `ctrl-dot ctrl-${role}${selected === i ? ' is-selected' : ''}`;
+      el.textContent = role === 'start' ? 'S' : role === 'end' ? (loop ? '⟲' : 'F') : '';
+      const title =
+        role === 'start' ? `Start, point 1 of ${n}` : role === 'end' ? `Finish, point ${n} of ${n}` : `Point ${i + 1} of ${n}`;
+      const marker = L.marker([p.lat, p.lon], {
+        icon: L.divIcon({ className: 'ctrl-pt', html: el, iconSize: [40, 40], iconAnchor: [20, 20] }),
+        draggable: true,
+        autoPan: true,
+        keyboard: true,
+        title: `${title}${selected === i ? ', selected' : ''}`,
+        alt: title,
+        zIndexOffset: selected === i ? 1000 : role === 'via' ? 0 : 500,
+        riseOnHover: true,
+      });
+      marker.on('click', () => this.handlers?.onSelect(i));
+      marker.on('dragstart', () => {
+        this.dragging = true;
+        el.classList.add('is-dragging');
+        this.handlers?.onSelect(i);
+      });
+      marker.on('drag', () => this.previewDrag(r, i, marker.getLatLng()));
+      marker.on('dragend', () => {
+        this.dragging = false;
+        this.preview?.remove();
+        this.preview = null;
+        const ll = marker.getLatLng().wrap();
+        const pending = this.deferred;
+        this.deferred = null;
+        if (pending) this.showEditor(pending.r, pending.selected);
+        this.handlers?.onDragEnd(i, { lat: ll.lat, lon: ll.lng });
+      });
+      marker.addTo(this.drawLayer);
+    });
+  }
+
+  /** While dragging: straight dashed lines from the neighbours to the marker, until the drag ends and the legs are routed. */
+  private previewDrag(r: EditorRoute, i: number, ll: L.LatLng): void {
+    const pts: [number, number][] = [];
+    const prev = r.controls[i - 1];
+    const next = r.controls[i + 1];
+    if (prev) pts.push([prev.lat, prev.lon]);
+    pts.push([ll.lat, ll.lng]);
+    if (next) pts.push([next.lat, next.lon]);
+    if (pts.length < 2) return;
+    if (!this.preview) this.preview = L.polyline(pts, { ...EDITOR_STYLE.pending, interactive: false }).addTo(this.drawLayer);
+    else this.preview.setLatLngs(pts);
+  }
+
+  /** Credits the routing service (and links to reporting map errors, as FOSSGIS asks) while it's in use; null removes it. */
+  setRoutingAttribution(html: string | null): void {
+    if (html === this.routingCredit) return;
+    if (this.routingCredit) this.map.attributionControl.removeAttribution(this.routingCredit);
+    if (html) this.map.attributionControl.addAttribution(html);
+    this.routingCredit = html;
   }
 
   clearPlan(): void {

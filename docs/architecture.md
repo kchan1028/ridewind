@@ -1,6 +1,6 @@
 # How RideWind is built
 
-RideWind is a static web page with no server of its own. One file of interface code, [`src/ui/app.ts`](../src/ui/app.ts), handles the page. It calls small, tested functions in [`src/lib/`](../src/lib) that turn a GPX route and one forecast request into a timed ride plan. The only outside services are Open-Meteo for weather and elevation, and OpenStreetMap for map tiles. Both are called straight from the browser.
+RideWind is a static web page with no server of its own. One file of interface code, [`src/ui/app.ts`](../src/ui/app.ts), handles the page. It calls small, tested functions in [`src/lib/`](../src/lib) that turn a GPX route and one forecast request into a timed ride plan. The only outside services are Open-Meteo for weather and elevation, OpenStreetMap for map tiles, and a Valhalla routing server (FOSSGIS by default) used only while drawing a route along roads. All are called straight from the browser.
 
 This page explains the main parts, how data moves between them, and where to make common changes. The maths behind the estimates is in [model.md](model.md). Commands and setup are in [development.md](development.md).
 
@@ -21,13 +21,14 @@ flowchart LR
   Weather -- "up to 40 rounded coordinates" --> OM[(Open-Meteo<br/>forecast API)]
   Elev -- "up to 200 coordinates" --> OME[(Open-Meteo<br/>elevation API)]
   UI -- "map tiles" --> OSM[(OpenStreetMap<br/>tile server)]
+  UI -. "only while drawing:<br/>control points" .-> RT[(Valhalla<br/>routing server)]
 ```
 
-Everything inside the box runs in the rider's browser. The three services on the right are the only network calls the app makes, and the production build's Content Security Policy ([`src/lib/csp.ts`](../src/lib/csp.ts)) blocks any others.
+Everything inside the box runs in the rider's browser. The services on the right are the only network calls the app makes, and the production build's Content Security Policy ([`src/lib/csp.ts`](../src/lib/csp.ts)) blocks any others.
 
 ## What happens when a route loads
 
-1. **Parse.** A drawn route skips this step: [`buildDrawnRoute`](../src/lib/draw.ts) turns the points into a `Route` and calls the same `loadRoute`. For a file, `app.ts` refuses files over 25 MB (`MAX_GPX_BYTES`). Then [`parseGpx`](../src/lib/gpx.ts) reads the file with the browser's `DOMParser`. It keeps only latitude, longitude and elevation, and throws an `AppError` with a plain message if the file is empty, not GPX or has fewer than two usable points.
+1. **Parse.** A drawn route skips this step: [`editorToRoute`](../src/lib/route-editor.ts) joins its routed and straight sections into a `Route` (with `manualRanges` marking the straight ones). While drawing, each completed edit becomes the loaded route through `beginRoute` and `applyRoute`, so steps 2 and 5 to 7 rerun on the full road geometry; see [drawing a route](routing.md). For a file, `app.ts` refuses files over 25 MB (`MAX_GPX_BYTES`). Then [`parseGpx`](../src/lib/gpx.ts) reads the file with the browser's `DOMParser`. It keeps only latitude, longitude and elevation, and throws an `AppError` with a plain message if the file is empty, not GPX or has fewer than two usable points.
 2. **Measure.** [`cumulativeDistances`](../src/lib/geo.ts) works out how far along the route each point is. [`sampleRoute`](../src/lib/geo.ts) picks up to 40 evenly spaced points, about 5 km apart, for the forecast.
 3. **Fetch the forecast.** [`fetchForecast`](../src/lib/weather.ts) sends one request for all sample points, rounded to about 100 m. It gets 16 days of hourly temperature, rain and wind, plus sunrise and sunset. The response is checked and kept in memory as a `ForecastBundle`.
 4. **Pick a departure.** The forecast tells the app the route's timezone. [`src/lib/time.ts`](../src/lib/time.ts) converts between that local time and UTC, so departure times mean the same thing wherever the rider's device is.
@@ -63,7 +64,9 @@ These modules are plain TypeScript with no access to the page. Most take numbers
 | Module | What it's responsible for |
 | --- | --- |
 | [`gpx.ts`](../src/lib/gpx.ts) | Reads GPX track points or route points into a `Route`. Throws on bad files. |
-| [`draw.ts`](../src/lib/draw.ts) | Adds and undoes points of a route drawn on the map, fills each straight leg with points every 100 m, builds the `Route` (source `drawn`, no elevation) and writes GPX for **Export GPX**. |
+| [`draw.ts`](../src/lib/draw.ts) | Fills straight legs with points every 100 m, the drawing limits, and writes GPX for **Export GPX** (noting straight sections). |
+| [`route-editor.ts`](../src/lib/route-editor.ts) | Click-to-route editing: add, move, remove, reverse and close-loop operations on control points and legs, joining them into a `Route`, and `RouteSession`, which keeps the undo history, spaces and batches routing requests, caches legs, ignores out-of-date answers and falls back to the last complete route on failure. |
+| [`routing.ts`](../src/lib/routing.ts), [`routing-config.ts`](../src/lib/routing-config.ts) | The Valhalla request (road-bike cycling profile), polyline decoding, elevation along the shape, error messages, the default endpoint, its CSP origin and its map credit. |
 | [`geo.ts`](../src/lib/geo.ts) | Distances, bearings, forecast sample points, map sections, elevation gain and loss, and reversing a route. |
 | [`weather.ts`](../src/lib/weather.ts) | Builds the Open-Meteo forecast request, checks the response, and turns network problems into `AppError`s. Its `openMeteoGet` is shared with the elevation lookup. |
 | [`forecast-match.ts`](../src/lib/forecast-match.ts) | Finds the forecast at an exact time by blending the hours either side of it. |

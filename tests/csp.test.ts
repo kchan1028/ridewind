@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contentSecurityPolicy, CSP_DIRECTIVES } from '../src/lib/csp';
+import { contentSecurityPolicy, cspDirectives, CSP_DIRECTIVES } from '../src/lib/csp';
 
 describe('content security policy', () => {
   const policy = contentSecurityPolicy();
@@ -7,6 +7,13 @@ describe('content security policy', () => {
   it('allows only the services the app actually uses', () => {
     expect(CSP_DIRECTIVES['connect-src']).toEqual(["'self'", 'https://api.open-meteo.com']);
     expect(CSP_DIRECTIVES['img-src']).toEqual(["'self'", 'data:', 'https://tile.openstreetmap.org']);
+  });
+
+  it('adds the routing server, and only an https one', () => {
+    expect(cspDirectives()['connect-src']).toEqual(["'self'", 'https://api.open-meteo.com', 'https://valhalla1.openstreetmap.de']);
+    expect(cspDirectives('https://api.stadiamaps.com/route/v1')['connect-src']).toContain('https://api.stadiamaps.com');
+    expect(cspDirectives('http://evil.example/route')['connect-src']).toHaveLength(2);
+    expect(policy).toContain('connect-src \'self\' https://api.open-meteo.com https://valhalla1.openstreetmap.de');
   });
 
   it('never allows inline or eval', () => {

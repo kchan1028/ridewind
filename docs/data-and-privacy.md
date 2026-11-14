@@ -1,6 +1,6 @@
 # Data sources and privacy
 
-Your route file never leaves your browser. RideWind sends only up to 40 route points, rounded to about 100 m, to Open-Meteo for the forecast, and requests map tiles from OpenStreetMap. Settings and saved routes stay on your device. The details are below.
+Your route file never leaves your browser. RideWind sends only up to 40 route points, rounded to about 100 m, to Open-Meteo for the forecast, and requests map tiles from OpenStreetMap. When you draw a route that follows roads, the points you place are sent, unrounded, to a routing service. Settings and saved routes stay on your device. The details are below.
 
 ```mermaid
 flowchart LR
@@ -12,6 +12,7 @@ flowchart LR
   App -- "Up to 40 points, rounded to about 100 m" --> OM[Open-Meteo<br/>forecast]
   App -. "Only if you press Look up elevation:<br/>up to 200 points, rounded to about 11 m" .-> OME[Open-Meteo<br/>elevation]
   App -- "Map tiles for the area on screen" --> OSM[OpenStreetMap]
+  App -. "Only while drawing with Follow roads:<br/>the points you place, unrounded" .-> RT[Routing service<br/>FOSSGIS Valhalla by default]
 ```
 
 Nothing else leaves your browser. There are no analytics, cookies or accounts.
@@ -35,6 +36,19 @@ If you change how the app uses Open-Meteo, for example to add commercial use or 
 
 The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap.org/{z}/{x}/{y}.png`. Under the [OSMF tile usage policy](https://operations.osmfoundation.org/policies/tiles/), light interactive use is fine as long as attribution stays visible and the app does no bulk downloading, prefetching or offline caching. RideWind does none of these: its service worker caches only RideWind's own page and files, never map tiles, so the map is blank offline while the rest of the app works. The page's referrer policy (`strict-origin-when-cross-origin`) still sends the Referer header the policy asks for. If the app ever gets heavy traffic, switch to a tile provider with its own terms.
 
+## Routing service (drawing a route)
+
+Drawing a route that follows roads uses the public [Valhalla](https://github.com/valhalla/valhalla) server run by [FOSSGIS e.V.](https://fossgis.de/) at `valhalla1.openstreetmap.de`, called directly from the browser. This was checked in November 2026:
+
+- **Terms:** [FOSSGIS terms of use](https://fossgis.de/arbeitsgruppen/osm-server/nutzungsbedingungen/). At most one request a second; no high-traffic sites; commercial use only where routing isn't a substantial part of the site. The site must show OpenStreetMap attribution, a link for reporting map errors, and an easily found contact email for its operator. No key is needed.
+- **Usage:** only completed edits are routed, at least 1.1 seconds apart, with rapid taps sent together in one request. Sections are cached, so undo, redo and reverse don't call the service again. Saved routes never call it.
+- **Privacy:** the points you place are sent unrounded, because road-following needs exact positions. Nothing else about you or your other routes is sent. The draw panel says this before you place a point.
+- **Attribution:** while drawing, and while a route drawn along roads is shown, the map credit reads "Routing Valhalla by FOSSGIS, report a map error".
+- **Elevation:** the same request returns elevation along the route, from the routing server's terrain data. RideWind labels it as such. Straight-line sections have none until you press **Look up elevation**.
+- **Errors:** network failures, timeouts (20 seconds), rate limiting, server errors and "no route" each get their own message, and the drawing goes back to its last complete version.
+
+The endpoint can be changed with `VITE_ROUTING_URL`, for example to Stadia Maps, which authenticates browsers by domain so no key is in the page. Never put a secret key in a `VITE_` variable. See [drawing a route](routing.md).
+
 ## Your data stays in your browser
 
 | What | Where | Notes |
@@ -47,6 +61,6 @@ The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap
 - Nothing syncs between devices or browsers. To move data, use **Data & settings → Export data** on one device and **Import data** on the other.
 - Clearing your browser's site data, or using **Delete all local data**, removes everything permanently.
 - Saved routes keep only latitude, longitude and elevation, plus the direction you ride them and your usual departure time of day (for example 08:00). Timestamps, heart rate and other recorded data in the GPX are thrown away when the file is imported.
-- A route you draw on the map stays in your browser like an imported one. Drawing sends nothing: the points aren't sent anywhere until the forecast request, which uses the same rounded sample points as any route. RideWind doesn't use a routing service, so drawn routes are straight lines between your points rather than following roads (a routing service would have to receive your points). **Export GPX** builds the file in your browser and downloads it, without timestamps.
-- Your GPX file is never uploaded. The only things that leave your browser are the rounded sample coordinates sent to Open-Meteo and the map tile requests sent to OpenStreetMap.
+- A route you draw on the map is saved in your browser like an imported one. To follow roads, each section's two end points (the points you placed, unrounded) are sent to the routing service, which returns the road geometry and its elevation. Sections drawn as **Straight line** send nothing. Finished and saved routes are never sent again: opening, reversing or exporting one uses the stored geometry. While you draw, the forecast uses the same rounded sample points as any route. **Export GPX** builds the file in your browser and downloads it, without timestamps. See [drawing a route](routing.md) for the service, its terms and how to change it.
+- Your GPX file is never uploaded. The only things that leave your browser are the rounded sample coordinates sent to Open-Meteo, the map tile requests sent to OpenStreetMap, and, only while you draw with **Follow roads**, the points you place, sent to the routing service.
 - Export files contain your routes, which can reveal where you live or ride. Don't commit them. `.gitignore` excludes `*.gpx` (except the samples) and `ridewind-export*.json`.

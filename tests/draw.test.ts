@@ -1,49 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   DRAWN_ROUTE_NAME,
-  MAX_DRAWN_POINTS,
-  addDrawnPoint,
   buildDrawnRoute,
   densify,
-  drawnDistanceM,
   gpxFileName,
   routeToGpx,
-  undoDrawnPoint,
 } from '../src/lib/draw';
 import { AppError } from '../src/lib/errors';
-import { haversineM, type LatLon } from '../src/lib/geo';
+import { haversineM } from '../src/lib/geo';
 import { parseGpx } from '../src/lib/gpx';
 import { packRoute, parseImport, unpackRoute } from '../src/lib/storage';
 
 const A = { lat: 37.8716, lon: -122.2727 };
 const B = { lat: 37.8716, lon: -122.2614 }; // ~1 km east of A
 const C = { lat: 37.8806, lon: -122.2614 }; // ~1 km north of B
-
-describe('drawing a route', () => {
-  it('adds points in order, rounded to 6 decimals', () => {
-    const one = addDrawnPoint([], { lat: 37.12345678, lon: -122.98765432 })!;
-    expect(one).toEqual([{ lat: 37.123457, lon: -122.987654 }]);
-    const two = addDrawnPoint(one, B)!;
-    expect(two).toHaveLength(2);
-    expect(one).toHaveLength(1); // not mutated
-  });
-
-  it('ignores a tap on top of the last point, invalid coordinates and a full draft', () => {
-    expect(addDrawnPoint([A], { lat: A.lat + 0.000001, lon: A.lon })).toBeNull();
-    expect(addDrawnPoint([], { lat: 91, lon: 0 })).toBeNull();
-    expect(addDrawnPoint([], { lat: Number.NaN, lon: 0 })).toBeNull();
-    const full: LatLon[] = Array.from({ length: MAX_DRAWN_POINTS }, (_, i) => ({ lat: 37 + i * 0.001, lon: -122 }));
-    expect(addDrawnPoint(full, B)).toBeNull();
-  });
-
-  it('undoes the last point and measures the straight-line distance', () => {
-    const pts = [A, B, C];
-    expect(undoDrawnPoint(pts)).toEqual([A, B]);
-    expect(undoDrawnPoint([])).toEqual([]);
-    expect(drawnDistanceM([A])).toBe(0);
-    expect(drawnDistanceM(pts)).toBeCloseTo(haversineM(A, B) + haversineM(B, C), 6);
-  });
-});
 
 describe('densify', () => {
   it('fills each leg so no gap exceeds the spacing, keeping every corner', () => {

@@ -1681,6 +1681,202 @@ input[aria-invalid='true'] {
 body.drawing .legend {
   display: none;
 }
+/* Click-to-route editor */
+.draw-mode {
+  margin: 4px 0 6px;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 16px;
+}
+.draw-mode legend {
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0;
+}
+.draw-mode .radio {
+  font-size: 0.875rem;
+}
+.hint-inline {
+  color: var(--muted);
+}
+.draw-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.draw-key li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dk {
+  stroke-width: 4;
+}
+.dk-routed {
+  stroke: var(--ink);
+}
+.dk-manual {
+  stroke: #b45309;
+  stroke-dasharray: 1 6;
+  stroke-linecap: round;
+}
+.dk-pending {
+  stroke: var(--calm);
+  stroke-width: 3;
+  stroke-dasharray: 5 4;
+}
+.lg-manual {
+  stroke: #fff;
+  stroke-width: 3;
+  stroke-dasharray: 1 6;
+  stroke-linecap: round;
+}
+.draw-routing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--line);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.draw-error,
+.draw-selected {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+.draw-error {
+  background: var(--err-bg);
+  border: 1px solid var(--err-line);
+}
+.draw-selected {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+}
+.draw-error p,
+.draw-selected p {
+  margin: 0 0 6px;
+}
+.draw-tools {
+  margin-top: 4px;
+}
+.draw-privacy {
+  margin: 8px 0 0;
+}
+.btn[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.draw-review h3 {
+  font-size: 1rem;
+}
+.draw-review h3:focus:not(:focus-visible) {
+  outline: none;
+}
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.checkbox input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+#map.is-drawing.tap-off {
+  cursor: grab;
+}
+/* Control points: a 40 px touch target around a smaller dot. */
+.ctrl-pt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+}
+.ctrl-pt:focus-visible {
+  outline: none;
+}
+.ctrl-pt:focus-visible .ctrl-dot {
+  box-shadow: 0 0 0 3px var(--focus);
+}
+.ctrl-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #14213d;
+  box-sizing: border-box;
+  font: 700 11px/1 var(--font);
+  color: #fff;
+  cursor: grab;
+  transition: transform 120ms var(--ease-out, ease-out);
+}
+.ctrl-start,
+.ctrl-end {
+  width: 24px;
+  height: 24px;
+  border-color: #fff;
+  background: #14213d;
+}
+.ctrl-end {
+  background: #1d7a46;
+}
+.ctrl-dot.is-selected {
+  transform: scale(1.35);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 6px #0b63ce;
+}
+.ctrl-dot.is-dragging {
+  cursor: grabbing;
+  transform: scale(1.5);
+}
+.leaflet-overlay-pane path.leg-pending {
+  animation: leg-pending 1s linear infinite;
+}
+@keyframes leg-pending {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .leaflet-overlay-pane path.leg-pending {
+    animation: none;
+  }
+}
+/* While drawing, the route card's actions belong to the finished route. */
+body.drawing #route-card .actions {
+  display: none;
+}
 /* Phones: while drawing, the map leads with room to tap, and the verdict bar steps aside. */
 @media (max-width: 899px) {
   body.drawing .layout {
@@ -1694,6 +1890,36 @@ body.drawing .legend {
     flex: none;
     height: 55vh;
     min-height: 260px;
+  }
+  /* The map comes first so there's room to tap; the controls you use most sit right under it. */
+  body.drawing .map-pane {
+    display: flex;
+    flex-direction: column;
+  }
+  body.drawing .draw-bar {
+    order: 2;
+    border-bottom: 0;
+    border-top: 1px solid var(--line);
+  }
+  #draw-edit {
+    display: flex;
+    flex-direction: column;
+  }
+  #draw-edit[hidden] {
+    display: none;
+  }
+  .draw-title {
+    order: 5;
+    margin-top: 8px;
+  }
+  .draw-mode {
+    order: 4;
+  }
+  .draw-key {
+    order: 6;
+  }
+  .draw-privacy {
+    order: 7;
   }
   body.drawing .verdict {
     display: none;

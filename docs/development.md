@@ -27,11 +27,13 @@ CI runs on Node 22 (see [`.github/workflows/ci.yml`](../.github/workflows/ci.yml
 
 ## Configuration
 
-There's one optional environment variable.
+There are three optional environment variables. None of them is a secret, and none may hold one: `VITE_` values are compiled into the public JavaScript.
 
 | Variable | Used by | What it does |
 | --- | --- | --- |
 | `BASE_PATH` | [`vite.config.ts`](../vite.config.ts) at build time | Sets the URL path the site is served from. Defaults to `/`. The GitHub Pages workflow sets it to `/ridewind/`. |
+| `VITE_ROUTING_URL` | [`src/ui/app.ts`](../src/ui/app.ts) and the CSP in [`vite.config.ts`](../vite.config.ts) | The Valhalla `/route` endpoint used to draw routes along roads. Defaults to the FOSSGIS server. See [drawing a route](routing.md). |
+| `VITE_ROUTING_MIN_INTERVAL_MS` | [`src/ui/app.ts`](../src/ui/app.ts) | Smallest gap between routing requests. Defaults to 1100. |
 
 ```bash
 BASE_PATH=/ridewind/ npm run build
