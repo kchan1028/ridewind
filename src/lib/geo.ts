@@ -86,7 +86,7 @@ export function pointAtDistance(points: LatLon[], cum: number[], d: number): Lat
   return { lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f };
 }
 
-export const MAX_WEATHER_SAMPLES = 20;
+export const MAX_WEATHER_SAMPLES = 40;
 export const TARGET_SAMPLE_SPACING_M = 5000;
 
 /**

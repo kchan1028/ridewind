@@ -87,7 +87,7 @@
               <option value="prs-cw.gpx">PRS (clockwise)</option>
             </select>
           </div>
-          <p class="hint">Your file is read in this browser and is not uploaded. To get forecasts, about 20 rounded points along the route are sent to Open-Meteo.</p>
+          <p class="hint">Your file is read in this browser and is not uploaded. To get forecasts, up to 40 rounded points along the route, about 5 km apart, are sent to Open-Meteo.</p>
 
           <div id="route-card" class="route-card" hidden>
             <div class="route-title">
@@ -153,6 +153,11 @@
               </select>
             </div>
             <p class="hint">Typical CdA: 0.40 on the tops, 0.32 on the hoods, 0.28 in the drops, 0.23 on a TT bike. Typical Crr: 0.004 for fast tyres on smooth tarmac, 0.005 for everyday road tyres, 0.008 or more on rough roads or gravel. Exposure scales the 10 m forecast wind down to rider height.</p>
+          </div>
+          <div class="field">
+            <label for="stops">Planned stops (minutes)</label>
+            <input type="number" id="stops" inputmode="numeric" min="0" max="600" step="5" />
+            <p class="hint">Total time off the bike, such as a café stop. It's spread evenly along the ride, so later arrival times and the finish move back.</p>
           </div>
           <div id="elevation-gate" class="note" hidden>
             <p id="elevation-gate-msg"></p>
@@ -234,6 +239,7 @@
                 </table>
               </div>
               <p class="meta" id="data-stamp"></p>
+              <button type="button" class="btn btn-small" id="refresh-forecast">Refresh forecast</button>
             </div>
           </div>
         </section>
@@ -245,7 +251,7 @@
             <li><span class="src src-est">estimate</span> and <em>calculated</em> values are RideWind's own maths. Arrival times come from your average speed or your power settings. Headwind and crosswind come from the forecast wind and the direction you're riding.</li>
             <li>The forecast doesn't know about shelter from buildings, trees, hedges or hills. Open roads can feel windier than shown, and sheltered ones calmer.</li>
             <li>Headwind means the wind is within 45° of straight in your face, tailwind within 45° of straight behind you, and anything else is crosswind. Use these to plan a ride, not to race.</li>
-            <li>The power estimate uses a published cycling model (Martin and others, 1998) with your settings, the slope, the air density and the wind along your direction. It leaves out stops, traffic, corners, speeding up and getting tired, so treat it as a rough guide. It hasn't been checked against your own rides.</li>
+            <li>The power estimate uses a published cycling model (Martin and others, 1998) with your settings, the slope, the air density and the wind along your direction. It leaves out unplanned stops, traffic, corners, speeding up and getting tired, so treat it as a rough guide. In a check against five real rides it came within about 11%.</li>
           </ul>
         </section>
 

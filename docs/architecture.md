@@ -18,7 +18,7 @@ flowchart LR
     UI <--> Store[storage.ts<br/>localStorage and IndexedDB]
     UI -. "Look up elevation" .-> Elev[elevation.ts<br/>only when asked]
   end
-  Weather -- "up to 20 rounded coordinates" --> OM[(Open-Meteo<br/>forecast API)]
+  Weather -- "up to 40 rounded coordinates" --> OM[(Open-Meteo<br/>forecast API)]
   Elev -- "up to 200 coordinates" --> OME[(Open-Meteo<br/>elevation API)]
   UI -- "map tiles" --> OSM[(OpenStreetMap<br/>tile server)]
 ```
@@ -28,7 +28,7 @@ Everything inside the box runs in the rider's browser. The three services on the
 ## What happens when a route loads
 
 1. **Parse.** `app.ts` refuses files over 25 MB (`MAX_GPX_BYTES`). Then [`parseGpx`](../src/lib/gpx.ts) reads the file with the browser's `DOMParser`. It keeps only latitude, longitude and elevation, and throws an `AppError` with a plain message if the file is empty, not GPX or has fewer than two usable points.
-2. **Measure.** [`cumulativeDistances`](../src/lib/geo.ts) works out how far along the route each point is. [`sampleRoute`](../src/lib/geo.ts) picks up to 20 evenly spaced points, about 5 km apart, for the forecast.
+2. **Measure.** [`cumulativeDistances`](../src/lib/geo.ts) works out how far along the route each point is. [`sampleRoute`](../src/lib/geo.ts) picks up to 40 evenly spaced points, about 5 km apart, for the forecast.
 3. **Fetch the forecast.** [`fetchForecast`](../src/lib/weather.ts) sends one request for all sample points, rounded to about 100 m. It gets 16 days of hourly temperature, rain and wind, plus sunrise and sunset. The response is checked and kept in memory as a `ForecastBundle`.
 4. **Pick a departure.** The forecast tells the app the route's timezone. [`src/lib/time.ts`](../src/lib/time.ts) converts between that local time and UTC, so departure times mean the same thing wherever the rider's device is.
 5. **Simulate the ride.** [`simulateRide`](../src/lib/simulate.ts) walks the route in 100 m steps. For each step it finds the forecast for the moment the rider gets there, then works out a speed. That speed is either the rider's constant average speed or, in power mode, the speed from [`solveSpeed`](../src/lib/physics.ts). The clock moves forward step by step.

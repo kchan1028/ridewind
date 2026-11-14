@@ -6,9 +6,13 @@ RideWind shows you the wind you'll actually ride into. Load a GPX route and pick
 
 It runs entirely in your browser. There's no account and no server, and your route file is never uploaded.
 
+![RideWind with the Berkeley to Morgan Territory sample loaded. The verdict reads "Mostly crosswind" with gusts, ride time, finish and sunset times, above a bar showing 19% headwind, 59% crosswind, 11% tailwind and 10% calm. The map colours the route red, striped amber and blue by wind type, with arrows showing where the wind blows.](docs/screenshot.webp)
+
+*The Berkeley to Morgan Territory sample on 14 November 2026. Forecasts change, so yours will differ.*
+
 **[Open RideWind](https://kchan1028.github.io/ridewind/)**, then choose a route from **Try a sample route…** to see it working in a few seconds. · [Documentation](docs/README.md) · [Report an issue](https://github.com/kchan1028/ridewind/issues)
 
-![How RideWind works: load a route, pick up to 20 points about 5 km apart, work out when you reach each one, take the forecast for that hour, then label each section headwind, crosswind or tailwind and give a verdict.](docs/how-it-works.svg)
+![How RideWind works: load a route, pick up to 40 points about 5 km apart, work out when you reach each one, take the forecast for that hour, then label each section headwind, crosswind or tailwind and give a verdict.](docs/how-it-works.svg)
 
 ## Why use it
 
@@ -64,7 +68,7 @@ gusts 43 km/h · rain up to 4.3 mm/h · 5 h 36 min, finish 01:35 PM · sunset 04
 
 Forecasts change, so your numbers will differ. To keep a route, press **Save on this device**. Data is never synced; to move it to another device, use **Data & settings → Export data** and then **Import data**.
 
-RideWind is a planning aid. Forecast wind doesn't fully account for shelter from buildings, trees or terrain, and the estimates haven't been checked against real rides. For the details, see [how RideWind estimates your ride](docs/model.md).
+RideWind is a planning aid. Forecast wind doesn't fully account for shelter from buildings, trees or terrain, and the estimates have only been checked against five real rides (see [how close the estimates are](docs/model.md#how-close-are-the-estimates)). For the details, see [how RideWind estimates your ride](docs/model.md).
 
 ## Common questions
 
@@ -74,7 +78,7 @@ RideWind compares the forecast wind direction with the direction you're riding a
 
 ### Where does the weather forecast come from?
 
-The forecast comes from [Open-Meteo](https://open-meteo.com/), a free weather service. RideWind asks for up to 16 days of hourly wind, gusts, temperature and rain at up to 20 points along your route, then uses the hour you're expected to reach each point.
+The forecast comes from [Open-Meteo](https://open-meteo.com/), a free weather service. RideWind asks for up to 16 days of hourly wind, gusts, temperature and rain at up to 40 points along your route, about 5 km apart, then uses the hour you're expected to reach each point.
 
 ### Is the wind on the map what I'll feel on the bike?
 
@@ -82,7 +86,7 @@ Usually not quite. The forecast is for wind 10 m above open ground, so you'll of
 
 ### Does RideWind upload my GPX file?
 
-No. The file is read in your browser and never uploaded. RideWind sends only up to 20 points, rounded to about 100 m, to Open-Meteo, plus the usual map tile requests to OpenStreetMap. See [data sources and privacy](docs/data-and-privacy.md).
+No. The file is read in your browser and never uploaded. RideWind sends only up to 40 points, rounded to about 100 m, to Open-Meteo, plus the usual map tile requests to OpenStreetMap. See [data sources and privacy](docs/data-and-privacy.md).
 
 ### What if my route has no elevation?
 
@@ -106,7 +110,7 @@ Yes. RideWind is a free, open-source personal project for non-commercial use, an
 - [Deploying RideWind](docs/deployment.md): building, publishing with GitHub Pages, checking and rolling back.
 - [Maintaining RideWind](docs/maintaining.md): branch rules and how changes reach `main`.
 - [Contributing](CONTRIBUTING.md): how to propose a change and the checks it must pass.
-- [Roadmap](ROADMAP.md): proposed Now, Next and Later priorities, none approved yet.
+- [Roadmap](ROADMAP.md): what's planned next and what has shipped.
 
 **Policies**
 - [Security policy](SECURITY.md): how to report a vulnerability privately, and how RideWind handles your data.
