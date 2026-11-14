@@ -240,17 +240,23 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P3-1 · One error, three messages
 
+> **Status: fixed** in the P3 polish PR. A forecast error now shows in the verdict and the alert above the results, with the status line left clear, and it's announced once through the verdict's live region. "Forecast ready for …" no longer repeats the verdict.
+
 - **Observed:** with the forecast blocked, the same sentence appears in the status line, the verdict bar and the Conditions alert. A screen reader hears it at least twice (`role=status` and `role=alert`).
 - **Fix:** keep the verdict for display and announce through a single region. Clear the status line when the verdict carries the same message. Do the same with "Forecast ready for …", which duplicates the verdict and pushes Route down on the phone.
 - **Evidence:** [mobile-forecast-error.jpg](ux-ui-audit/mobile-forecast-error.jpg)
 
 ### P3-2 · Start and Finish labels collide on loop routes
 
+> **Status: fixed** in the P3 polish PR. When the start and finish are within 200 m, the map shows one "Start / Finish" label above the point.
+
 - **Where:** [`src/ui/map.ts:82-85`](../src/ui/map.ts).
 - **Observed:** on loop routes, the labels sit side by side over one point. On the phone, "Finish" is clipped at the map edge on PRS.
 - **Fix:** when the start and finish are within about 200 m of each other, show one "Start / Finish" label. Keep labels inside the map bounds with `autoPan` padding.
 
 ### P3-3 · KPI and chart disagree slightly
+
+> **Status: fixed** in the P3 polish PR. The temperature figure now uses the same per-step series as the chart.
 
 - **Observed:** the temperature KPI says 12–16°C while the chart summary says 12–17°C, on the same route. One uses the sampled points and the other the simulation steps.
 - **Fix:** derive both from the same series.

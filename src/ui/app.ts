@@ -393,7 +393,8 @@ async function loadForecast(): Promise<void> {
     state.cachedForecast = fc;
     state.tzFromForecast = isValidTimeZone(fc.timezone);
     state.tz = state.tzFromForecast ? fc.timezone : deviceTimeZone();
-    if ($('status').textContent === loadingMsg) setStatus(`Forecast ready for “${name}”.`, 'ok');
+    // The verdict now gives the answer (and announces it), so clear the loading line rather than repeat it.
+    if ($('status').textContent === loadingMsg) setStatus('');
     // Keep it with the saved route so the route still opens without a connection.
     if (state.savedId) void store.saveRouteForecast(state.savedId, fc).catch(() => {});
   } catch (e) {
@@ -428,8 +429,11 @@ function showForecastError(msg: string): void {
   state.tz = deviceTimeZone();
   $('wx-error-msg').textContent = msg;
   show('wx-error', true);
-  setStatus(msg, 'error');
+  // The verdict and the alert above the results both show this, so the status line stays clear.
+  // Announce it once, through the verdict's live region (an unhidden role="alert" isn't announced reliably).
+  setStatus('');
   setVerdictMode('error', 'Forecast unavailable', msg);
+  announce(`Forecast unavailable. ${msg}`);
 }
 
 function rideDurationMs(): number {
@@ -797,7 +801,11 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
   $('kpi-wind').textContent =
     s.windSpeedMin === null ? dash : `${formatSpeed(s.windSpeedMin, u).split(' ')[0]}–${formatSpeed(s.windSpeedMax!, u)}`;
   $('kpi-gust').textContent = s.gustMax === null ? '' : `Gusts up to ${formatSpeed(s.gustMax, u)}`;
-  $('kpi-temp').textContent = s.tempMin === null ? dash : `${formatTemp(s.tempMin, u)} to ${formatTemp(s.tempMax!, u)}`;
+  // Same series as the temperature chart (every simulation step), so the two ranges agree.
+  const temps = sim.steps.map((st) => st.weather?.temperature).filter((t): t is number => typeof t === 'number');
+  const tMin = temps.length ? Math.min(...temps) : s.tempMin;
+  const tMax = temps.length ? Math.max(...temps) : s.tempMax;
+  $('kpi-temp').textContent = tMin === null || tMax === null ? dash : `${formatTemp(tMin, u)} to ${formatTemp(tMax, u)}`;
   const rain = rainSummary(s.precipMax, s.precipProbabilityMax, (mm) => `${formatPrecip(mm, u)}/h`);
   $('kpi-rain').textContent = rain ? rain.value : dash;
   $('kpi-rain-prob').textContent = rain ? rain.sub : '';
