@@ -14,7 +14,7 @@ Bugs and checks that are open on GitHub.
 
 ## Next
 
-All of the audit's Next items have shipped. New ideas start as [issues](https://github.com/kchan1028/ridewind/issues).
+All of the audit's Next items have shipped. New ideas start as [issues](https://github.com/kchan1028/ridewind/issues). Loading the app itself without a connection (a service worker for RideWind's own files, never map tiles) is in review in [#63](https://github.com/kchan1028/ridewind/pull/63).
 
 ## Later
 
