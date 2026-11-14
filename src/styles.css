@@ -1311,10 +1311,22 @@ select {
   .verdict[data-compact='true'] #dep-later {
     grid-area: later;
   }
-  .verdict[data-compact='true'] .verdict-route,
+  .verdict[data-compact='true'] .verdict-route {
+    display: none;
+  }
+  /* Hidden from view only: screen readers still get the departure time and Details */
   .verdict[data-compact='true'] .verdict-toggle,
   .verdict[data-compact='true'] .depart-label {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }
 
