@@ -244,7 +244,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P3-1 · One error, three messages
 
-> **Status: fixed** in the step 12 PR. A forecast error is shown in the verdict and announced once by the Conditions alert; the status line is cleared. "Forecast ready for …" is no longer shown, since the verdict carries and announces the result.
+> **Status: fixed** in the P3 polish PR. A forecast error now shows in the verdict and the alert above the results, with the status line left clear, and it's announced once through the verdict's live region. "Forecast ready for …" no longer repeats the verdict.
 
 - **Observed:** with the forecast blocked, the same sentence appears in the status line, the verdict bar and the Conditions alert. A screen reader hears it at least twice (`role=status` and `role=alert`).
 - **Fix:** keep the verdict for display and announce through a single region. Clear the status line when the verdict carries the same message. Do the same with "Forecast ready for …", which duplicates the verdict and pushes Route down on the phone.
@@ -252,7 +252,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P3-2 · Start and Finish labels collide on loop routes
 
-> **Status: fixed** in the step 12 PR. When the ends are within 200 m, one "Start / Finish" label is shown.
+> **Status: fixed** in the P3 polish PR. When the start and finish are within 200 m, the map shows one "Start / Finish" label above the point.
 
 - **Where:** [`src/ui/map.ts:82-85`](../src/ui/map.ts).
 - **Observed:** on loop routes, the labels sit side by side over one point. On the phone, "Finish" is clipped at the map edge on PRS.
@@ -260,7 +260,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P3-3 · KPI and chart disagree slightly
 
-> **Status: fixed** in the step 12 PR. The temperature KPI now uses the simulation steps, like the chart (PRS: 57–61°F in both).
+> **Status: fixed** in the P3 polish PR. The temperature figure now uses the same per-step series as the chart.
 
 - **Observed:** the temperature KPI says 12–16°C while the chart summary says 12–17°C, on the same route. One uses the sampled points and the other the simulation steps.
 - **Fix:** derive both from the same series.
@@ -314,7 +314,7 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | 9 | ~~Compact first-run screen on the phone (short map, value sentence, two actions)~~ **Done** | P2-5 | Medium | S | |
 | 10 | Chart smoothing, axis units and tick thinning | P2-7 | Medium | S–M | |
 | 11 | ~~Touch targets of at least 44 px and spacing between Open and Delete~~ **Done in #25** | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
-| 12 | ~~De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range~~ **Done** | P3-1 to P3-3 | Low | S | |
+| 12 | ~~De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range~~ **Done in #59** | P3-1 to P3-3 | Low | S | |
 | 13 | ~~Wider, resizable desktop panel~~ **Done in #49** | P2-9 | Medium | S–M | No change below 900 px |
 
 Before step 4, run the riders' test from section 5, at least questions 2, 6 and 8, because the answers decide what the collapsed bar shows. After the changes, run a screen-reader pass (VoiceOver on iOS, NVDA), 200% zoom, and outdoor readability checks. `ACCESSIBILITY.md` lists all three as untested.
