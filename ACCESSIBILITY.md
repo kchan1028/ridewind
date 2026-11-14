@@ -36,13 +36,14 @@ RideWind aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. It has
 **Touch and small screens**
 - Main buttons and form fields are at least 44 px tall, as are the map zoom buttons on touch screens and the saved-routes toggle.
 - At 375 px wide there's no horizontal scrolling; wide tables scroll inside their own frame.
-- On phones, the verdict and the departure buttons sit in a bar at the bottom of the screen, within thumb reach.
+- On phones, the verdict and the departure buttons sit in a bar at the bottom of the screen, within thumb reach. The bar shows a one-line summary in 16 px bold text; **Details** (a button with `aria-expanded`) opens the full facts, the wind key and the forecast time. The page reserves the bar's exact height, so nothing is hidden behind it.
+- The **−1 h / +1 h** buttons are 48 px tall.
 
 ## Known limitations
 
 - **The map is visual.** Panning and zooming the map works with the keyboard (it's a Leaflet map), but the route and wind colours can only be seen. The verdict, wind bar key and point-by-point table carry the same information in text.
 - **Charts don't have their own data tables.** Only the summary in each chart's text description is available to screen readers.
-- **Some secondary buttons are below 44 px.** Departure presets and the −1 h / +1 h buttons are 40 px; **Open** and **Delete** in the saved routes list are 36 px; the **Use** buttons in the comparison table are 32 px.
+- **Some secondary buttons are below 44 px.** Departure presets are 40 px; **Open** and **Delete** in the saved routes list are 36 px; the **Use** buttons in the comparison table are 32 px.
 - **Date and time entry** uses your browser's built-in picker, so how accessible it is depends on your browser.
 - **Testing so far has been limited.** Checks were automated (contrast, target sizes, overflow, focus styles) plus manual keyboard use in Chromium on desktop and at phone size. It hasn't yet been tested with a screen reader (VoiceOver, NVDA, TalkBack), with 200% zoom, or in Windows high contrast mode.
 

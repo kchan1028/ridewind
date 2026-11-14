@@ -995,8 +995,44 @@ select {
   font-size: 0.9rem;
   color: var(--ink-soft);
 }
-.verdict-detail .wind-bar-key {
+.verdict-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.verdict-toggle {
+  flex: none;
+  min-height: 44px;
+}
+/* One line to read at arm's length: finish, daylight, rain worth knowing about */
+.verdict-key {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.verdict .wind-bar {
+  margin-top: 8px;
+}
+.verdict-more {
+  margin-top: 8px;
+}
+.verdict-more .wind-bar-key {
   font-size: 0.8125rem;
+}
+.verdict-age {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.verdict-age .btn {
+  min-height: 44px;
 }
 .verdict-actions {
   display: flex;
@@ -1015,8 +1051,8 @@ select {
   width: 100%;
 }
 .depart-stepper .btn {
-  min-height: 40px;
-  min-width: 56px;
+  min-height: 48px;
+  min-width: 64px;
 }
 .depart-label {
   flex: 1;
@@ -1090,24 +1126,27 @@ select {
   .verdict[data-mode='error'] {
     border-top-color: var(--err-line);
   }
-  .verdict-head {
-    font-size: 1.2rem;
-  }
   .verdict-facts {
     margin-bottom: 6px;
-    font-size: 0.8125rem;
+    font-size: 0.9375rem;
   }
-  .verdict-detail .wind-bar-key {
-    display: none;
-  }
-  .verdict-detail .wind-bar {
+  .verdict .wind-bar {
     height: 10px;
   }
   .verdict-actions {
     margin-top: 8px;
   }
+  /* The expanded bar can be tall; let it scroll rather than cover the whole screen */
+  .verdict {
+    max-height: 75vh;
+    overflow-y: auto;
+  }
   body.has-verdict {
-    padding-bottom: 190px;
+    padding-bottom: calc(var(--verdict-h, 190px) + 16px);
+  }
+  /* Collapsed, the bar only needs the answer: the route name is on the page above */
+  .verdict[data-expanded='false'] .verdict-route {
+    display: none;
   }
 }
 
