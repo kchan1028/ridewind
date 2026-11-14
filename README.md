@@ -66,51 +66,32 @@ RideWind is a planning aid. Forecast wind doesn't fully account for shelter from
 
 ## Documentation
 
+**Using RideWind**
 - [How RideWind estimates your ride](docs/model.md): sampling, time matching, wind components, the physics model (Martin et al., 1998) and comparisons.
 - [Data sources and privacy](docs/data-and-privacy.md): Open-Meteo usage and limits, attribution, map tiles, and what is stored in your browser.
-- [Deploying RideWind](docs/deployment.md): building the static site and publishing it with GitHub Pages.
+- [Troubleshooting](docs/troubleshooting.md): what each error message means and how to fix it.
+
+**Working on RideWind**
+- [Developing RideWind](docs/development.md): setup, commands, tests and debugging.
+- [How RideWind is built](docs/architecture.md): the main parts, how data moves through them, and where to make common changes.
+- [Deploying RideWind](docs/deployment.md): building, publishing with GitHub Pages, checking and rolling back.
 - [Maintaining RideWind](docs/maintaining.md): branch rules and how changes reach `main`.
+- [Contributing](CONTRIBUTING.md): how to propose a change and the checks it must pass.
+
+**Policies**
 - [Security policy](SECURITY.md): how to report a vulnerability privately, and how RideWind handles your data.
 - [Accessibility](ACCESSIBILITY.md): what's supported, known gaps, and how to report a barrier.
 
 ## Development
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Start the Vite dev server with hot reload |
-| `npm test` | Run the unit tests once (Vitest) |
-| `npm run test:watch` | Run the tests in watch mode |
-| `npm run typecheck` | Type-check with TypeScript |
-| `npm run build` | Type-check, then build the static site into `dist/` |
-| `npm run preview` | Serve the production build locally |
+RideWind is written in TypeScript and built with Vite. It uses Leaflet for the map and no UI framework. The route and weather calculations live in [`src/lib/`](src/lib) and have unit tests. The page code lives in [`src/ui/`](src/ui).
 
-Built with TypeScript, Vite and Leaflet, with no UI framework. The calculations live in `src/lib/` and are kept separate from the interface in `src/ui/`:
-
-```
-src/lib/          Route, weather and ride calculations (unit-tested)
-  gpx.ts            GPX → route (track or route points)
-  geo.ts            distance, bearing, sampling, elevation stats
-  weather.ts        Open-Meteo client and response validation
-  forecast-match.ts forecast value at an arrival time
-  wind.ts           head/cross components and classification
-  ride.ts           combines the above into a ride plan
-  physics.ts        cycling power model (Martin et al. 1998)
-  simulate.ts       steps along the route: speed, timing, weather per step
-  compare.ts        departure-time and direction comparison
-  elevation.ts      opt-in Open-Meteo elevation lookup
-  daylight.ts       sunrise/sunset relative to the ride
-  presets.ts        quick departure choices
-  verdict.ts        one-line wind summary
-  time.ts           route-timezone conversions
-  storage.ts        localStorage settings, IndexedDB routes, export/import
-src/ui/           Leaflet map, charts and DOM wiring
-tests/            Vitest unit tests
-public/samples/   The bundled sample routes
+```bash
+npm test         # run the unit tests
+npm run build    # type-check and build the static site into dist/
 ```
 
-### Contributing
-
-There's no separate contributing guide yet. Changes reach `main` through pull requests, and the `test-build` check (tests plus a production build) must pass before merging. [Maintaining RideWind](docs/maintaining.md) explains the branch rules. To report a bug or suggest an idea, [open an issue](https://github.com/kchan1028/ridewind/issues). Report security problems privately as described in [SECURITY.md](SECURITY.md).
+Every command, the test setup and debugging tips are in [docs/development.md](docs/development.md). To propose a change, read [CONTRIBUTING.md](CONTRIBUTING.md). Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## Credits and licence
 
