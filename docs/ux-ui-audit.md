@@ -85,6 +85,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P1-2 · Rain summary states an amount without its likelihood
 
+> **Status: fixed** in [#27](https://github.com/kchan1028/ridewind/pull/27). The rain summary leads with the chance of rain rather than the rate.
+
 - **Where:** the verdict facts in [`src/ui/app.ts:135-138`](../src/ui/app.ts) and the Rain KPI.
 - **Observed:**
   - On **PRS (clockwise)**, the verdict reads "rain up to 4.0 mm/h". The Rain KPI reads "Up to 4.0 mm/h · Highest chance 11%".
@@ -306,14 +308,14 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | # | Change | Fixes | Impact | Effort | Notes |
 |---|---|---|---|---|---|
 | 1 | ~~Daylight-aware, threshold-based comparison~~ **Done in #23** | P1-1 | High | S–M | Row cap at sunset done too |
-| 2 | Rain wording led by probability, in the verdict, KPI and comparison | P1-2 | High | S | Copy plus `verdict` facts; test the thresholds |
-| 3 | Inline field validation helper (`aria-invalid`, `aria-describedby`, keep the typed value) | P1-3 | High | S | One helper for speed and the six rider fields |
-| 4 | Collapsible, glanceable verdict bar (collapsed on scroll, larger text, 48 px stepper, "Updated X min ago" and Refresh) | P2-1, P2-3 (part), P2-8 (part) | High | M | The biggest change for use outdoors; check with VoiceOver |
+| 2 | ~~Rain wording led by probability, in the verdict, KPI and comparison~~ **Done in #27** | P1-2 | High | S | Copy plus `verdict` facts; test the thresholds |
+| 3 | ~~Inline field validation helper (`aria-invalid`, `aria-describedby`, keep the typed value)~~ **Done in #28** | P1-3 | High | S | One helper for speed and the six rider fields |
+| 4 | ~~Collapsible, glanceable verdict bar (collapsed on scroll, larger text, 48 px stepper, "Updated X min ago" and Refresh)~~ **Done in #36** | P2-1, P2-3 (part), P2-8 (part) | High | M | The biggest change for use outdoors; check with VoiceOver |
 | 5 | ~~Phone layout for the comparison (cards or a direction toggle) and reduced columns for the point-by-point table~~ **Done** | P2-2 | Med–High | M | Keep the table on desktop |
-| 6 | Auto-refresh when the forecast is stale, plus a cached last forecast for saved routes (offline fallback) | P2-3 | Medium | M | Respect the OSM tile policy (no tile caching) |
-| 7 | Saved routes remember the direction and usual departure time | P2-4 | Medium | S–M | Schema version bump in `storage.ts` |
-| 8 | Units from the locale, plus an inline speed-unit switch | P2-6 | Medium | S | |
-| 9 | ~~Compact first-run screen on the phone (short map, value sentence, two actions)~~ **Done** | P2-5 | Medium | S | |
+| 6 | ~~Auto-refresh when the forecast is stale, plus a cached last forecast for saved routes (offline fallback)~~ **Done in #50** | P2-3 | Medium | M | Respect the OSM tile policy (no tile caching) |
+| 7 | ~~Saved routes remember the direction and usual departure time~~ **Done in #43** | P2-4 | Medium | S–M | Schema version bump in `storage.ts` |
+| 8 | ~~Units from the locale, plus an inline speed-unit switch~~ **Done in #53** | P2-6 | Medium | S | |
+| 9 | ~~Compact first-run screen on the phone (short map, value sentence, two actions)~~ **Done in #54** | P2-5 | Medium | S | |
 | 10 | ~~Chart smoothing, axis units and tick thinning~~ **Done in #56** | P2-7 | Medium | S–M | |
 | 11 | ~~Touch targets of at least 44 px and spacing between Open and Delete~~ **Done in #25** | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
 | 12 | ~~De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range~~ **Done in #59** | P3-1 to P3-3 | Low | S | |
