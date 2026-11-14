@@ -56,7 +56,7 @@ Impeccable's heuristic score is **26/40 (Acceptable)**: a solid foundation, with
 
 **States:** empty (first run), loading, ready, forecast error (Open-Meteo blocked in the page), invalid speed, invalid power, saved, and the dialog open. Offline and storage-denied were checked in source. The keyboard path was checked with Tab on the phone layout, along with the focus ring.
 
-**Screenshots:** in [`docs/ux-ui-audit/`](ux-ui-audit/).
+**Screenshots:** in [`docs/ux-ui-audit/`](ux-ui-audit/). The ready state is in [desktop-verdict-map.jpg](ux-ui-audit/desktop-verdict-map.jpg) and the departure controls on a phone are in [mobile-departure.jpg](ux-ui-audit/mobile-departure.jpg). Each finding below links its own evidence.
 
 ## 3. Prioritised findings
 
