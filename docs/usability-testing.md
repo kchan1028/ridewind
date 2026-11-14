@@ -268,7 +268,7 @@ The test browser already held one saved route (*Sample: Afsluitdijk crossing (ap
 
 Severity uses the audit's scale: **P0** blocks the task, **P1** is a major problem or misleading result, **P2** is real friction with a workaround, and **P3** is polish. Findings marked *New* aren't in the audit. The rest re-confirm audit findings on the live site, which keeps the audit's evidence and adds these repro steps.
 
-| ID | Finding | Severity | Audit | Status (rechecked on live builds `15a7709`, `e504e98` and `d4ddf9d`, 14 Nov) |
+| ID | Finding | Severity | Audit | Status (rechecked on live builds `15a7709`, `e504e98`, `d4ddf9d` and `ca0c597`, 14 Nov) |
 | --- | --- | --- | --- | --- |
 | W1 | **Best** goes to rides that finish in the dark, and to differences of a minute or two | P1 | P1-1 | Resolved on live ([PR #23](https://github.com/kchan1028/ridewind/pull/23)) |
 | W2 | The verdict states a rain amount without its chance | P1 | P1-2 | Resolved on live ([PR #27](https://github.com/kchan1028/ridewind/pull/27)) |
@@ -281,7 +281,7 @@ Severity uses the audit's scale: **P0** blocks the task, **P1** is a major probl
 | W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Comparison resolved on live ([PR #40](https://github.com/kchan1028/ridewind/pull/40)); the point-by-point table still scrolls sideways |
 | W10 | Phone: the first screen is an empty map | P2 | P2-5 | Still present on live |
 | W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Resolved on live ([PR #25](https://github.com/kchan1028/ridewind/pull/25)) |
-| W12 | One forecast error shown three times | P3 | P3-1 | Partly resolved on live ([PR #60](https://github.com/kchan1028/ridewind/pull/60)); the rest is fixed on `main` by [PR #65](https://github.com/kchan1028/ridewind/pull/65), not deployed |
+| W12 | One forecast error shown three times | P3 | P3-1 | Resolved on live ([PR #60](https://github.com/kchan1028/ridewind/pull/60), [PR #65](https://github.com/kchan1028/ridewind/pull/65), [#57](https://github.com/kchan1028/ridewind/issues/57)) |
 | W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#34](https://github.com/kchan1028/ridewind/issues/34)) |
 | W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#35](https://github.com/kchan1028/ridewind/issues/35)) |
 | W15 | A comparison row that finishes late in the evening is labelled "before sunrise" | P3 | *New* | Resolved on live ([PR #62](https://github.com/kchan1028/ridewind/pull/62), [#58](https://github.com/kchan1028/ridewind/issues/58)) |
@@ -460,8 +460,9 @@ After a fix ships, rerun the tasks that showed the problem, with new participant
 | W15 | none yet ([#58](https://github.com/kchan1028/ridewind/issues/58)) | `e504e98` | Walkthrough recheck 2, 14 Nov | T4 | Still present: the 6:00 PM row reads "finish 11:35 PM · before sunrise" | Walkthrough, no participants |
 | W12 | #60 | `d4ddf9d` | Walkthrough recheck 3, 14 Nov | T11 | Partly resolved: the status line stays clear, but the message shows in the verdict and in a `role=alert` box, with a **Retry forecast** in each. Retry still recovers | Walkthrough, no participants |
 | W15 | #62 | `d4ddf9d` | Walkthrough recheck 3, 14 Nov | T4 | Resolved: evening starts read "starts after sunset" (6:00, 8:00 and 10:00 PM rows), and the verdict reads "starts after sunset (04:58 PM)" | Walkthrough, no participants |
+| W12 | #65 | `ca0c597` | Walkthrough recheck 4, 14 Nov | T11 | Resolved: the message shows only in the verdict, with one **Retry forecast**, and only the verdict's live region carries it. Conditions shows a one-line pointer. Retry recovers and moves focus to the verdict heading | Walkthrough, no participants |
 
-Recheck 2 ran on `e504e98`, deployed after PR #48. Recheck 3 ran on `d4ddf9d`, deployed after PRs #60 and #62. These rechecks were done by Claude in the in-app Chromium browser, at 1280×800 and in a 375×812 phone emulation, without participants. They show whether a fix is live. They don't say whether riders find it clear, so participant retests are still needed under the rule below.
+Recheck 2 ran on `e504e98`, deployed after PR #48. Recheck 3 ran on `d4ddf9d`, deployed after PRs #60 and #62. Recheck 4 ran on `ca0c597`, deployed after PR #65. These rechecks were done by Claude in the in-app Chromium browser, at 1280×800 and in a 375×812 phone emulation, without participants. They show whether a fix is live. They don't say whether riders find it clear, so participant retests are still needed under the rule below.
 
 ## How do findings reach GitHub issues and the roadmap?
 
