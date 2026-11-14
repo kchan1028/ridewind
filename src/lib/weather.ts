@@ -37,6 +37,13 @@ export interface LocationForecast {
   gridLat: number;
   gridLon: number;
   series: HourlySeries;
+  /** Sunrise and sunset per forecast day (Unix seconds); empty when unavailable, e.g. polar day or night. */
+  sun: SunTimes;
+}
+
+export interface SunTimes {
+  sunrise: number[];
+  sunset: number[];
 }
 
 export interface ForecastBundle {
@@ -60,6 +67,8 @@ export function buildForecastUrl(coords: LatLon[], forecastDays = FORECAST_DAYS)
     latitude: coords.map((c) => c.lat.toFixed(3)).join(','),
     longitude: coords.map((c) => c.lon.toFixed(3)).join(','),
     hourly: HOURLY_VARIABLES.join(','),
+    // Daily sun times cost nothing extra: still one call per location (checked via X-RateLimit-Cost).
+    daily: 'sunrise,sunset',
     wind_speed_unit: 'kmh',
     timezone: 'auto',
     timeformat: 'unixtime',
@@ -71,6 +80,13 @@ export function buildForecastUrl(coords: LatLon[], forecastDays = FORECAST_DAYS)
 function numArray(v: unknown, len: number): Num[] | null {
   if (!Array.isArray(v) || v.length !== len) return null;
   return v.map((x) => (typeof x === 'number' && Number.isFinite(x) ? x : null));
+}
+
+/** Sun times are optional extras: anything malformed yields empty lists rather than failing the forecast. */
+function parseSun(daily: unknown): SunTimes {
+  const d = daily as { sunrise?: unknown; sunset?: unknown } | undefined;
+  const nums = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is number => typeof x === 'number' && Number.isFinite(x)) : []);
+  return { sunrise: nums(d?.sunrise), sunset: nums(d?.sunset) };
 }
 
 function bad(detail: string): AppError {
@@ -108,6 +124,7 @@ export function parseForecastResponse(json: unknown, requested: LatLon[], fetche
         windDirection: get('wind_direction_10m'),
         windGusts: get('wind_gusts_10m'),
       },
+      sun: parseSun(r?.daily),
     };
   });
 

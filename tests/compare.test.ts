@@ -19,7 +19,7 @@ function forecast(): LocationForecast {
     windDirection: time.map((_, i) => (i < 3 ? 90 : 270)),
     windGusts: time.map(() => 35),
   };
-  return { key: 'k', gridLat: 0, gridLon: 0, series };
+  return { key: 'k', gridLat: 0, gridLon: 0, series, sun: { sunrise: [], sunset: [] } };
 }
 
 function variant(direction: 'forward' | 'reverse'): RouteVariant {

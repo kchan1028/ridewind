@@ -48,6 +48,7 @@ describe('buildForecastUrl', () => {
     expect(u.searchParams.get('timeformat')).toBe('unixtime');
     expect(u.searchParams.get('wind_speed_unit')).toBe('kmh');
     expect(u.searchParams.get('forecast_days')).toBe('16');
+    expect(u.searchParams.get('daily')).toBe('sunrise,sunset');
     expect(u.searchParams.has('apikey')).toBe(false);
   });
 });
@@ -60,6 +61,11 @@ describe('parseForecastResponse', () => {
     expect(b.windowStartMs).toBe(1_800_000_000_000);
     expect(b.windowEndMs).toBe(1_800_003_600_000);
     expect(b.fetchedAt).toBe(123);
+  });
+  it('reads optional daily sun times and tolerates their absence', () => {
+    const withSun = { ...loc(1, 1), daily: { time: [1], sunrise: [100, 'x'], sunset: [200] } };
+    expect(parseForecastResponse(withSun, [{ lat: 1, lon: 1 }], 0).locations[0]!.sun).toEqual({ sunrise: [100], sunset: [200] });
+    expect(parseForecastResponse(loc(1, 1), [{ lat: 1, lon: 1 }], 0).locations[0]!.sun).toEqual({ sunrise: [], sunset: [] });
   });
   it('accepts a bare object for a single location', () => {
     expect(parseForecastResponse(loc(1, 1), [{ lat: 1, lon: 1 }], 0).locations).toHaveLength(1);
