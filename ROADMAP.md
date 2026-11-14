@@ -10,7 +10,6 @@ Bugs and checks that are open on GitHub.
 
 | Item | Status | Tracked in |
 | --- | --- | --- |
-| Glanceable verdict bar with Details, forecast age and Refresh (audit step 4) | In review | [PR #36](https://github.com/kchan1028/ridewind/pull/36) |
 | Keyboard focus is lost after **Use**, a departure preset or **Retry forecast** | Open bug | [#31](https://github.com/kchan1028/ridewind/issues/31) |
 | The comparison restarts at the chosen departure, so earlier options disappear | Open bug | [#32](https://github.com/kchan1028/ridewind/issues/32) |
 | No wind verdict for a route without elevation in power mode | Open | [#33](https://github.com/kchan1028/ridewind/issues/33) |
@@ -24,7 +23,7 @@ Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-imp
 
 | Item | Status | Size |
 | --- | --- | --- |
-| Phone layout for the departure comparison, and fewer columns in the point-by-point table | Proposed | 1 to 2 days |
+| Fewer columns in the point-by-point table on phones (the rest of audit step 5) | Proposed | Under a day |
 | Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | Proposed | 1 to 2 days |
 | Saved routes remember the direction and usual departure time | Proposed | Up to 2 days |
 | Pick units from the browser's locale, with a speed-unit switch next to the field | Proposed | Under half a day |
@@ -38,7 +37,7 @@ Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-imp
 | Tidy-ups: no repeated status messages, one combined Start/Finish label on loops, one series for the temperature range | Proposed | Under half a day |
 | Limit the comparison to departures that finish before sunset | Proposed | Not sized |
 
-The audit says to run the riders' test in the [usability testing plan](docs/usability-testing.md) before the verdict bar ships, because the answers decide what the bar shows.
+The audit asked for the riders' test in the [usability testing plan](docs/usability-testing.md) to decide what the verdict bar shows. The bar shipped first, so that test should now check it.
 
 ## Done
 
@@ -58,6 +57,8 @@ From the UX/UI audit's implementation plan:
 - [PR #23](https://github.com/kchan1028/ridewind/pull/23): **Best** departure skips rides that end in the dark and calls that are too close to split (step 1).
 - [PR #27](https://github.com/kchan1028/ridewind/pull/27): the rain summary leads with the chance of rain, not the rate (step 2).
 - [PR #28](https://github.com/kchan1028/ridewind/pull/28): speed and rider errors show under the field and keep what you typed (step 3).
+- [PR #36](https://github.com/kchan1028/ridewind/pull/36): a glanceable verdict bar with Details, forecast age and Refresh (step 4).
+- [PR #40](https://github.com/kchan1028/ridewind/pull/40): the departure comparison as cards on phones, with both directions visible (most of step 5).
 - [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
 
 The design review's P0 to P3 items have all shipped:
