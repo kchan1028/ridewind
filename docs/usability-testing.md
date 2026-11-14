@@ -277,8 +277,8 @@ Severity uses the audit's scale: **P0** blocks the task, **P1** is a major probl
 | W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Open: [#32](https://github.com/kchan1028/ridewind/issues/32) |
 | W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Open: [#33](https://github.com/kchan1028/ridewind/issues/33) |
 | W7 | A saved route forgets its direction and departure | P2 | P2-4 | Open |
-| W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Open |
-| W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Open |
+| W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Fixed on `main` by [PR #36](https://github.com/kchan1028/ridewind/pull/36); not deployed |
+| W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Comparison fixed on `main` by [PR #40](https://github.com/kchan1028/ridewind/pull/40); not deployed. The point-by-point table still scrolls sideways |
 | W10 | Phone: the first screen is an empty map | P2 | P2-5 | Open |
 | W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Fixed on `main` by [PR #25](https://github.com/kchan1028/ridewind/pull/25); not deployed |
 | W12 | One forecast error shown three times | P3 | P3-1 | Open |
