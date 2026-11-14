@@ -12,6 +12,19 @@ export interface DeparturePreset {
  * tomorrow at 08:00, and the coming weekend morning that isn't tomorrow
  * (Saturday, else Sunday) at 09:00. Only presets inside [min, max] are returned.
  */
+/**
+ * The next time the wall clock in `tz` shows `hhmm` ("08:00"): today if that
+ * is still ahead of `nowMs`, otherwise tomorrow.
+ */
+export function nextDepartureAt(hhmm: string, nowMs: number, tz: string): number {
+  const today = utcToWallTime(nowMs, tz).slice(0, 10);
+  const [y, m, d] = today.split('-').map(Number) as [number, number, number];
+  const at = wallTimeToUtc(`${today}T${hhmm}`, tz);
+  if (at > nowMs) return at;
+  const tomorrow = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+  return wallTimeToUtc(`${tomorrow}T${hhmm}`, tz);
+}
+
 export function departurePresets(nowMs: number, tz: string, bounds: { min: number; max: number }): DeparturePreset[] {
   const today = utcToWallTime(nowMs, tz).slice(0, 10);
   const [y, m, d] = today.split('-').map(Number) as [number, number, number];

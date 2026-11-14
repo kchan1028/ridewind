@@ -7,7 +7,7 @@ import { RIDER_LIMITS, type Exposure, type RiderParams } from '../lib/physics';
 import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
 import { MAX_STOP_MINUTES, simulateRide, type PaceModel, type Simulation } from '../lib/simulate';
 import { rideDaylight } from '../lib/daylight';
-import { departurePresets } from '../lib/presets';
+import { departurePresets, nextDepartureAt } from '../lib/presets';
 import { LOW_RAIN_CHANCE, rainSummary, windVerdict } from '../lib/verdict';
 import * as store from '../lib/storage';
 import {
@@ -74,6 +74,8 @@ interface State {
   elevationBusy: boolean;
   settings: store.Settings;
   abort: AbortController | null;
+  /** Usual departure time ("HH:MM", route-local) from a saved route, applied once its forecast loads. */
+  pendingDepartTime: string | null;
 }
 
 const state: State = {
@@ -94,6 +96,7 @@ const state: State = {
   elevationBusy: false,
   settings: store.loadSettings(),
   abort: null,
+  pendingDepartTime: null,
 };
 
 let map: RouteMap;
@@ -216,9 +219,10 @@ function show(id: string, visible: boolean): void {
 /* ---------- route ---------- */
 
 /** Starts over with a new route: resets per-route state, draws it and fetches its forecast. */
-function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | null } = {}): void {
+function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | null; prefs?: store.RoutePrefs } = {}): void {
   state.original = route;
-  state.reversed = false;
+  state.reversed = opts.prefs?.reversed ?? false;
+  state.pendingDepartTime = opts.prefs?.departTime ?? null;
   state.isSample = !!opts.isSample;
   state.savedId = opts.savedId ?? null;
   state.forecast = null;
@@ -429,6 +433,11 @@ function departureBounds(): { min: number; max: number } | null {
 function chooseDefaultDeparture(): void {
   const b = departureBounds();
   const nextHour = Math.ceil(Date.now() / HOUR) * HOUR;
+  if (state.departureMs === null && state.pendingDepartTime && state.tzFromForecast) {
+    // A saved route's usual time: the next time that comes round on the route's clock.
+    state.departureMs = nextDepartureAt(state.pendingDepartTime, Date.now(), state.tz);
+  }
+  if (state.forecast) state.pendingDepartTime = null;
   if (state.departureMs === null) state.departureMs = nextHour;
   if (b && (state.departureMs < b.min || state.departureMs > b.max)) {
     state.departureMs = Math.min(Math.max(nextHour, b.min), b.max);
@@ -782,6 +791,10 @@ function describePoint(i: number): string {
       );
     }
   } else lines.push('No forecast for this arrival time');
+  if (wx?.precipitation != null) {
+    const chance = wx.precipitationProbability != null ? `, ${Math.round(wx.precipitationProbability)}% chance` : '';
+    lines.push(wx.precipitation < 0.05 ? `Dry${chance} <em>(forecast)</em>` : `Rain ${formatPrecip(wx.precipitation, u)}/h${chance} <em>(forecast)</em>`);
+  }
   return lines.join('<br>');
 }
 
@@ -807,7 +820,8 @@ async function renderSaved(): Promise<void> {
       name.textContent = r.name;
       const meta = document.createElement('span');
       meta.className = 'hint';
-      meta.textContent = `Saved ${new Date(r.savedAt).toLocaleDateString()}`;
+      const usual = [r.prefs?.reversed ? 'reversed' : '', r.prefs?.departTime ? `usually ${r.prefs.departTime}` : ''].filter(Boolean);
+      meta.textContent = [`Saved ${new Date(r.savedAt).toLocaleDateString()}`, ...usual].join(' · ');
       const load = document.createElement('button');
       load.type = 'button';
       load.className = 'btn btn-small';
@@ -815,7 +829,7 @@ async function renderSaved(): Promise<void> {
       load.setAttribute('aria-label', `Open ${r.name}`);
       load.addEventListener('click', () => {
         setStatus(`Opened “${r.name}”.`, 'ok');
-        loadRoute(store.unpackRoute(r), { savedId: r.id });
+        loadRoute(store.unpackRoute(r), { savedId: r.id, prefs: r.prefs });
       });
       const del = document.createElement('button');
       del.type = 'button';
@@ -849,7 +863,12 @@ async function renderSaved(): Promise<void> {
 async function saveCurrentRoute(): Promise<void> {
   if (!state.original) return;
   try {
-    const saved = store.packRoute(state.original, state.savedId ?? undefined);
+    // Remember how this route is ridden: direction and the departure's time of day on the route's clock.
+    const prefs: store.RoutePrefs = {
+      reversed: state.reversed,
+      ...(state.departureMs !== null && state.tzFromForecast ? { departTime: utcToWallTime(state.departureMs, state.tz).slice(11, 16) } : {}),
+    };
+    const saved = store.packRoute(state.original, state.savedId ?? undefined, undefined, prefs);
     await store.saveRoute(saved);
     state.savedId = saved.id;
     flashButton($('save-btn') as HTMLButtonElement, 'Saved ✓', 'Update saved copy');
