@@ -1,38 +1,91 @@
 # RideWind
 
-A personal cycling weather app. Load a GPX route, pick a departure time, and see the forecast wind, gusts, temperature and rain at the points you'll reach along the way. Each section of the route is coloured by headwind, tailwind or crosswind.
+[![CI](https://github.com/kchan1028/ridewind/actions/workflows/ci.yml/badge.svg)](https://github.com/kchan1028/ridewind/actions/workflows/ci.yml)
 
-It's a static web page with no backend, accounts or database. It's built for personal, non-commercial use.
+RideWind shows you the wind you'll actually ride into. Load a GPX route and pick a departure time. RideWind matches the forecast wind, gusts, temperature and rain to the moment you reach each part of the route, and colours the map by headwind, crosswind and tailwind.
 
-## What it does
+It runs entirely in your browser: no account, no backend, and your route file is never uploaded.
 
-- Imports GPX files with track points (`<trkpt>`) or route points (`<rtept>`), and includes three San Francisco Bay Area sample routes you can pick from a list (Berkeley to Morgan Territory, China Camp – Nicasio Valley, PRS clockwise). The map opens on the Bay Area.
-- Shows the route on an OpenStreetMap map with its distance and any elevation data the file contains. If a file has no elevation, climbing is shown as **unknown**, not as zero.
-- Lets you choose a departure time in the **route's own timezone**, which Open-Meteo works out from the coordinates, and reverse the route's direction.
-- Estimates when you'll reach each point, either from a constant average speed or from a **power-based physics model** that uses your power, weight, drag, rolling resistance, the gradient and the forecast wind. It then matches each point to the forecast for that time.
-- Predicts ride time and finish time, and **compares departure times and both route directions** to find the least windy or quickest option.
-- Draws **charts along the route**: elevation (with a headwind/tailwind strip), wind along your direction, predicted speed, and temperature with rain.
-- Can **look up terrain elevation** for routes without it, but only when you ask.
-- Calculates headwind and crosswind components from the route's direction and the forecast wind, and colours the map with a legend.
-- Saves settings and, if you choose, routes in your browser, with export, import and delete controls.
+**[Open RideWind](https://kchan1028.github.io/ridewind/)**, then choose a route from **Try a sample route…** to see it working in a few seconds. · [Documentation](docs/README.md) · [Report an issue](https://github.com/kchan1028/ridewind/issues)
 
-## Run it locally
+## Why use it
 
-Requires Node.js 20.19 or newer.
+- **See where the wind will hit you, at the time you'll be there.** The route is split into sections and coloured by wind type. A one-line verdict sums up the ride, such as *Mostly crosswind · gusts 43 km/h · rain up to 4.3 mm/h · finish 01:35 PM · sunset 04:57 PM*.
+- **Pick the better time or direction.** Step the departure an hour earlier or later, use presets like *Tomorrow 08:00*, or compare up to six departure times in both directions. RideWind marks the best option.
+- **Get timing from your power, not a guess.** Besides a simple average-speed mode, a power-based model uses your power, weight, drag, rolling resistance, the gradient and the forecast wind. As a check, a 200 W rider at 84 kg (rider plus bike) comes out at about 33 km/h on a calm, flat road.
+- **Keep your rides private.** Settings and saved routes stay in your browser. Only coordinates rounded to about 100 m are sent to the weather service, and timestamps and other recorded data in your GPX file are discarded.
+
+## Quick start
+
+**Prerequisites:** [Node.js](https://nodejs.org/) 20.19 or newer (CI uses Node 22), and npm.
 
 ```bash
+git clone https://github.com/kchan1028/ridewind.git
+cd ridewind
 npm install
-npm run dev        # http://localhost:5173
-npm test           # unit tests (Vitest)
-npm run build      # type-check and production build into dist/
+npm run dev
 ```
 
-No API keys or environment variables are needed.
-
-## Project layout
+When the dev server is ready, Vite prints something like:
 
 ```
-src/lib/          Pure logic, no DOM except GPX parsing
+  VITE v8.3.8  ready in 132 ms
+
+  ➜  Local:   http://localhost:5173/
+```
+
+Open that address in your browser. If port 5173 is busy, Vite picks the next free port and prints that one instead.
+
+**Configuration:** none is needed. The forecast and elevation services need no API key, and there's no `.env` file. The only environment variable is the optional `BASE_PATH`, used when the built site is served from a subpath such as GitHub Pages:
+
+```bash
+BASE_PATH=/ridewind/ npm run build
+```
+
+## Usage
+
+1. **Load a route.** Press **Import GPX** and choose a `.gpx` file with track or route points. Or pick one of the three San Francisco Bay Area samples from **Try a sample route…**:
+   - Berkeley to Morgan Territory
+   - China Camp – Nicasio Valley
+   - PRS (clockwise)
+2. **Choose when you'll leave.** Departure times use the route's own timezone. Use the date and time field, a preset, or the **−1 h / +1 h** buttons in the verdict.
+3. **Set your pace.** Choose **A constant average speed**, or **Power and bike setup** for the physics estimate. A route without elevation data asks you to look elevation up or explicitly estimate it as flat; it never quietly assumes a flat route.
+4. **Read the result.** The verdict at the top (a bar along the bottom on phones) gives the answer. Below it you'll find the ride-time and weather figures, charts along the route, the departure comparison and a point-by-point table.
+
+On 14 November 2026, the **Berkeley to Morgan Territory** sample at the default 25 km/h, leaving at the **Tomorrow 08:00** preset, gave this verdict:
+
+```
+Berkeley to Morgan Territory · 139.8 km
+Mostly crosswind
+gusts 43 km/h · rain up to 4.3 mm/h · 5 h 36 min, finish 01:35 PM · sunset 04:57 PM
+```
+
+Forecasts change, so your numbers will differ. To keep a route, press **Save on this device**. Data is never synced; to move it to another device, use **Data & settings → Export data** and then **Import data**.
+
+RideWind is a planning aid. Forecast wind doesn't fully account for shelter from buildings, trees or terrain, and the estimates haven't been validated against real rides. For the details, see [how RideWind estimates your ride](docs/model.md).
+
+## Documentation
+
+- [How RideWind estimates your ride](docs/model.md): sampling, time matching, wind components, the physics model (Martin et al., 1998) and comparisons.
+- [Data sources and privacy](docs/data-and-privacy.md): Open-Meteo usage and limits, attribution, map tiles, and what is stored in your browser.
+- [Deploying RideWind](docs/deployment.md): building the static site and publishing it with GitHub Pages.
+- [Maintaining RideWind](docs/maintaining.md): branch rules and how changes reach `main`.
+
+## Development
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the Vite dev server with hot reload |
+| `npm test` | Run the unit tests once (Vitest) |
+| `npm run test:watch` | Run the tests in watch mode |
+| `npm run typecheck` | Type-check with TypeScript |
+| `npm run build` | Type-check, then build the static site into `dist/` |
+| `npm run preview` | Serve the production build locally |
+
+Built with TypeScript, Vite and Leaflet, with no UI framework. The calculations live in `src/lib/` and are kept separate from the interface in `src/ui/`:
+
+```
+src/lib/          Route, weather and ride calculations (unit-tested)
   gpx.ts            GPX → route (track or route points)
   geo.ts            distance, bearing, sampling, elevation stats
   weather.ts        Open-Meteo client and response validation
@@ -43,125 +96,25 @@ src/lib/          Pure logic, no DOM except GPX parsing
   simulate.ts       steps along the route: speed, timing, weather per step
   compare.ts        departure-time and direction comparison
   elevation.ts      opt-in Open-Meteo elevation lookup
+  daylight.ts       sunrise/sunset relative to the ride
+  presets.ts        quick departure choices
+  verdict.ts        one-line wind summary
   time.ts           route-timezone conversions
   storage.ts        localStorage settings, IndexedDB routes, export/import
-src/ui/           Leaflet map and DOM wiring
+src/ui/           Leaflet map, charts and DOM wiring
 tests/            Vitest unit tests
 public/samples/   The bundled sample routes
 ```
 
-## Weather data and attribution
+### Contributing
 
-Weather comes from the [Open-Meteo Forecast API](https://open-meteo.com/en/docs), called directly from the browser. This was checked in November 2026:
+There's no separate contributing guide yet. Changes reach `main` through pull requests, and the `test-build` check (tests plus a production build) must pass before merging. [Maintaining RideWind](docs/maintaining.md) explains the branch rules. To report a bug or suggest an idea, [open an issue](https://github.com/kchan1028/ridewind/issues).
 
-- **Terms:** the free API is for non-commercial use only. It is limited to fewer than 10,000 calls a day, 5,000 an hour and 600 a minute (300,000 a month), and needs no API key. Each location in a request counts as one call. A 16-day request for one point with 6 hourly variables plus daily sunrise and sunset costs 1 call, which was confirmed from the `X-RateLimit-Cost` header.
-- **Daylight:** the same request returns sunrise and sunset. The verdict uses the start point's times to note when a ride starts before sunrise or finishes after sunset; otherwise it shows the sunset time.
-- **Usage per route:** RideWind sends one request per loaded route, covering up to 20 points spaced evenly along it, so loading a route costs about 20 calls. The 16-day hourly forecast is cached in memory, so changing the departure time, speed or direction doesn't call the API again. To refresh the forecast, load the route again.
-- **Privacy:** coordinates are rounded to 3 decimal places (about 100 m) before they're sent.
-- **Licence:** the data is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The app shows "Weather data by Open-Meteo.com" with links wherever forecast data appears, and notes that RideWind derives its estimates from that data.
-- **Errors:** rate limiting (HTTP 429 or a "limit exceeded" reason), network failures, server errors and malformed responses each get their own message. Requests time out after 20 seconds instead of loading forever. The imported route stays loaded, and a retry button is shown.
-- **Elevation lookup (opt-in):** the [Elevation API](https://open-meteo.com/en/docs/elevation-api) charges **one call per coordinate**, measured from the `X-RateLimit-Cost` header, and takes up to 100 coordinates per request. RideWind samples at most 200 points per route (at least 250 m apart) and only when you press **Look up elevation**. The button tells you how many calls it will use. These coordinates are rounded to 4 decimal places (about 11 m).
-- **Elevation attribution:** the elevation data is the Copernicus DEM GLO-90 (© DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA; all rights reserved). The app shows this credit whenever looked-up elevation is in use.
+## Credits and licence
 
-If you change how the app uses Open-Meteo, for example to add commercial use or move hosting to a shared server, check the [terms](https://open-meteo.com/en/terms) and [licence](https://open-meteo.com/en/licence) again.
+- **Code:** [MIT License](LICENSE).
+- **Weather and elevation data:** [Open-Meteo.com](https://open-meteo.com/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  - Looked-up elevation uses the Copernicus DEM GLO-90: © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA. All rights reserved.
+- **Map data:** © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, ODbL.
 
-## Map tiles
-
-The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap.org/{z}/{x}/{y}.png`. Under the [OSMF tile usage policy](https://operations.osmfoundation.org/policies/tiles/), light interactive use is fine as long as attribution stays visible and the app does no bulk downloading, prefetching or offline caching. RideWind does none of these. The page's referrer policy (`strict-origin-when-cross-origin`) still sends the Referer header the policy asks for. If the app ever gets heavy traffic, switch to a tile provider with its own terms.
-
-## Your data stays in your browser
-
-| What | Where | Notes |
-| --- | --- | --- |
-| Settings (speed, units, pace model, rider and bike setup, exposure) | `localStorage` | Key `ridewind:settings:v1` |
-| Saved routes | IndexedDB database `ridewind` | Only saved when you press **Save on this device** |
-| Forecast | Memory only | Gone when you reload |
-
-- Nothing syncs between devices or browsers. To move data, use **Data & settings → Export data** on one device and **Import data** on the other.
-- Clearing your browser's site data, or using **Delete all local data**, removes everything permanently.
-- Saved routes keep only latitude, longitude and elevation. Timestamps, heart rate and other recorded data in the GPX are thrown away when the file is imported.
-- Your GPX file is never uploaded. The only things that leave your browser are the rounded sample coordinates sent to Open-Meteo and the map tile requests sent to OpenStreetMap.
-- Export files contain your routes, which can reveal where you live or ride. Don't commit them. `.gitignore` excludes `*.gpx` (except the samples) and `ridewind-export*.json`.
-
-## Model assumptions
-
-Values labelled **Forecast** come straight from Open-Meteo. Values labelled **Estimate** or **calculated** are RideWind's own arithmetic.
-
-- **Arrival times** come from either a constant average speed or the physics model below. Neither accounts for stops.
-- **Sampling:** forecast points are spread evenly along the route, about 5 km apart, with at most 20. Each map section uses the nearest sample's forecast at that section's own estimated arrival time.
-- **Matching to time:** temperature and wind speed are linearly interpolated between hourly values. Wind direction is interpolated along the shorter arc, so 350° to 10° passes through 0°. Precipitation, precipitation probability and gusts are totals or maximums for the *preceding* hour in Open-Meteo, so RideWind uses the hour that contains the arrival time. Arrivals outside the forecast window are shown as "No forecast" and are never filled in.
-- **Wind components:** wind direction is where the wind blows *from*. With travel bearing θ and wind from φ:
-  - headwind = speed × cos(φ − θ), where positive is a headwind and negative is a tailwind
-  - crosswind = speed × sin(φ − θ), where positive means the wind comes from the right
-  
-  Travel bearing is measured over ±250 m around each point to smooth out GPS noise.
-- **Classification:** headwind means within ±45° of straight on, tailwind within ±45° of directly behind, and crosswind anything in between. Wind below 5 km/h counts as calm. These cut-offs are a display convention.
-- **Wind height:** the wind is the model's 10 m wind. It doesn't fully account for shelter from buildings, trees, hedges, cuttings or local terrain, and riders usually feel less wind than this at road level.
-- **Elevation:** climbing and descending use a 3 m turning-point threshold to filter noise. If only some points have elevation, the app says so and calculates from the points that do.
-
-### Physics model (power mode)
-
-Speed comes from the steady-state road cycling model in Martin, Milliken, Cobb, McFadden and Coggan (1998), "Validation of a mathematical model for road cycling power", *Journal of Applied Biomechanics* 14(3):276–291. For each step, RideWind finds the ground speed *v* at which your power at the pedals equals:
-
-```
-P = ( ½·ρ·CdA·v_air·|v_air|·v          aerodynamic drag, v_air = v + headwind
-    + Crr·m·g·cos(atan G)·v             rolling resistance
-    + m·g·sin(atan G)·v                 gravity
-    + v·(91 + 8.7·v)·10⁻³ ) / η         wheel bearings; η = 0.976 drivetrain efficiency
-```
-
-`m` is rider plus bike mass, `g` = 9.80665 m/s² and `G` is the gradient. The speed is found by bisection.
-
-- **Air density** ρ comes from the forecast temperature and the elevation, using the standard atmosphere for pressure and the dry-air gas law. Humidity is ignored.
-- **Wind at rider height:** the 10 m forecast wind is scaled to about 1.2 m with a Hellmann power law, v·(1.2/10)^α. You choose the exposure: open (α 0.14, about 74%), mixed (α 0.25, about 59%) or sheltered (α 0.33, about 50%). Only the component along your direction of travel is used. Crosswind effects on drag (yaw) are ignored.
-- **Steps:** the route is walked in 100 m steps. Gradient is measured over a 200 m window centred on each step and clamped to ±25% to limit the effect of noisy elevation. The clock advances step by step, so each step meets the forecast for when you'd actually get there.
-- **Limits:** speed is capped at your **max descent speed**, on the assumption that you brake. On very steep climbs it bottoms out at 4 km/h (walking pace).
-- **Not modelled:** acceleration and kinetic energy, corners, traffic, stops, drafting, fatigue and changes in power. Where a step has no forecast (outside the forecast window), still air and 15 °C are assumed, and the app warns you.
-- **Missing elevation never silently becomes flat.** If the route has no elevation, or only some, power mode shows a choice instead of results: look up elevation, or **Estimate as if flat**. A flat estimate is labelled "Physics estimate · flat" and carries a warning. In constant-speed mode, the elevation chart says "No elevation data" instead of drawing a flat line.
-- **Defaults:** 180 W, 75 kg rider, 9 kg bike and kit, CdA 0.32 m² (on the hoods), Crr 0.005, 55 km/h max descent, mixed exposure. Change them to match you.
-
-The model's tests check it against hand calculations (aerodynamic, rolling, gravity and bearing terms), check that solving for speed exactly reverses the power calculation, and check that it responds the right way to power, wind, gradient, CdA, Crr and mass. A 200 W, 84 kg rider with CdA 0.32 and Crr 0.005 comes out at about 33 km/h on a calm flat road.
-
-### Comparing departures and directions
-
-For up to six departure times (every 1, 2, 3 or 6 hours from the one you chose) and both directions, RideWind runs the same simulation and reports ride time, the share of distance into a headwind, and the highest chance of rain. Only options that finish inside the forecast window are listed. **Best** means the shortest predicted time in power mode. In constant-speed mode, where every time is the same, it means the lowest average headwind. Options not fully covered by the forecast are never marked Best.
-
-These are planning aids based on forecasts and a simplified model. They are not validated against your own rides and are not race advice. RideWind doesn't claim to match any commercial cycling weather service.
-
-## Deployment
-
-The app builds to static files in `dist/` and can run on any static host. The repository includes a GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) that only runs when you start it manually, so nothing is published until you choose to:
-
-1. Go to **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**.
-2. Go to **Actions → Deploy to GitHub Pages → Run workflow**.
-3. The site is published at `https://<user>.github.io/ridewind/`.
-
-The workflow sets `BASE_PATH=/<repo>/` so asset paths work under the repository subpath. To deploy on every merge, change its trigger to `push: branches: [main]`.
-
-## Branch rules
-
-`main` is protected by three repository rulesets. The owner can edit or remove them at any time in **Settings → Rules → Rulesets**.
-
-| Ruleset | Rules | Who can bypass |
-| --- | --- | --- |
-| `main: no force-push or delete` | Block force pushes, restrict deletions | Nobody, including the owner |
-| `main: PR + CI` | Pull request required (0 approvals), `test-build` check must pass on the latest commit, linear history (squash or rebase merges) | Nobody |
-| `main: owner-only updates` | Restrict updates: only bypass actors can push or merge to `main` | Repository admin role (the owner) |
-
-These rules are configured for a solo maintainer:
-
-- **No approving review is required.** GitHub doesn't let you approve your own pull request, so requiring one would lock out the only maintainer.
-- **Requiring pull requests alone doesn't restrict who can change `main`.** It only controls *how* changes arrive. The "Restrict updates" ruleset limits updates to the repository admin role, and in a personal repository with no collaborators that is only the owner.
-- **GitHub's legacy "Restrict who can push to matching branches" setting** is only available for organisation-owned repositories. That's why a ruleset is used instead.
-- **Collaborators:** none have been added. Adding a collaborator gives them write access, though "Restrict updates" would still stop them updating `main` unless they're given the admin role.
-- **Forked pull requests:** their workflows need maintainer approval before they run, and the default `GITHUB_TOKEN` permission is read-only.
-
-The repository is **public**. Anyone can view, clone and fork it and open pull requests, but that doesn't let them change this repository.
-
-## Not affiliated
-
-RideWind is an independent personal project with its own branding. It isn't affiliated with, endorsed by or equivalent to any commercial cycling weather service, and it doesn't claim parity with one.
-
-## Licence
-
-Code: [MIT](LICENSE). Weather data: Open-Meteo, CC BY 4.0. Map data: © OpenStreetMap contributors, ODbL.
+RideWind is an independent personal project for non-commercial use. It isn't affiliated with or endorsed by any commercial cycling weather service.
