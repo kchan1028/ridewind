@@ -46,8 +46,15 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => {
 const HOUR = 3600_000;
 const sampleUrl = (file: string) => `${import.meta.env.BASE_URL}samples/${file}`;
 
+/**
+ * Everything the page knows about the current ride. There is one instance,
+ * `state`, and every handler reads and updates it before calling recompute().
+ * See docs/architecture.md for how a route moves through these fields.
+ */
 interface State {
+  /** The route as imported, in its original direction. */
   original: Route | null;
+  /** `original`, or its reverse when `reversed` is true. All calculations use this. */
   route: Route | null;
   reversed: boolean;
   isSample: boolean;
@@ -175,6 +182,7 @@ function show(id: string, visible: boolean): void {
 
 /* ---------- route ---------- */
 
+/** Starts over with a new route: resets per-route state, draws it and fetches its forecast. */
 function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | null } = {}): void {
   state.original = route;
   state.reversed = false;
@@ -194,6 +202,7 @@ function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | 
   void loadForecast();
 }
 
+/** Rebuilds distances and forecast sample points after the route or its direction changes. */
 function applyRoute(): void {
   if (!state.original) return;
   state.route = state.reversed ? reverseRoute(state.original) : state.original;
@@ -275,6 +284,12 @@ function forecastsForSamples(): Array<LocationForecast | null> {
   return state.samples.map((s) => byKey.get(coordKey(s)) ?? null);
 }
 
+/**
+ * Fetches one forecast for the current sample points and takes the route's
+ * timezone from it. A newer call aborts an older one, so a slow response for
+ * a previous route can't overwrite the current one. On failure the route stays
+ * loaded and the rider sees the error with a retry button.
+ */
 async function loadForecast(): Promise<void> {
   if (!state.route) return;
   state.abort?.abort();
@@ -432,6 +447,12 @@ function renderPresets(): void {
 
 /* ---------- results ---------- */
 
+/**
+ * Reruns the simulation and ride plan from the forecast already in memory and
+ * redraws the results. Called after any change to departure, pace, direction
+ * or settings. It sends no network request unless the sample points no longer
+ * match the forecast.
+ */
 function recompute(): void {
   if (!state.route) return;
   show('wx-empty', false);
@@ -985,6 +1006,7 @@ function bindDataDialog(): void {
 
 /* ---------- init ---------- */
 
+/** Entry point, called once from main.ts: builds the map, restores settings and attaches every event handler. */
 export function initApp(): void {
   map = new RouteMap($('map'));
   applySettingsToInputs();
