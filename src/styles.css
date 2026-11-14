@@ -1228,7 +1228,8 @@ select {
 .chip:active {
   transform: scale(0.97);
 }
-.btn:disabled {
+.btn:disabled,
+.btn[aria-disabled='true'] {
   opacity: 0.55;
   cursor: default;
 }
@@ -1383,4 +1384,18 @@ input[aria-invalid='true'] {
     font-weight: 600;
     color: var(--muted);
   }
+}
+
+/* Elevation choice inside the verdict, shown while power timing waits for it. */
+.verdict-elevation {
+  margin-top: 8px;
+  font-size: 0.875rem;
+}
+.verdict-elevation p {
+  margin: 0 0 6px;
+}
+.verdict-elevation .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }

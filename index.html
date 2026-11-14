@@ -51,11 +51,18 @@
         <section id="verdict" class="verdict" aria-labelledby="verdict-head" hidden>
           <p class="verdict-route" id="verdict-route"></p>
           <div class="verdict-top">
-            <h2 class="verdict-head" id="verdict-head"></h2>
+            <h2 class="verdict-head" id="verdict-head" tabindex="-1"></h2>
             <button type="button" class="btn btn-small verdict-toggle" id="verdict-toggle" aria-expanded="false" aria-controls="verdict-more" hidden>Details</button>
           </div>
           <div class="wind-bar" id="wind-bar" role="img" hidden></div>
           <p class="verdict-key" id="verdict-key"></p>
+          <div class="verdict-elevation" id="verdict-elevation" hidden>
+            <p>Power timing needs elevation for this route. Until you choose, times use your average speed.</p>
+            <div class="actions">
+              <button type="button" class="btn btn-small lookup-ele">Look up elevation</button>
+              <button type="button" class="btn btn-small assume-flat">Estimate as if flat</button>
+            </div>
+          </div>
           <div class="verdict-more" id="verdict-more" hidden>
             <p class="verdict-facts" id="verdict-facts"></p>
             <ul class="wind-bar-key" id="wind-bar-key"></ul>
@@ -163,7 +170,7 @@
             <p id="elevation-gate-msg"></p>
             <div class="actions">
               <button type="button" class="btn lookup-ele">Look up elevation</button>
-              <button type="button" class="btn" id="assume-flat-btn">Estimate as if flat</button>
+              <button type="button" class="btn assume-flat" id="assume-flat-btn">Estimate as if flat</button>
             </div>
           </div>
         </section>
