@@ -90,10 +90,10 @@ describe('parseGpx', () => {
     }
   });
 
-  it('parses the bundled sample route', () => {
-    const text = readFileSync(resolve(process.cwd(), 'public/samples/afsluitdijk-sample.gpx'), 'utf8');
+  it.each(['morgan-territory.gpx', 'china-camp-nicasio.gpx', 'prs-cw.gpx'])('parses the bundled sample route %s', (file) => {
+    const text = readFileSync(resolve(process.cwd(), 'public/samples', file), 'utf8');
     const r = parseGpx(text);
-    expect(r.name).toMatch(/^Sample:/);
+    expect(r.name.length).toBeGreaterThan(0);
     expect(r.points.length).toBeGreaterThan(100);
     expect(r.points.every((p) => p.ele !== null)).toBe(true);
   });

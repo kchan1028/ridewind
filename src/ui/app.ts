@@ -44,7 +44,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => {
   return el as T;
 };
 const HOUR = 3600_000;
-const SAMPLE_URL = `${import.meta.env.BASE_URL}samples/afsluitdijk-sample.gpx`;
+const sampleUrl = (file: string) => `${import.meta.env.BASE_URL}samples/${file}`;
 
 interface State {
   original: Route | null;
@@ -255,12 +255,12 @@ async function importGpxFile(file: File): Promise<void> {
   }
 }
 
-async function loadSample(): Promise<void> {
+async function loadSample(file: string, label: string): Promise<void> {
   try {
-    const res = await fetch(SAMPLE_URL);
+    const res = await fetch(sampleUrl(file));
     if (!res.ok) throw new Error(`sample HTTP ${res.status}`);
-    const route = parseGpx(await res.text(), 'Sample route');
-    setStatus('Loaded the sample route. It is an approximate demonstration route.', 'ok');
+    const route = parseGpx(await res.text(), label);
+    setStatus(`Loaded the sample route “${route.name}”.`, 'ok');
     loadRoute(route, { isSample: true });
   } catch (e) {
     setStatus(isAppError(e) ? e.message : 'The sample route could not be loaded. Check your connection.', 'error');
@@ -981,7 +981,12 @@ export function initApp(): void {
     input.value = '';
     if (file) void importGpxFile(file);
   });
-  $('sample-btn').addEventListener('click', () => void loadSample());
+  $<HTMLSelectElement>('sample-select').addEventListener('change', (ev) => {
+    const select = ev.target as HTMLSelectElement;
+    const opt = select.selectedOptions[0];
+    if (opt?.value) void loadSample(opt.value, opt.text);
+    select.value = '';
+  });
   $('reverse-btn').addEventListener('click', () => {
     state.reversed = !state.reversed;
     applyRoute();

@@ -19,7 +19,7 @@ export class RouteMap {
   private planLayer = L.layerGroup();
 
   constructor(el: HTMLElement) {
-    this.map = L.map(el, { zoomControl: true, attributionControl: true }).setView([52.2, 5.3], 7);
+    this.map = L.map(el, { zoomControl: true, attributionControl: true }).setView([37.85, -122.2], 9); // San Francisco Bay Area
     // OSMF tile policy: this exact URL, visible attribution, no prefetching or offline caching.
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
