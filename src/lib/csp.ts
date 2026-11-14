@@ -6,8 +6,8 @@
  * - No 'unsafe-inline' or 'unsafe-eval': the build has no inline scripts or
  *   styles, and map icons set their rotation through the CSSOM, not style="".
  * - data: images are needed for Leaflet's bundled control icons.
- * - frame-ancestors can't be set from a <meta> tag, so clickjacking protection
- *   would need a host that supports headers.
+ * - frame-ancestors can't be set from a <meta> tag, so src/lib/framing.ts
+ *   checks for a frame at startup and shows a notice instead of the app.
  */
 export const CSP_DIRECTIVES: Record<string, string[]> = {
   'default-src': ["'self'"],

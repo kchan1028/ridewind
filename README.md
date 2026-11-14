@@ -62,7 +62,7 @@ gusts 43 km/h · rain up to 4.3 mm/h · 5 h 36 min, finish 01:35 PM · sunset 04
 
 Forecasts change, so your numbers will differ. To keep a route, press **Save on this device**. Data is never synced; to move it to another device, use **Data & settings → Export data** and then **Import data**.
 
-RideWind is a planning aid. Forecast wind doesn't fully account for shelter from buildings, trees or terrain, and the estimates haven't been validated against real rides. For the details, see [how RideWind estimates your ride](docs/model.md).
+RideWind is a planning aid. Forecast wind doesn't fully account for shelter from buildings, trees or terrain, and the estimates have only been checked against a handful of real rides (see the [model notes](docs/model.md#how-close-are-the-estimates)). For the details, see [how RideWind estimates your ride](docs/model.md).
 
 ## Documentation
 
@@ -112,7 +112,7 @@ public/samples/   The bundled sample routes
 
 ### Contributing
 
-There's no separate contributing guide yet. Changes reach `main` through pull requests, and the `test-build` check (tests plus a production build) must pass before merging. [Maintaining RideWind](docs/maintaining.md) explains the branch rules. To report a bug or suggest an idea, [open an issue](https://github.com/kchan1028/ridewind/issues). Report security problems privately as described in [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report a bug, propose a change and what a pull request needs. Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## Credits and licence
 

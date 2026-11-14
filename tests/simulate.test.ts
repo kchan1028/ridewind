@@ -49,6 +49,27 @@ describe('simulateRide', () => {
     expect(s.avgSpeedKmh).toBeCloseTo(20, 6);
   });
 
+  it('planned stops add to the total time but not to the moving speed', () => {
+    const base = sim(route(() => 0), { kind: 'constant', speedKmh: 20 });
+    const stopped = sim(route(() => 0), { kind: 'constant', speedKmh: 20, stopMinutes: 30 });
+    expect(stopped.stopMs).toBe(30 * 60_000);
+    expect(stopped.durationMs - base.durationMs).toBeCloseTo(30 * 60_000, 3);
+    expect(stopped.avgSpeedKmh).toBeCloseTo(20, 6);
+  });
+
+  it('spreads stops evenly, so halfway arrives with half the stop time', () => {
+    const base = sim(route(() => 0), { kind: 'constant', speedKmh: 20 });
+    const stopped = sim(route(() => 0), { kind: 'constant', speedKmh: 20, stopMinutes: 30 });
+    const half = base.steps[base.steps.length - 1]!.endM / 2;
+    expect(stopped.elapsedAt(half) - base.elapsedAt(half)).toBeCloseTo(15 * 60_000, 3);
+  });
+
+  it('ignores negative stop time and caps very long stops', () => {
+    const base = sim(route(() => 0), { kind: 'constant', speedKmh: 20 });
+    expect(sim(route(() => 0), { kind: 'constant', speedKmh: 20, stopMinutes: -10 }).durationMs).toBeCloseTo(base.durationMs, 3);
+    expect(sim(route(() => 0), { kind: 'constant', speedKmh: 20, stopMinutes: 10_000 }).stopMs).toBe(600 * 60_000);
+  });
+
   it('refuses a power prediction without elevation unless flat is explicitly chosen', () => {
     expect(() => sim(route(null), power)).toThrow(expect.objectContaining({ code: 'ELEVATION_MISSING' }));
     const flat = sim(route(null), power, undefined, true);

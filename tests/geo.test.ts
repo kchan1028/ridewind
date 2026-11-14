@@ -48,6 +48,13 @@ describe('sampleRoute', () => {
     expect(s[0]!.distanceM).toBe(0);
     expect(s[s.length - 1]!.distanceM).toBeCloseTo(cum[cum.length - 1]!, 6);
   });
+  it('keeps ~5 km spacing on a 140 km route instead of hitting the cap', () => {
+    const pts = line(127, 0.01); // ≈ 140 km
+    const cum = cumulativeDistances(pts);
+    const s = sampleRoute(pts, cum);
+    expect(s.length).toBeLessThan(MAX_WEATHER_SAMPLES);
+    expect(s[1]!.distanceM).toBeLessThanOrEqual(5000);
+  });
   it('uses at least two samples for short routes', () => {
     const pts = line(2, 0.001);
     expect(sampleRoute(pts, cumulativeDistances(pts))).toHaveLength(2);

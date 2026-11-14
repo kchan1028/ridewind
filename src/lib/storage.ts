@@ -1,6 +1,7 @@
 import { AppError } from './errors';
 import type { Route, TrackPoint } from './geo';
 import { DEFAULT_RIDER, validRiderParams, type Exposure, type RiderParams } from './physics';
+import { MAX_STOP_MINUTES } from './simulate';
 import type { UnitSystem } from './units';
 
 export type PaceMode = 'constant' | 'power';
@@ -11,6 +12,8 @@ export interface Settings {
   paceMode: PaceMode;
   rider: RiderParams;
   exposure: Exposure;
+  /** Planned stop time in minutes, spread along the ride. */
+  stopMinutes: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -19,6 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
   paceMode: 'constant',
   rider: { ...DEFAULT_RIDER },
   exposure: 'mixed',
+  stopMinutes: 0,
 };
 const SETTINGS_KEY = 'ridewind:settings:v1';
 
@@ -28,7 +32,9 @@ function validSettings(v: unknown): Settings {
   const units: UnitSystem = o.units === 'imperial' ? 'imperial' : 'metric';
   const paceMode: PaceMode = o.paceMode === 'power' ? 'power' : 'constant';
   const exposure: Exposure = o.exposure === 'open' || o.exposure === 'sheltered' ? o.exposure : 'mixed';
-  return { speedKmh: speed, units, paceMode, rider: validRiderParams(o.rider), exposure };
+  const stopMinutes =
+    typeof o.stopMinutes === 'number' && o.stopMinutes >= 0 && o.stopMinutes <= MAX_STOP_MINUTES ? o.stopMinutes : DEFAULT_SETTINGS.stopMinutes;
+  return { speedKmh: speed, units, paceMode, rider: validRiderParams(o.rider), exposure, stopMinutes };
 }
 
 export function loadSettings(storage: Storage | undefined = globalThis.localStorage): Settings {

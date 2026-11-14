@@ -5,7 +5,7 @@ import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute
 import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
 import { RIDER_LIMITS, type Exposure, type RiderParams } from '../lib/physics';
 import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
-import { simulateRide, type PaceModel, type Simulation } from '../lib/simulate';
+import { MAX_STOP_MINUTES, simulateRide, type PaceModel, type Simulation } from '../lib/simulate';
 import { rideDaylight } from '../lib/daylight';
 import { departurePresets } from '../lib/presets';
 import { windVerdict } from '../lib/verdict';
@@ -320,12 +320,15 @@ async function loadForecast(): Promise<void> {
 function rideDurationMs(): number {
   if (state.sim) return state.sim.durationMs;
   const totalKm = (state.cum[state.cum.length - 1] ?? 0) / 1000;
-  return (totalKm / state.settings.speedKmh) * HOUR;
+  return (totalKm / state.settings.speedKmh) * HOUR + state.settings.stopMinutes * 60_000;
 }
 
 function currentPace(): PaceModel {
   const s = state.settings;
-  return s.paceMode === 'power' ? { kind: 'power', rider: s.rider, exposure: s.exposure } : { kind: 'constant', speedKmh: s.speedKmh };
+  const stops = { stopMinutes: s.stopMinutes };
+  return s.paceMode === 'power'
+    ? { kind: 'power', rider: s.rider, exposure: s.exposure, ...stops }
+    : { kind: 'constant', speedKmh: s.speedKmh, ...stops };
 }
 
 /** Shows the elevation choice when a power estimate can't run on this route's elevation. */
@@ -614,9 +617,10 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
   const power = state.settings.paceMode === 'power';
   $('kpi-time').textContent = formatDuration(plan.durationMs);
   $('kpi-time-tag').textContent = power ? (sim.assumedFlat ? 'physics estimate, flat' : 'physics estimate') : 'estimate';
+  const stopNote = sim.stopMs > 0 ? `, including ${formatDuration(sim.stopMs)} of stops` : '';
   $('kpi-finish').textContent = power
-    ? `Finish about ${formatClock(plan.finishMs, tz)} · average ${formatSpeed(sim.avgSpeedKmh, u)} at ${state.settings.rider.powerW} W`
-    : `Finish about ${formatClock(plan.finishMs, tz)} at ${formatSpeed(state.settings.speedKmh, u)}`;
+    ? `Finish about ${formatClock(plan.finishMs, tz)} · average ${formatSpeed(sim.avgSpeedKmh, u)} at ${state.settings.rider.powerW} W${stopNote}`
+    : `Finish about ${formatClock(plan.finishMs, tz)} at ${formatSpeed(state.settings.speedKmh, u)}${stopNote}`;
   $('kpi-wind').textContent =
     s.windSpeedMin === null ? dash : `${formatSpeed(s.windSpeedMin, u).split(' ')[0]}–${formatSpeed(s.windSpeedMax!, u)}`;
   $('kpi-gust').textContent = s.gustMax === null ? '' : `Gusts up to ${formatSpeed(s.gustMax, u)}`;
@@ -659,7 +663,7 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
   $('data-stamp').textContent =
     `Forecast retrieved ${formatDateTime(fc.fetchedAt, deviceTimeZone())} (your device time) from Open-Meteo, ` +
     `covering ${formatDateTime(fc.windowStartMs, tz)} to ${formatDateTime(fc.windowEndMs, tz)}. ` +
-    `Arrival times are in ${tz.replace(/_/g, ' ')}. Reload the route to refresh the forecast.`;
+    `Arrival times are in ${tz.replace(/_/g, ' ')}. Use Refresh forecast to get the latest one.`;
 }
 
 function noData(): Node {
@@ -819,6 +823,7 @@ function applySettingsToInputs(): void {
     input.value = String(conv.toDisplay(s.rider[key]));
   }
   ($('p-exposure') as HTMLSelectElement).value = s.exposure;
+  $<HTMLInputElement>('stops').value = String(s.stopMinutes);
 }
 
 /** Display conversion for a rider field: masses in kg/lb, speeds in km/h/mph, others unchanged. */
@@ -864,6 +869,19 @@ function bindPaceForm(): void {
     state.settings.exposure = (v === 'open' || v === 'sheltered' ? v : 'mixed') as Exposure;
     persistSettings();
     recompute();
+  });
+  $('stops').addEventListener('change', (ev) => {
+    const input = ev.target as HTMLInputElement;
+    const v = input.value.trim() === '' ? 0 : Number.parseFloat(input.value);
+    if (!Number.isFinite(v) || v < 0 || v > MAX_STOP_MINUTES) {
+      setStatus(`Enter planned stops between 0 and ${MAX_STOP_MINUTES} minutes.`, 'error');
+      applySettingsToInputs();
+      return;
+    }
+    state.settings.stopMinutes = Math.round(v);
+    persistSettings();
+    recompute();
+    updateDepartureInput();
   });
   for (const b of document.querySelectorAll('.lookup-ele')) b.addEventListener('click', () => void lookupElevation());
   $('assume-flat-btn').addEventListener('click', () => {
@@ -996,6 +1014,8 @@ export function initApp(): void {
   $('save-btn').addEventListener('click', () => void saveCurrentRoute());
   $('retry-btn').addEventListener('click', () => void loadForecast());
   $('verdict-retry').addEventListener('click', () => void loadForecast());
+  // Same single request as a normal load; the departure time and settings are kept.
+  $('refresh-forecast').addEventListener('click', () => void loadForecast());
   $('dep-earlier').addEventListener('click', () => shiftDeparture(-HOUR));
   $('dep-later').addEventListener('click', () => shiftDeparture(HOUR));
 

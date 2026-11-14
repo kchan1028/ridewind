@@ -16,7 +16,7 @@ RideWind aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. It has
 - The verdict ("Mostly tailwind…") is announced in a polite live region when results arrive. So are the status line and the data-settings messages.
 - Forecast errors use `role="alert"`.
 - Toggle buttons such as **Reverse direction** and the departure presets report their state with `aria-pressed`.
-- Each chart is an image with a text summary, for example the elevation range and the headwind range.
+- Each chart is an image with a text summary, for example the elevation range and the headwind range. Below each chart, **show the data** opens a table of the values at about 20 points along the route.
 - The map has a text description that points to the table.
 - The page language is set to English.
 
@@ -33,17 +33,15 @@ RideWind aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. It has
 - With **Reduce motion** turned on in your system settings, button press movement and scaling are switched off, and only brief fades remain.
 
 **Touch and small screens**
-- Main buttons and form fields are at least 44 px tall, as are the map zoom buttons on touch screens and the saved-routes toggle.
-- At 375 px wide there's no horizontal scrolling; wide tables scroll inside their own frame.
+- All buttons and form fields are at least 44 px tall, including the departure presets, −1 h / +1 h, **Open**, **Delete** and **Use**, as are the map zoom buttons on touch screens.
+- Down to 320 px wide there's no horizontal scrolling; wide tables scroll inside their own frame.
 - On phones, the verdict and the departure buttons sit in a bar at the bottom of the screen, within thumb reach.
 
 ## Known limitations
 
 - **The map is visual.** Panning and zooming the map works with the keyboard (it's a Leaflet map), but the route and wind colours can only be seen. The verdict, wind bar key and point-by-point table carry the same information in text.
-- **Charts don't have their own data tables.** Only the summary in each chart's text description is available to screen readers.
-- **Some secondary buttons are below 44 px.** Departure presets and the −1 h / +1 h buttons are 40 px; **Open** and **Delete** in the saved routes list are 36 px; the **Use** buttons in the comparison table are 32 px.
 - **Date and time entry** uses your browser's built-in picker, so how accessible it is depends on your browser.
-- **Testing so far has been limited.** Checks were automated (contrast, target sizes, overflow, focus styles) plus manual keyboard use in Chromium on desktop and at phone size. It hasn't yet been tested with a screen reader (VoiceOver, NVDA, TalkBack), with 200% zoom, or in Windows high contrast mode.
+- **Not yet tested with a real screen reader or high contrast mode.** Checks so far are automated (contrast, target sizes, overflow, focus styles, labels on every control), manual keyboard use in Chromium, and reflow at 640 px and 320 px wide, which is what 200% and 400% zoom give on a 1280 px screen. It still needs testing with VoiceOver, NVDA or TalkBack, and in Windows high contrast mode ([#12](https://github.com/kchan1028/ridewind/issues/12)).
 
 ## Report a problem
 
