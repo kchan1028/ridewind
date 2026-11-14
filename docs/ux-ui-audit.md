@@ -85,6 +85,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P1-2 · Rain summary states an amount without its likelihood
 
+> **Status: fixed** in [#27](https://github.com/kchan1028/ridewind/pull/27). The verdict, the Rain figure and the comparison lead with the chance: below 20% it reads "low chance of rain (11%)" with "up to 4.0 mm/h if it rains" underneath; from 20% it reads "60% chance of rain, up to 2.5 mm/h".
+
 - **Where:** the verdict facts in [`src/ui/app.ts:135-138`](../src/ui/app.ts) and the Rain KPI.
 - **Observed:**
   - On **PRS (clockwise)**, the verdict reads "rain up to 4.0 mm/h". The Rain KPI reads "Up to 4.0 mm/h · Highest chance 11%".
@@ -97,7 +99,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P1-3 · Field validation is far away, silent and destructive
 
-> **Status: fixed** in the inline field errors PR. Errors now appear under the field, are linked and announced, and the typed value is kept.
+> **Status: fixed** in [#28](https://github.com/kchan1028/ridewind/pull/28), with the styling restored in [#39](https://github.com/kchan1028/ridewind/pull/39). Errors now appear under the field, are linked and announced, and the typed value is kept.
 
 - **Where:** speed in [`src/ui/app.ts:1015-1029`](../src/ui/app.ts); rider fields in [`src/ui/app.ts:844-861`](../src/ui/app.ts).
 - **Observed:**
@@ -114,7 +116,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-1 · The verdict bar costs space but is hard to glance at outdoors
 
-> **Status: fixed** in the glanceable verdict PR. The bar is collapsed by default to the headline, wind bar and one 16 px line (finish, daylight, rain from 20%), with **Details** for the rest and 48 px −1 h / +1 h. Measured collapsed height: 172 px on a 375×812 phone (was 178 px with smaller text) and 202 px on desktop (was 270 px). The page reserves the bar's real height. It doesn't collapse automatically on scroll; riders' views on that are an open question.
+> **Status: fixed** in [#36](https://github.com/kchan1028/ridewind/pull/36). The bar is collapsed by default to the headline, wind bar and one 16 px line (finish, daylight, rain from 20%), with **Details** for the rest and 48 px −1 h / +1 h. Measured collapsed height: 172 px on a 375×812 phone (was 178 px with smaller text) and 202 px on desktop (was 270 px). The page reserves the bar's real height. It doesn't collapse automatically on scroll; riders' views on that are an open question.
 
 - **Where:** `.verdict` in [`src/styles.css:951`](../src/styles.css) (sticky on desktop) and [`src/styles.css:1065`](../src/styles.css) (fixed on the phone).
 - **Observed:**
@@ -129,7 +131,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-2 · On a phone, the reversed direction is hidden behind a sideways scroll
 
-> **Status: fixed.** Below 600 px each departure in the comparison is a card with both directions stacked and labelled, with no sideways scrolling, and explicit table roles keep screen-reader semantics (comparison cards PR). The point-by-point table now shows Distance, Arrive, Head/tail and Rain on phones and fits a 375 px screen, with **Show all columns** for Wind, Gust, Cross and Temp.
+> **Status: fixed.** Below 600 px each departure in the comparison is a card with both directions stacked and labelled, with no sideways scrolling, and explicit table roles keep screen-reader semantics ([#40](https://github.com/kchan1028/ridewind/pull/40)). The point-by-point table now shows Distance, Arrive, Head/tail and Rain on phones and fits a 375 px screen, with **Show all columns** for Wind, Gust, Cross and Temp.
 
 - **Where:** the comparison table inside `.table-wrap`.
 - **Observed:**
@@ -145,7 +147,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-3 · Forecast age is hidden, and nothing survives a reload with poor signal
 
-> **Status: fixed.** Auto-refresh and the offline fallback landed in the offline forecast PR: coming back to a tab with a forecast over an hour old fetches a new one, and a saved route keeps its last forecast and uses it, clearly labelled, when a new one can't be loaded. An offline app shell is added in the service worker PR: RideWind's own page and files are cached so the app opens without a connection; map tiles are never cached. Earlier, in the glanceable verdict PR: **Details** shows when the forecast was updated, with **Refresh forecast**, and the summary line adds "forecast N h old" after an hour, rechecked when you return to the tab. The offline cache and auto-refresh are still open.
+> **Status: fixed.** Auto-refresh and the offline fallback landed in [#50](https://github.com/kchan1028/ridewind/pull/50): coming back to a tab with a forecast over an hour old fetches a new one, and a saved route keeps its last forecast and uses it, clearly labelled, when a new one can't be loaded. An offline app shell is added in [#63](https://github.com/kchan1028/ridewind/pull/63): RideWind's own page and files are cached so the app opens without a connection; map tiles are never cached. Earlier, in [#36](https://github.com/kchan1028/ridewind/pull/36): **Details** shows when the forecast was updated, with **Refresh forecast**, and the summary line adds "forecast N h old" after an hour.
 
 - **Where:** `#data-stamp` at the bottom of the results; the forecast is held only in memory (see `docs/data-and-privacy.md`). Offline behaviour was checked in source: there is no service worker or manifest.
 - **Observed:**
@@ -162,7 +164,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-4 · Saved routes don't remember how you ride them
 
-> **Status: fixed** in the saved route preferences PR. Saving keeps the direction and the departure's time of day; opening restores them (the next time that time comes round), and the saved list shows "reversed · usually 08:00". Pace stays a global setting.
+> **Status: fixed** in [#43](https://github.com/kchan1028/ridewind/pull/43). Saving keeps the direction and the departure's time of day; opening restores them (the next time that time comes round), and the saved list shows "reversed · usually 08:00". Pace stays a global setting.
 
 - **Where:** `packRoute(state.original)` in [`src/ui/app.ts:772`](../src/ui/app.ts) saves geometry only.
 - **Source:** reopening a saved route resets it to the file's direction and the next hour. The pace model is global, not per route.
@@ -171,7 +173,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-5 · First run on a phone opens on an empty map
 
-> **Status: fixed** in the first-run PR. Until a route loads, the Route section opens with one sentence on what the app does, and below 900 px the panel comes first and the empty map shrinks to a 160 px strip below it. At 375×812, Import GPX starts at 227 px (was about 640 px). The full map returns at the top once a route loads.
+> **Status: fixed** in [#54](https://github.com/kchan1028/ridewind/pull/54). Until a route loads, the Route section opens with one sentence on what the app does, and below 900 px the panel comes first and the empty map shrinks to a 160 px strip below it. At 375×812, Import GPX starts at 227 px (was about 640 px). The full map returns at the top once a route loads.
 
 - **Observed:**
   - At 375 px, the first screen is a 52 vh map of the Bay Area with nothing on it.
@@ -185,7 +187,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-6 · Units are hidden in "Data & settings", and metric is always the default
 
-> **Status: fixed** in the units PR. Until the rider chooses, units follow the browser's locale (US, Liberia and Myanmar regions start in miles, mph and °F; everyone else in metric). Under Departure and pace a line says which units are showing, with a one-tap **Switch to miles / km**. The dialog keeps its name.
+> **Status: fixed** in [#53](https://github.com/kchan1028/ridewind/pull/53). Until the rider chooses, units follow the browser's locale (US, Liberia and Myanmar regions start in miles, mph and °F; everyone else in metric). Under Departure and pace a line says which units are showing, with a one-tap **Switch to miles / km**. The dialog keeps its name.
 
 - **Where:** `DEFAULT_SETTINGS.units = 'metric'` in `src/lib/storage.ts`; the control is in the dialog.
 - **Impact:** US and UK riders (mph) start in km/h and may not think to look under "Data". Speed validation then quotes km/h limits.
@@ -246,7 +248,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P3-1 · One error, three messages
 
-> **Status: fixed** in the P3 polish PR. A forecast error now shows in the verdict and the alert above the results, with the status line left clear, and it's announced once through the verdict's live region. "Forecast ready for …" no longer repeats the verdict.
+> **Status: fixed** in [#59](https://github.com/kchan1028/ridewind/pull/59). A forecast error now shows in the verdict and the alert above the results, with the status line left clear, and it's announced once through the verdict's live region. "Forecast ready for …" no longer repeats the verdict.
 
 - **Observed:** with the forecast blocked, the same sentence appears in the status line, the verdict bar and the Conditions alert. A screen reader hears it at least twice (`role=status` and `role=alert`).
 - **Fix:** keep the verdict for display and announce through a single region. Clear the status line when the verdict carries the same message. Do the same with "Forecast ready for …", which duplicates the verdict and pushes Route down on the phone.
@@ -254,7 +256,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P3-2 · Start and Finish labels collide on loop routes
 
-> **Status: fixed** in the P3 polish PR. When the start and finish are within 200 m, the map shows one "Start / Finish" label above the point.
+> **Status: fixed** in [#59](https://github.com/kchan1028/ridewind/pull/59). When the start and finish are within 200 m, the map shows one "Start / Finish" label above the point.
 
 - **Where:** [`src/ui/map.ts:82-85`](../src/ui/map.ts).
 - **Observed:** on loop routes, the labels sit side by side over one point. On the phone, "Finish" is clipped at the map edge on PRS.
@@ -262,7 +264,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P3-3 · KPI and chart disagree slightly
 
-> **Status: fixed** in the P3 polish PR. The temperature figure now uses the same per-step series as the chart.
+> **Status: fixed** in [#59](https://github.com/kchan1028/ridewind/pull/59). The temperature figure now uses the same per-step series as the chart.
 
 - **Observed:** the temperature KPI says 12–16°C while the chart summary says 12–17°C, on the same route. One uses the sampled points and the other the simulation steps.
 - **Fix:** derive both from the same series.
@@ -306,14 +308,14 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | # | Change | Fixes | Impact | Effort | Notes |
 |---|---|---|---|---|---|
 | 1 | ~~Daylight-aware, threshold-based comparison~~ **Done in #23** | P1-1 | High | S–M | Row cap at sunset done too |
-| 2 | Rain wording led by probability, in the verdict, KPI and comparison | P1-2 | High | S | Copy plus `verdict` facts; test the thresholds |
-| 3 | Inline field validation helper (`aria-invalid`, `aria-describedby`, keep the typed value) | P1-3 | High | S | One helper for speed and the six rider fields |
-| 4 | Collapsible, glanceable verdict bar (collapsed on scroll, larger text, 48 px stepper, "Updated X min ago" and Refresh) | P2-1, P2-3 (part), P2-8 (part) | High | M | The biggest change for use outdoors; check with VoiceOver |
-| 5 | ~~Phone layout for the comparison (cards or a direction toggle) and reduced columns for the point-by-point table~~ **Done** | P2-2 | Med–High | M | Keep the table on desktop |
-| 6 | Auto-refresh when the forecast is stale, plus a cached last forecast for saved routes (offline fallback) | P2-3 | Medium | M | Respect the OSM tile policy (no tile caching) |
-| 7 | Saved routes remember the direction and usual departure time | P2-4 | Medium | S–M | Schema version bump in `storage.ts` |
-| 8 | Units from the locale, plus an inline speed-unit switch | P2-6 | Medium | S | |
-| 9 | ~~Compact first-run screen on the phone (short map, value sentence, two actions)~~ **Done** | P2-5 | Medium | S | |
+| 2 | ~~Rain wording led by probability, in the verdict, KPI and comparison~~ **Done in #27** | P1-2 | High | S | Check the 20% threshold with riders |
+| 3 | ~~Inline field validation helper (`aria-invalid`, `aria-describedby`, keep the typed value)~~ **Done in #28** | P1-3 | High | S | |
+| 4 | ~~Collapsible, glanceable verdict bar (larger text, 48 px stepper, forecast time and Refresh)~~ **Done in #36** | P2-1, P2-3 (part), P2-8 (part) | High | M | Collapses on a Details tap, not on scroll; check with VoiceOver |
+| 5 | ~~Phone layout for the comparison (cards or a direction toggle) and reduced columns for the point-by-point table~~ **Done in #40 and #52** | P2-2 | Med–High | M | Keep the table on desktop |
+| 6 | ~~Auto-refresh when the forecast is stale, plus a cached last forecast for saved routes (offline fallback)~~ **Done in #50**, app shell in #63 | P2-3 | Medium | M | No tile caching, per the OSM policy |
+| 7 | ~~Saved routes remember the direction and usual departure time~~ **Done in #43** | P2-4 | Medium | S–M | Optional `prefs` field; no schema bump needed |
+| 8 | ~~Units from the locale, plus an inline speed-unit switch~~ **Done in #53** | P2-6 | Medium | S | |
+| 9 | ~~Compact first-run screen on the phone (short map, value sentence, two actions)~~ **Done in #54** | P2-5 | Medium | S | |
 | 10 | ~~Chart smoothing, axis units and tick thinning~~ **Done in #56** | P2-7 | Medium | S–M | |
 | 11 | ~~Touch targets of at least 44 px and spacing between Open and Delete~~ **Done in #25** | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
 | 12 | ~~De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range~~ **Done in #59** | P3-1 to P3-3 | Low | S | |
