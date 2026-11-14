@@ -50,11 +50,16 @@
 
         <section id="verdict" class="verdict" aria-labelledby="verdict-head" hidden>
           <p class="verdict-route" id="verdict-route"></p>
-          <h2 class="verdict-head" id="verdict-head"></h2>
-          <p class="verdict-facts" id="verdict-facts"></p>
-          <div class="verdict-detail" id="verdict-detail">
-            <div class="wind-bar" id="wind-bar" role="img"></div>
+          <div class="verdict-top">
+            <h2 class="verdict-head" id="verdict-head"></h2>
+            <button type="button" class="btn btn-small verdict-toggle" id="verdict-toggle" aria-expanded="false" aria-controls="verdict-more" hidden>Details</button>
+          </div>
+          <div class="wind-bar" id="wind-bar" role="img" hidden></div>
+          <p class="verdict-key" id="verdict-key"></p>
+          <div class="verdict-more" id="verdict-more" hidden>
+            <p class="verdict-facts" id="verdict-facts"></p>
             <ul class="wind-bar-key" id="wind-bar-key"></ul>
+            <p class="verdict-age"><span id="verdict-age"></span> <button type="button" class="btn btn-small" id="verdict-refresh">Refresh forecast</button></p>
           </div>
           <div class="verdict-actions">
             <div class="depart-stepper" id="depart-stepper" role="group" aria-label="Change departure time">

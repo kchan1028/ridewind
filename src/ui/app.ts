@@ -8,12 +8,13 @@ import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
 import { MAX_STOP_MINUTES, simulateRide, type PaceModel, type Simulation } from '../lib/simulate';
 import { rideDaylight } from '../lib/daylight';
 import { departurePresets } from '../lib/presets';
-import { rainSummary, windVerdict } from '../lib/verdict';
+import { LOW_RAIN_CHANCE, rainSummary, windVerdict } from '../lib/verdict';
 import * as store from '../lib/storage';
 import {
   deviceTimeZone,
   formatClock,
   formatDateTime,
+  formatDayClock,
   formatDuration,
   formatOffset,
   isValidTimeZone,
@@ -109,21 +110,39 @@ function setStatus(message: string, kind: 'info' | 'error' | 'ok' | 'loading' = 
 
 type VerdictMode = 'loading' | 'error' | 'notice' | 'ready';
 
-function setVerdictMode(mode: VerdictMode, head: string, facts: string): void {
+/** Whether the rider has opened the verdict's details. Collapsed by default so the bar stays small. */
+let verdictExpanded = false;
+/** A forecast older than this is flagged in the verdict's summary line. */
+const STALE_FORECAST_MS = HOUR;
+
+/** `message` fills the summary line; a ready verdict sets its own summary and details afterwards. */
+function setVerdictMode(mode: VerdictMode, head: string, message: string): void {
   const v = $('verdict');
   v.hidden = false;
   v.dataset.mode = mode;
   if (mode !== 'ready') delete v.dataset.tone;
   document.body.classList.add('has-verdict');
   $('verdict-head').textContent = head;
-  $('verdict-facts').textContent = facts;
-  show('verdict-detail', mode === 'ready');
+  $('verdict-key').textContent = message;
+  show('wind-bar', mode === 'ready');
+  show('verdict-toggle', mode === 'ready');
+  applyVerdictExpanded(mode === 'ready' && verdictExpanded);
   show('depart-stepper', mode === 'ready');
   show('verdict-retry', mode === 'error');
   const r = state.route;
   $('verdict-route').textContent = r
     ? `${r.name} · ${formatDistance(state.cum[state.cum.length - 1] ?? 0, units())}${state.reversed ? ' · reversed' : ''}`
     : '';
+}
+
+/** Shows the details (all facts, wind key, forecast time) instead of the one-line summary. */
+function applyVerdictExpanded(expanded: boolean): void {
+  const toggle = $('verdict-toggle');
+  toggle.setAttribute('aria-expanded', String(expanded));
+  toggle.textContent = expanded ? 'Less' : 'Details';
+  $('verdict').dataset.expanded = String(expanded);
+  show('verdict-more', expanded);
+  show('verdict-key', !expanded);
 }
 
 function announce(text: string): void {
@@ -142,14 +161,29 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   if (s.gustMax !== null) facts.push(`gusts ${formatSpeed(s.gustMax, u)}`);
   const rain = rainSummary(s.precipMax, s.precipProbabilityMax, (mm) => `${formatPrecip(mm, u)}/h`);
   if (rain) facts.push(rain.fact);
-  facts.push(`${formatDuration(plan.durationMs)}, finish ${formatClock(plan.finishMs, tz)}${sim.assumedFlat ? ' (flat estimate)' : ''}`);
+  const finish = `finish ${formatClock(plan.finishMs, tz)}${sim.assumedFlat ? ' (flat estimate)' : ''}`;
+  facts.push(`${formatDuration(plan.durationMs)}, ${finish}`);
   const light = rideDaylight(state.departureMs!, plan.finishMs, forecastsForSamples()[0]?.sun);
-  if (light.kind === 'starts-before-sunrise') facts.push(`starts in the dark (sunrise ${formatClock(light.sunriseMs!, tz)})`);
-  else if (light.kind === 'ends-after-sunset') facts.push(`finishes after sunset (${formatClock(light.sunsetMs!, tz)})`);
-  else if (light.kind === 'daylight') facts.push(`sunset ${formatClock(light.sunsetMs!, tz)}`);
-  setVerdictMode('ready', headline, facts.join(' · '));
+  let daylight = '';
+  if (light.kind === 'starts-before-sunrise') daylight = `starts in the dark (sunrise ${formatClock(light.sunriseMs!, tz)})`;
+  else if (light.kind === 'ends-after-sunset') daylight = `finishes after sunset (${formatClock(light.sunsetMs!, tz)})`;
+  else if (light.kind === 'daylight') daylight = `sunset ${formatClock(light.sunsetMs!, tz)}`;
+  if (daylight) facts.push(daylight);
+
+  // The collapsed summary: when you'll finish, daylight, and rain only when it's worth a glance.
+  const key = [finish];
+  if (daylight) key.push(daylight);
+  const chance = s.precipProbabilityMax;
+  if (rain && rain.fact !== 'dry' && (chance === null || chance >= LOW_RAIN_CHANCE)) key.push(rain.fact);
+  const fc = state.forecast!;
+  const ageMs = Date.now() - fc.fetchedAt;
+  if (ageMs >= STALE_FORECAST_MS) key.push(`forecast ${Math.floor(ageMs / HOUR)} h old`);
+
+  setVerdictMode('ready', headline, key.join(' · '));
+  $('verdict-facts').textContent = facts.join(' · ');
+  $('verdict-age').textContent = `Forecast updated ${formatDateTime(fc.fetchedAt, deviceTimeZone())} (your device time).`;
   $('verdict').dataset.tone = tone;
-  $('depart-label').textContent = `Leave ${formatDateTime(state.departureMs!, tz)}`;
+  $('depart-label').textContent = `Leave ${formatDayClock(state.departureMs!, tz)}`;
   const b = departureBounds();
   ($('dep-earlier') as HTMLButtonElement).disabled = !b || state.departureMs! - HOUR < b.min;
   ($('dep-later') as HTMLButtonElement).disabled = !b || state.departureMs! + HOUR > b.max;
@@ -1068,6 +1102,20 @@ export function initApp(): void {
   $('save-btn').addEventListener('click', () => void saveCurrentRoute());
   $('retry-btn').addEventListener('click', () => void loadForecast());
   $('verdict-retry').addEventListener('click', () => void loadForecast());
+  $('verdict-refresh').addEventListener('click', () => void loadForecast());
+  $('verdict-toggle').addEventListener('click', () => {
+    verdictExpanded = !verdictExpanded;
+    applyVerdictExpanded(verdictExpanded);
+  });
+  // Coming back to a tab left open: refresh the summary so an old forecast is flagged.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state.plan && state.sim) renderVerdict(state.plan, state.sim);
+  });
+  // On phones the verdict is a fixed bottom bar; reserve exactly its height so nothing hides behind it.
+  new ResizeObserver(([entry]) => {
+    const h = Math.ceil(entry?.borderBoxSize?.[0]?.blockSize ?? $('verdict').offsetHeight);
+    document.body.style.setProperty('--verdict-h', `${h}px`);
+  }).observe($('verdict'));
   // Same single request as a normal load; the departure time and settings are kept.
   $('refresh-forecast').addEventListener('click', () => void loadForecast());
   $('dep-earlier').addEventListener('click', () => shiftDeparture(-HOUR));

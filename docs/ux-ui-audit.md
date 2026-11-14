@@ -114,6 +114,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-1 · The verdict bar costs space but is hard to glance at outdoors
 
+> **Status: fixed** in the glanceable verdict PR. The bar is collapsed by default to the headline, wind bar and one 16 px line (finish, daylight, rain from 20%), with **Details** for the rest and 48 px −1 h / +1 h. Measured collapsed height: 172 px on a 375×812 phone (was 178 px with smaller text) and 202 px on desktop (was 270 px). The page reserves the bar's real height. It doesn't collapse automatically on scroll; riders' views on that are an open question.
+
 - **Where:** `.verdict` in [`src/styles.css:951`](../src/styles.css) (sticky on desktop) and [`src/styles.css:1065`](../src/styles.css) (fixed on the phone).
 - **Observed:**
   - **Phone:** the bar is **178 px** of an 812 px screen, about 22%. On a 667 px phone it would be about 27%. The facts line is 13 px text in a dense middle-dot list, and the wind-bar key is hidden, so headwind red and tailwind blue have no labels in the bar.
@@ -142,6 +144,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 - **Evidence:** [mobile-compare.jpg](ux-ui-audit/mobile-compare.jpg)
 
 ### P2-3 · Forecast age is hidden, and nothing survives a reload with poor signal
+
+> **Status: partly fixed** in the glanceable verdict PR. **Details** shows when the forecast was updated, with **Refresh forecast**, and the summary line adds "forecast N h old" after an hour, rechecked when you return to the tab. The offline cache and auto-refresh are still open.
 
 - **Where:** `#data-stamp` at the bottom of the results; the forecast is held only in memory (see `docs/data-and-privacy.md`). Offline behaviour was checked in source: there is no service worker or manifest.
 - **Observed:**
