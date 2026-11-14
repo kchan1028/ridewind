@@ -1,28 +1,42 @@
 import { AppError } from './errors';
 import type { Route, TrackPoint } from './geo';
+import { DEFAULT_RIDER, validRiderParams, type Exposure, type RiderParams } from './physics';
 import type { UnitSystem } from './units';
+
+export type PaceMode = 'constant' | 'power';
 
 export interface Settings {
   speedKmh: number;
   units: UnitSystem;
+  paceMode: PaceMode;
+  rider: RiderParams;
+  exposure: Exposure;
 }
 
-export const DEFAULT_SETTINGS: Settings = { speedKmh: 25, units: 'metric' };
+export const DEFAULT_SETTINGS: Settings = {
+  speedKmh: 25,
+  units: 'metric',
+  paceMode: 'constant',
+  rider: { ...DEFAULT_RIDER },
+  exposure: 'mixed',
+};
 const SETTINGS_KEY = 'ridewind:settings:v1';
 
 function validSettings(v: unknown): Settings {
   const o = (v ?? {}) as Partial<Settings>;
   const speed = typeof o.speedKmh === 'number' && o.speedKmh >= 5 && o.speedKmh <= 80 ? o.speedKmh : DEFAULT_SETTINGS.speedKmh;
   const units: UnitSystem = o.units === 'imperial' ? 'imperial' : 'metric';
-  return { speedKmh: speed, units };
+  const paceMode: PaceMode = o.paceMode === 'power' ? 'power' : 'constant';
+  const exposure: Exposure = o.exposure === 'open' || o.exposure === 'sheltered' ? o.exposure : 'mixed';
+  return { speedKmh: speed, units, paceMode, rider: validRiderParams(o.rider), exposure };
 }
 
 export function loadSettings(storage: Storage | undefined = globalThis.localStorage): Settings {
   try {
     const raw = storage?.getItem(SETTINGS_KEY);
-    return raw ? validSettings(JSON.parse(raw)) : { ...DEFAULT_SETTINGS };
+    return validSettings(raw ? JSON.parse(raw) : null);
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    return validSettings(null);
   }
 }
 
@@ -54,6 +68,7 @@ export interface SavedRoute {
   name: string;
   savedAt: number;
   source: Route['source'];
+  elevationSource?: Route['elevationSource'];
   points: PackedPoint[];
 }
 
@@ -96,13 +111,21 @@ async function withStore<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) =>
 }
 
 export function packRoute(route: Route, id: string = crypto.randomUUID(), savedAt = Date.now()): SavedRoute {
-  return { id, name: route.name, savedAt, source: route.source, points: route.points.map((p) => [p.lat, p.lon, p.ele]) };
+  return {
+    id,
+    name: route.name,
+    savedAt,
+    source: route.source,
+    ...(route.elevationSource ? { elevationSource: route.elevationSource } : {}),
+    points: route.points.map((p) => [p.lat, p.lon, p.ele]),
+  };
 }
 
 export function unpackRoute(saved: SavedRoute): Route {
   return {
     name: saved.name,
     source: saved.source,
+    ...(saved.elevationSource ? { elevationSource: saved.elevationSource } : {}),
     points: saved.points.map(([lat, lon, ele]): TrackPoint => ({ lat, lon, ele })),
   };
 }
@@ -172,6 +195,7 @@ export function parseImport(text: string): ExportFile {
       name: r.name.slice(0, 100),
       savedAt: typeof r.savedAt === 'number' ? r.savedAt : Date.now(),
       source: r.source === 'route' ? 'route' : 'track',
+      ...(r.elevationSource === 'dem' ? { elevationSource: 'dem' as const } : {}),
       points: r.points,
     };
   });

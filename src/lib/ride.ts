@@ -52,7 +52,10 @@ export interface PlanInput {
   /** Forecast for each sample (same order), or null where unavailable. */
   forecasts: Array<LocationForecast | null>;
   departureMs: number;
-  speedKmh: number;
+  /** Constant average speed. Ignored when `elapsedAt` is given. */
+  speedKmh?: number;
+  /** Elapsed ms from departure at a distance, e.g. from simulateRide(). */
+  elapsedAt?: (distanceM: number) => number;
 }
 
 /** Arrival time at a distance along the route under a constant average speed. */
@@ -73,15 +76,19 @@ const minMax = (vals: Array<number | null>) => {
   return v.length ? { min: Math.min(...v), max: Math.max(...v) } : { min: null, max: null };
 };
 
-/** Combines route geometry, forecasts and a constant speed into per-point and per-section estimates. */
+/** Combines route geometry, forecasts and a pace (constant speed or simulated timing) into per-point and per-section estimates. */
 export function planRide(input: PlanInput): RidePlan {
   const { points, cum, samples, forecasts, departureMs, speedKmh } = input;
-  if (!(speedKmh > 0)) throw new RangeError('speedKmh must be positive');
+  let elapsed = input.elapsedAt;
+  if (!elapsed) {
+    if (!(speedKmh !== undefined && speedKmh > 0)) throw new RangeError('speedKmh must be positive');
+    elapsed = (d: number) => etaAt(0, d, speedKmh);
+  }
   const totalM = cum[cum.length - 1] ?? 0;
-  const durationMs = etaAt(0, totalM, speedKmh);
+  const durationMs = elapsed(totalM);
 
   const sampleResults: SampleResult[] = samples.map((sample, i) => {
-    const etaMs = etaAt(departureMs, sample.distanceM, speedKmh);
+    const etaMs = departureMs + elapsed(sample.distanceM);
     const bearing = bearingAtDistance(points, cum, sample.distanceM);
     const f = forecasts[i];
     const weather = f ? weatherAt(f.series, etaMs) : null;
@@ -104,7 +111,7 @@ export function planRide(input: PlanInput): RidePlan {
   for (const chunk of chunkRoute(points, cum)) {
     const lengthM = cum[chunk.endIndex]! - cum[chunk.startIndex]!;
     const f = forecasts[nearestSampleIndex(samples, chunk.midDistanceM)];
-    const w = f ? weatherAt(f.series, etaAt(departureMs, chunk.midDistanceM, speedKmh)) : null;
+    const w = f ? weatherAt(f.series, departureMs + elapsed(chunk.midDistanceM)) : null;
     let cls: SegmentClass = 'unknown';
     if (w && w.windSpeed !== null && w.windDirection !== null) {
       cls = classifyWind(w.windSpeed, w.windDirection, chunk.bearing);

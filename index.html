@@ -64,9 +64,11 @@
               <div><dt>Elevation range</dt><dd id="fact-range"></dd></div>
             </dl>
             <p id="elevation-note" class="note" hidden></p>
+            <p id="elevation-source" class="hint" hidden>Elevation looked up from the Copernicus DEM (90 m terrain model) via Open-Meteo, not from your file.</p>
             <div class="actions">
               <button type="button" class="btn" id="reverse-btn" aria-pressed="false">Reverse direction</button>
               <button type="button" class="btn" id="save-btn">Save on this device</button>
+              <button type="button" class="btn lookup-ele" id="card-lookup-ele" hidden>Look up elevation</button>
             </div>
           </div>
 
@@ -84,10 +86,41 @@
             <input type="datetime-local" id="departure" step="900" disabled />
             <p class="hint" id="tz-note">Import a route to choose a departure time.</p>
           </div>
-          <div class="field">
+          <fieldset class="field">
+            <legend>Estimate timing from</legend>
+            <label class="radio"><input type="radio" name="pace" value="constant" /> A constant average speed</label>
+            <label class="radio"><input type="radio" name="pace" value="power" /> Power and bike setup (physics estimate)</label>
+          </fieldset>
+          <div class="field" id="speed-field">
             <label for="speed">Average moving speed (<span id="speed-unit">km/h</span>)</label>
             <input type="number" id="speed" inputmode="decimal" min="5" max="60" step="0.5" required />
             <p class="hint">A constant speed used only to estimate when you'll reach each point.</p>
+          </div>
+          <div id="power-fields" hidden>
+            <div class="grid-fields">
+              <div class="field"><label for="p-power">Steady power (W)</label><input type="number" id="p-power" data-rider="powerW" inputmode="numeric" min="30" max="600" step="5" /></div>
+              <div class="field"><label for="p-rider">Rider weight (<span class="mass-unit">kg</span>)</label><input type="number" id="p-rider" data-rider="riderKg" data-mass inputmode="decimal" step="0.5" /></div>
+              <div class="field"><label for="p-bike">Bike and kit (<span class="mass-unit">kg</span>)</label><input type="number" id="p-bike" data-rider="bikeKg" data-mass inputmode="decimal" step="0.5" /></div>
+              <div class="field"><label for="p-cda">Drag area CdA (m²)</label><input type="number" id="p-cda" data-rider="cda" inputmode="decimal" min="0.15" max="0.8" step="0.01" /></div>
+              <div class="field"><label for="p-crr">Rolling resistance Crr</label><input type="number" id="p-crr" data-rider="crr" inputmode="decimal" min="0.002" max="0.02" step="0.0005" /></div>
+              <div class="field"><label for="p-descent">Max descent speed (<span class="speed-unit-2">km/h</span>)</label><input type="number" id="p-descent" data-rider="maxDescentKmh" data-speed inputmode="decimal" step="1" /></div>
+            </div>
+            <div class="field">
+              <label for="p-exposure">How exposed is the route?</label>
+              <select id="p-exposure">
+                <option value="open">Open: coast, fields, few trees</option>
+                <option value="mixed">Mixed: countryside with hedges and villages</option>
+                <option value="sheltered">Sheltered: towns, woodland, valleys</option>
+              </select>
+            </div>
+            <p class="hint">Typical CdA: 0.40 on the tops, 0.32 on the hoods, 0.28 in the drops, 0.23 on a TT bike. Typical Crr: 0.004 for fast tyres on smooth tarmac, 0.005 for everyday road tyres, 0.008 or more on rough roads or gravel. Exposure scales the 10 m forecast wind down to rider height.</p>
+          </div>
+          <div id="elevation-gate" class="note" hidden>
+            <p id="elevation-gate-msg"></p>
+            <div class="actions">
+              <button type="button" class="btn lookup-ele">Look up elevation</button>
+              <button type="button" class="btn" id="assume-flat-btn">Estimate as if flat</button>
+            </div>
           </div>
         </section>
 
@@ -111,10 +144,41 @@
             </div>
 
             <div class="kpis">
-              <div class="kpi"><span class="kpi-label">Ride time <span class="tag tag-est">Estimate</span></span><span class="kpi-value" id="kpi-time"></span><span class="kpi-sub" id="kpi-finish"></span></div>
+              <div class="kpi"><span class="kpi-label">Ride time <span class="tag tag-est" id="kpi-time-tag">Estimate</span></span><span class="kpi-value" id="kpi-time"></span><span class="kpi-sub" id="kpi-finish"></span></div>
               <div class="kpi"><span class="kpi-label">Wind <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-wind"></span><span class="kpi-sub" id="kpi-gust"></span></div>
               <div class="kpi"><span class="kpi-label">Temperature <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-temp"></span></div>
               <div class="kpi"><span class="kpi-label">Rain <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-rain"></span><span class="kpi-sub" id="kpi-rain-prob"></span></div>
+            </div>
+
+            <div class="result-block">
+              <div class="block-head"><h3>Along the route</h3></div>
+              <div id="charts" class="charts"></div>
+            </div>
+
+            <div class="result-block">
+              <div class="block-head"><h3>Compare departures and directions</h3><span class="tag tag-est">Estimate</span></div>
+              <div class="field compare-controls">
+                <label for="compare-spacing">Try departures every</label>
+                <select id="compare-spacing">
+                  <option value="1">1 hour</option>
+                  <option value="2" selected>2 hours</option>
+                  <option value="3">3 hours</option>
+                  <option value="6">6 hours</option>
+                </select>
+              </div>
+              <div class="table-wrap" tabindex="0" role="region" aria-labelledby="compare-caption">
+                <table class="samples compare">
+                  <caption id="compare-caption"></caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Depart</th>
+                      <th scope="col">Original direction</th>
+                      <th scope="col">Reversed</th>
+                    </tr>
+                  </thead>
+                  <tbody id="compare-body"></tbody>
+                </table>
+              </div>
             </div>
 
             <div class="result-block">
@@ -149,12 +213,14 @@
             <li><span class="tag tag-est">Estimate</span> and <em>calculated</em> values are RideWind's own arithmetic: arrival times assume a constant average speed, and the headwind and crosswind components come from that forecast wind and the route's direction.</li>
             <li>Forecast wind does not fully account for shelter from buildings, trees, hedges, cuttings or local terrain. Exposed roads may feel stronger wind, and sheltered ones weaker.</li>
             <li>Headwind means the wind is within 45° of straight on, tailwind within 45° of directly behind, and anything else is crosswind. These are rough planning guides, not race advice.</li>
+            <li>The power estimate uses a published steady-state cycling model (Martin et al., 1998) with your settings, gradient, air density and the wind along your direction of travel. It ignores stops, traffic, corners, accelerations and fatigue, so treat it as an approximation. It has not been validated against your own rides and is not a race prediction.</li>
           </ul>
         </section>
 
         <footer class="credits">
           <p><a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. RideWind calculates its estimates from this data.</p>
           <p>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, available under the ODbL.</p>
+          <p id="dem-credit" hidden>Elevation lookups use the Copernicus DEM GLO-90 through <a href="https://open-meteo.com/en/docs/elevation-api" target="_blank" rel="noopener">Open-Meteo</a>: © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA. All rights reserved.</p>
           <p>A personal, non-commercial project. Not affiliated with any weather or cycling service.</p>
         </footer>
       </div>

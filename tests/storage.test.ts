@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   buildExport,
   clearRoutes,
+  DEFAULT_SETTINGS,
   deleteRoute,
   listRoutes,
   loadSettings,
@@ -25,17 +26,22 @@ const route = {
 describe('settings', () => {
   beforeEach(() => localStorage.clear());
   it('round-trips and validates', () => {
-    expect(loadSettings()).toEqual({ speedKmh: 25, units: 'metric' });
-    expect(saveSettings({ speedKmh: 30, units: 'imperial' })).toBe(true);
-    expect(loadSettings()).toEqual({ speedKmh: 30, units: 'imperial' });
-    localStorage.setItem('ridewind:settings:v1', '{"speedKmh":-4,"units":"furlongs"}');
-    expect(loadSettings()).toEqual({ speedKmh: 25, units: 'metric' });
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+    const custom = { ...DEFAULT_SETTINGS, speedKmh: 30, units: 'imperial' as const, paceMode: 'power' as const, exposure: 'open' as const, rider: { ...DEFAULT_SETTINGS.rider, powerW: 240 } };
+    expect(saveSettings(custom)).toBe(true);
+    expect(loadSettings()).toEqual(custom);
+    localStorage.setItem('ridewind:settings:v1', '{"speedKmh":-4,"units":"furlongs","paceMode":"warp","rider":{"cda":9}}');
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
     localStorage.setItem('ridewind:settings:v1', 'not json');
-    expect(loadSettings()).toEqual({ speedKmh: 25, units: 'metric' });
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+  });
+  it('reads phase-1 settings (speed and units only) with phase-2 defaults', () => {
+    localStorage.setItem('ridewind:settings:v1', '{"speedKmh":28,"units":"metric"}');
+    expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, speedKmh: 28 });
   });
   it('reports failure when storage throws', () => {
     const broken = { setItem: () => { throw new Error('quota'); } } as unknown as Storage;
-    expect(saveSettings({ speedKmh: 30, units: 'metric' }, broken)).toBe(false);
+    expect(saveSettings(DEFAULT_SETTINGS, broken)).toBe(false);
   });
 });
 
@@ -53,11 +59,15 @@ describe('saved routes (IndexedDB)', () => {
   it('packing preserves missing elevation and drops nothing else', () => {
     expect(unpackRoute(packRoute(route, 'x', 0))).toEqual(route);
   });
+  it('packing keeps a looked-up elevation source', () => {
+    const dem = { ...route, elevationSource: 'dem' as const };
+    expect(unpackRoute(packRoute(dem, 'x', 0))).toEqual(dem);
+  });
 });
 
 describe('export / import', () => {
   it('round-trips an export', () => {
-    const file = buildExport({ speedKmh: 28, units: 'metric' }, [packRoute(route, 'a', 5)], new Date('2026-01-01T00:00:00Z'));
+    const file = buildExport({ ...DEFAULT_SETTINGS, speedKmh: 28 }, [packRoute(route, 'a', 5)], new Date('2026-01-01T00:00:00Z'));
     const parsed = parseImport(JSON.stringify(file));
     expect(parsed.routes).toHaveLength(1);
     expect(parsed.settings.speedKmh).toBe(28);

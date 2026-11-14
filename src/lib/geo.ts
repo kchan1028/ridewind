@@ -10,6 +10,8 @@ export interface Route {
   points: TrackPoint[];
   /** Whether the points came from <trkpt> or <rtept>. */
   source: 'track' | 'route';
+  /** Where elevation came from. Absent means the GPX file (possibly with gaps). */
+  elevationSource?: 'file' | 'dem';
 }
 
 export interface LatLon {
@@ -192,6 +194,23 @@ export function elevationStats(points: TrackPoint[], thresholdM = 3): ElevationS
   if (dir === 1) gain += ext - anchor;
   if (dir === -1) loss += anchor - ext;
   return { coverage, gainM: gain, lossM: loss, minM: min, maxM: max };
+}
+
+/** True when every point has an elevation value. */
+export function hasCompleteElevation(points: TrackPoint[]): boolean {
+  return points.length > 0 && points.every((p) => p.ele !== null);
+}
+
+/** Elevation at distance d by linear interpolation. Requires complete elevation. */
+export function elevationAtDistance(points: TrackPoint[], cum: number[], d: number): number {
+  const total = cum[cum.length - 1]!;
+  const dd = Math.max(0, Math.min(total, d));
+  const i = indexAtDistance(cum, dd);
+  const a = points[i]!;
+  const b = points[Math.min(i + 1, points.length - 1)]!;
+  const seg = cum[Math.min(i + 1, cum.length - 1)]! - cum[i]!;
+  const f = seg > 0 ? (dd - cum[i]!) / seg : 0;
+  return a.ele! + (b.ele! - a.ele!) * f;
 }
 
 export function reverseRoute(route: Route): Route {
