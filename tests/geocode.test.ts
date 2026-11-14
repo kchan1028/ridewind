@@ -51,6 +51,8 @@ describe('address search', () => {
     await s.search('Berkeley Marina');
     await s.search('  berkeley marina ');
     expect(calls).toBe(1);
+    await s.search('Berkeley Marina', { near: { lat: 40, lon: -74 } }); // another area is a new search
+    expect(calls).toBe(2);
     expect(s.waitMs()).toBe(1100);
     t += 600;
     expect(s.waitMs()).toBe(500);

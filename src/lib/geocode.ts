@@ -119,13 +119,15 @@ export class PlaceSearch {
   }
 
   async search(query: string, opts: { language?: string; near?: LatLon; signal?: AbortSignal } = {}): Promise<Place[]> {
-    const key = query.trim().toLowerCase();
+    const q = query.trim().toLowerCase();
+    // Results are biased to the area on screen, so the same words elsewhere are a different search.
+    const key = opts.near ? `${q}|${opts.near.lat.toFixed(1)},${opts.near.lon.toFixed(1)}` : q;
     const hit = this.cache.get(key);
     if (hit) return hit;
     const wait = this.waitMs();
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     this.lastStart = (this.opts.now ?? Date.now)();
-    const places = await searchPlaces(this.baseUrl, key, { ...opts, fetchImpl: this.opts.fetchImpl });
+    const places = await searchPlaces(this.baseUrl, q, { ...opts, fetchImpl: this.opts.fetchImpl });
     this.cache.set(key, places);
     return places;
   }
