@@ -147,12 +147,13 @@ export interface FetchForecastOptions {
   now?: () => number;
 }
 
-/**
- * GET an Open-Meteo endpoint and return its JSON body, mapping failures to
- * rider-facing AppErrors (network, rate limit, server error, rejected request).
- */
+/** Covers the whole request, including reading the body. */
 export const REQUEST_TIMEOUT_MS = 20_000;
 
+/**
+ * GET an Open-Meteo endpoint and return its JSON body, mapping failures to
+ * rider-facing AppErrors (network, timeout, rate limit, server error, rejected request).
+ */
 export async function openMeteoGet(
   url: string,
   opts: { fetchImpl?: typeof fetch; signal?: AbortSignal; timeoutMs?: number } = {},
@@ -168,25 +169,28 @@ export async function openMeteoGet(
   const onAbort = () => ctrl.abort();
   if (opts.signal?.aborted) ctrl.abort();
   opts.signal?.addEventListener('abort', onAbort);
+  const timeoutError = () =>
+    new AppError('WEATHER_NETWORK', "Open-Meteo didn't respond in time. Check your connection and retry. Your route is still loaded.");
   let res: Response;
+  let body: unknown = null;
   try {
-    res = await fetchImpl(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
-  } catch (e) {
-    if (timedOut) {
-      throw new AppError('WEATHER_NETWORK', "Open-Meteo didn't respond in time. Check your connection and retry. Your route is still loaded.");
+    try {
+      res = await fetchImpl(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    } catch (e) {
+      if (timedOut) throw timeoutError();
+      if ((e as Error)?.name === 'AbortError') throw e;
+      throw new AppError('WEATHER_NETWORK', "Couldn't reach Open-Meteo. Check your connection and retry. Your route is still loaded.");
     }
-    if ((e as Error)?.name === 'AbortError') throw e;
-    throw new AppError('WEATHER_NETWORK', "Couldn't reach Open-Meteo. Check your connection and retry. Your route is still loaded.");
+    try {
+      body = await res.json();
+    } catch (e) {
+      if (timedOut) throw timeoutError();
+      if ((e as Error)?.name === 'AbortError') throw e;
+      body = null;
+    }
   } finally {
     clearTimeout(timer);
     opts.signal?.removeEventListener('abort', onAbort);
-  }
-
-  let body: unknown = null;
-  try {
-    body = await res.json();
-  } catch {
-    body = null;
   }
   const reason = typeof (body as { reason?: unknown })?.reason === 'string' ? (body as { reason: string }).reason : undefined;
 

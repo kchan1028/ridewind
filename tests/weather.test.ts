@@ -135,6 +135,19 @@ describe('fetchForecast error handling', () => {
       message: expect.stringMatching(/didn't respond/),
     });
   });
+  it('also times out when the response body stalls', async () => {
+    const stalledBody: typeof fetch = async (_u, init) => {
+      const body = new ReadableStream({
+        start(c) {
+          init?.signal?.addEventListener('abort', () => c.error(new DOMException('aborted', 'AbortError')));
+        },
+      });
+      return new Response(body, { status: 200 });
+    };
+    await expect(openMeteoGet('https://api.open-meteo.com/x', { fetchImpl: stalledBody, timeoutMs: 20 })).rejects.toMatchObject({
+      code: 'WEATHER_NETWORK',
+    });
+  });
   it('rethrows aborts untouched', async () => {
     const abort = new DOMException('aborted', 'AbortError');
     await expect(fetchForecast(coords, { fetchImpl: async () => Promise.reject(abort) })).rejects.toBe(abort);
