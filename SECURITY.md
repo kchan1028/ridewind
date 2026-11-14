@@ -28,6 +28,7 @@ RideWind is a static site with no backend, no accounts, no database and no API k
 | Map popups and icons | Built only from numbers and fixed text, never from file contents. |
 | Network requests | Forecasts (and, only when you ask, elevation) from `api.open-meteo.com`, with coordinates rounded to about 100 m (forecast) or 11 m (elevation); map tiles from `tile.openstreetmap.org`. No analytics, cookies or other third parties. |
 | Stored data | Settings in `localStorage` and saved routes in IndexedDB, in your browser only. |
+| Content Security Policy | The production build includes a CSP `<meta>` tag. It only allows the site's own scripts and styles (no inline code or `eval`), data requests to `api.open-meteo.com`, and images from `tile.openstreetmap.org`. The policy lives in [`src/lib/csp.ts`](src/lib/csp.ts) and has tests. |
 | Dependencies | One runtime dependency, Leaflet 1.9.4, pinned to an exact version. `npm audit --omit=dev` reported 0 vulnerabilities on 14 November 2026. |
 
 Repository protections:
@@ -40,7 +41,7 @@ Repository protections:
 
 ## Known limitations
 
-- **No Content Security Policy.** GitHub Pages can't send custom response headers, and the page doesn't set a CSP `<meta>` tag yet.
+- **No clickjacking protection.** The Content Security Policy is delivered as a `<meta>` tag because GitHub Pages can't send custom headers, and `frame-ancestors` doesn't work from a `<meta>` tag. Another site could embed RideWind in a frame. The app has no accounts or actions that could be abused that way.
 - **Local data isn't encrypted.** Anyone with access to your browser profile can read your saved routes. Export files contain your routes too, so treat them as personal.
 - **Third parties see some data.** Open-Meteo and OpenStreetMap see your IP address and the rounded coordinates or map areas they serve, under their own privacy policies.
 - **Actions pinned by tag.** The CI and deploy workflows use major-version tags (for example `actions/checkout@v4`), not commit SHAs.

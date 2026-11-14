@@ -12,6 +12,26 @@ export const CLASS_STYLE: Record<SegmentClass, { color: string; dashArray?: stri
   unknown: { color: '#8a94a3', dashArray: '1 6', weight: 4, label: 'No forecast' },
 };
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/**
+ * A small rotated SVG icon built with DOM APIs. The rotation is set through
+ * element.style (CSSOM), which the Content Security Policy allows, rather than
+ * an inline style="" attribute, which it blocks.
+ */
+function rotatedSvg(viewBox: string, size: number, d: string, degrees: number): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', viewBox);
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('aria-hidden', 'true');
+  svg.style.transform = `rotate(${degrees}deg)`;
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', d);
+  svg.append(path);
+  return svg;
+}
+
 export class RouteMap {
   private map: L.Map;
   private baseLine: L.Polyline | null = null;
@@ -49,7 +69,7 @@ export class RouteMap {
       L.marker([p.lat, p.lon], {
         icon: L.divIcon({
           className: 'dir-chevron',
-          html: `<svg viewBox="0 0 16 16" width="16" height="16" style="transform:rotate(${bearing}deg)" aria-hidden="true"><path d="M3 11 L8 5 L13 11"/></svg>`,
+          html: rotatedSvg('0 0 16 16', 16, 'M3 11 L8 5 L13 11', bearing),
           iconSize: [16, 16],
           iconAnchor: [8, 8],
         }),
@@ -93,7 +113,7 @@ export class RouteMap {
       // Meteorological direction is where wind comes FROM; the arrow shows where it goes.
       const icon = L.divIcon({
         className: 'wind-arrow',
-        html: `<svg viewBox="0 0 24 24" width="26" height="26" style="transform:rotate(${(dir + 180) % 360}deg)" aria-hidden="true"><path d="M12 2 L19 20 L12 16 L5 20 Z"/></svg>`,
+        html: rotatedSvg('0 0 24 24', 26, 'M12 2 L19 20 L12 16 L5 20 Z', (dir + 180) % 360),
         iconSize: [26, 26],
         iconAnchor: [13, 13],
       });
