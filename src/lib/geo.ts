@@ -10,8 +10,10 @@ export interface Route {
   points: TrackPoint[];
   /** Whether the points came from <trkpt> or <rtept>, or were drawn on the map. */
   source: 'track' | 'route' | 'drawn';
-  /** Where elevation came from. Absent means the GPX file (possibly with gaps). */
-  elevationSource?: 'file' | 'dem';
+  /** Where elevation came from. Absent means the GPX file (possibly with gaps); 'routing' is the routing server's terrain data. */
+  elevationSource?: 'file' | 'dem' | 'routing';
+  /** Drawn routes only: point ranges (inclusive) drawn as straight lines by hand rather than along roads. */
+  manualRanges?: Array<{ start: number; end: number }>;
 }
 
 export interface LatLon {
@@ -214,5 +216,7 @@ export function elevationAtDistance(points: TrackPoint[], cum: number[], d: numb
 }
 
 export function reverseRoute(route: Route): Route {
-  return { ...route, points: route.points.slice().reverse() };
+  const last = route.points.length - 1;
+  const manualRanges = route.manualRanges?.map((r) => ({ start: last - r.end, end: last - r.start })).reverse();
+  return { ...route, points: route.points.slice().reverse(), ...(manualRanges ? { manualRanges } : {}) };
 }

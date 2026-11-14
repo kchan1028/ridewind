@@ -4,7 +4,7 @@
 
 RideWind shows you the wind you'll actually ride into. Load a GPX route and pick a departure time. RideWind matches the forecast wind, gusts, temperature and rain to the moment you reach each part of the route, and colours the map by headwind, crosswind and tailwind.
 
-It runs entirely in your browser. There's no account and no server, and your route file is never uploaded.
+It runs entirely in your browser. There's no account and no server, and your route file is never uploaded. No GPX file? Draw one on the map: tap to add points and the route follows roads, as in Strava or Ride with GPS.
 
 ![RideWind with the Berkeley to Morgan Territory sample loaded. The verdict reads "Mostly crosswind" with gusts, ride time, finish and sunset times, above a bar showing 19% headwind, 59% crosswind, 11% tailwind and 10% calm. The map colours the route red, striped amber and blue by wind type, with arrows showing where the wind blows.](docs/screenshot.webp)
 
@@ -55,7 +55,7 @@ BASE_PATH=/ridewind/ npm run build
    - China Camp and Nicasio Valley
    - PRS (clockwise)
 
-   No GPX file? Press **Draw a route** and tap or click the map to add points in riding order. Straight lines join the points, so add one at each turn. **Undo last point** and **Clear** fix mistakes, and the running distance shows as you go. With a keyboard, move the map with the arrow keys and press Enter (or **Add point at centre**) to add a point at the crosshair. Type a name and press **Finish route**. A drawn route has no elevation, so climbing shows as unknown until you press **Look up elevation**. You can save it like any other route, and **Export GPX** downloads it for your bike computer.
+   No GPX file? Press **Draw a route**, tap the map to set a start, and tap again to extend the route along roads (a cycling profile that prefers paved roads). Drag a point to move it, tap one to select or remove it, and use **Undo**, **Redo**, **Reverse**, **Close loop** and **Clear…**. Where the map has no road, switch *New sections* to **Straight line**; those sections stay marked as drawn by hand. Distance, climbing and the wind verdict update after each edit. **Review route** shows the finished geometry; tick that you've checked it, then **Use this route**. Save it like any other route, and **Export GPX** downloads it for your bike computer. With a keyboard, move the map with the arrow keys and press Enter (or **Add point at centre**) to add a point at the crosshair. See [drawing a route](docs/routing.md).
 2. **Choose when you'll leave.** Departure times use the route's own timezone. Use the date and time field, a preset, or the **−1 h / +1 h** buttons in the verdict.
 3. **Set your pace.** Units start in miles or kilometres to match your browser's language; **Switch to miles** (or **km**), just under the pace choice, changes them. Choose **A constant average speed**, or **Power and bike setup** for the physics estimate. A route without elevation data asks you to look elevation up or explicitly estimate it as flat; it never quietly assumes a flat route.
 4. **Read the result.** The verdict at the top (a bar along the bottom on phones) gives the answer: the wind headline, when you'll finish, daylight and any rain worth knowing about. Press **Details** for gusts, the wind breakdown, when the forecast was updated and **Refresh forecast**. Below it you'll find the ride-time and weather figures, charts along the route, the departure comparison and a point-by-point table.
@@ -88,11 +88,11 @@ Usually not quite. The forecast is for wind 10 m above open ground, so you'll of
 
 ### Does RideWind upload my GPX file?
 
-No. The file is read in your browser and never uploaded. RideWind sends only up to 40 points, rounded to about 100 m, to Open-Meteo, plus the usual map tile requests to OpenStreetMap. See [data sources and privacy](docs/data-and-privacy.md).
+No. The file is read in your browser and never uploaded. RideWind sends only up to 40 points, rounded to about 100 m, to Open-Meteo, plus the usual map tile requests to OpenStreetMap. Drawing a route that follows roads is the one exception: the points you place are sent, unrounded, to a routing service. See [data sources and privacy](docs/data-and-privacy.md).
 
 ### Can I draw a route instead of importing one?
 
-Yes. **Draw a route** lets you place points on the map, and straight lines join them. It doesn't follow roads: road-following would mean sending your points to a routing service, and RideWind keeps them in your browser. Drawing sends nothing anywhere. The map only loads tiles for the area on screen, as it always does.
+Yes. **Draw a route** follows roads between the points you tap, using the free [FOSSGIS Valhalla](https://fossgis.de/) routing server with a road-bike profile. To find the roads it has to receive those points, unrounded; the draw panel says so. Sections set to **Straight line** send nothing. Road-following uses OpenStreetMap data and doesn't confirm that a road is open, legal to ride or approved for an event. A saved route is never routed again, so it can't change after you save it. See [drawing a route](docs/routing.md).
 
 ### What if my route has no elevation?
 
@@ -100,7 +100,7 @@ RideWind never quietly treats a route as flat. Climbing shows as unknown, and po
 
 ### Is RideWind free?
 
-Yes. RideWind is a free, open-source personal project for non-commercial use, and it needs no account or API key.
+Yes. RideWind is a free, open-source personal project for non-commercial use, and it needs no account or API key. The default routing server needs no key either.
 
 ## Documentation
 
@@ -108,6 +108,7 @@ Yes. RideWind is a free, open-source personal project for non-commercial use, an
 - [Product overview](PRODUCT.md): who RideWind is for, the problems it solves, its principles and what it won't do.
 - [How RideWind estimates your ride](docs/model.md): sampling, time matching, wind components, the physics model (Martin et al., 1998) and comparisons.
 - [Data sources and privacy](docs/data-and-privacy.md): Open-Meteo usage and limits, attribution, map tiles, and what is stored in your browser.
+- [Drawing a route](docs/routing.md): click-to-route editing, why FOSSGIS Valhalla was chosen, what it receives, limits and configuration.
 - [Troubleshooting](docs/troubleshooting.md): what each error message means and how to fix it.
 
 **Working on RideWind**

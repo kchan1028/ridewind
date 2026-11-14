@@ -85,6 +85,8 @@ export interface SavedRoute {
   savedAt: number;
   source: Route['source'];
   elevationSource?: Route['elevationSource'];
+  /** Drawn routes: point ranges drawn as straight lines rather than along roads. */
+  manualRanges?: Route['manualRanges'];
   points: PackedPoint[];
   prefs?: RoutePrefs;
   /** The last forecast fetched for this route, kept so it still opens without a connection. Not exported. */
@@ -149,6 +151,7 @@ export function packRoute(route: Route, id: string = crypto.randomUUID(), savedA
     savedAt,
     source: route.source,
     ...(route.elevationSource ? { elevationSource: route.elevationSource } : {}),
+    ...(route.manualRanges?.length ? { manualRanges: route.manualRanges.map((r) => ({ ...r })) } : {}),
     points: route.points.map((pt) => [pt.lat, pt.lon, pt.ele]),
     ...(p ? { prefs: p } : {}),
   };
@@ -159,6 +162,7 @@ export function unpackRoute(saved: SavedRoute): Route {
     name: saved.name,
     source: saved.source,
     ...(saved.elevationSource ? { elevationSource: saved.elevationSource } : {}),
+    ...(saved.manualRanges?.length ? { manualRanges: saved.manualRanges.map((r) => ({ ...r })) } : {}),
     points: saved.points.map(([lat, lon, ele]): TrackPoint => ({ lat, lon, ele })),
   };
 }
@@ -228,6 +232,16 @@ function validPoint(p: unknown): p is PackedPoint {
   );
 }
 
+/** Keeps manual ranges only if every one is a well-formed, in-bounds, ordered range. */
+function validManualRanges(v: unknown, n: number): { manualRanges?: Array<{ start: number; end: number }> } {
+  if (!Array.isArray(v) || v.length === 0) return {};
+  const ok = v.every(
+    (r, i) =>
+      Number.isInteger(r?.start) && Number.isInteger(r?.end) && r.start >= 0 && r.end < n && r.start < r.end && (i === 0 || r.start >= v[i - 1].end),
+  );
+  return ok ? { manualRanges: v.map((r) => ({ start: r.start, end: r.end })) } : {};
+}
+
 /** Validates an export file. Throws IMPORT_INVALID with a readable message. */
 export function parseImport(text: string): ExportFile {
   const fail = (why: string) => new AppError('IMPORT_INVALID', `That file can't be imported: ${why}.`);
@@ -251,7 +265,8 @@ export function parseImport(text: string): ExportFile {
       name: r.name.slice(0, 100),
       savedAt: typeof r.savedAt === 'number' ? r.savedAt : Date.now(),
       source: r.source === 'route' || r.source === 'drawn' ? r.source : 'track',
-      ...(r.elevationSource === 'dem' ? { elevationSource: 'dem' as const } : {}),
+      ...(r.elevationSource === 'dem' || r.elevationSource === 'routing' ? { elevationSource: r.elevationSource } : {}),
+      ...validManualRanges(r.manualRanges, r.points.length),
       points: r.points,
       ...(prefs ? { prefs } : {}),
     };
