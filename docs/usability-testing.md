@@ -268,23 +268,23 @@ The test browser already held one saved route (*Sample: Afsluitdijk crossing (ap
 
 Severity uses the audit's scale: **P0** blocks the task, **P1** is a major problem or misleading result, **P2** is real friction with a workaround, and **P3** is polish. Findings marked *New* aren't in the audit. The rest re-confirm audit findings on the live site, which keeps the audit's evidence and adds these repro steps.
 
-| ID | Finding | Severity | Audit | Status (rechecked on live build `15a7709`, 14 Nov) |
+| ID | Finding | Severity | Audit | Status (rechecked on live builds `15a7709` and `e504e98`, 14 Nov) |
 | --- | --- | --- | --- | --- |
 | W1 | **Best** goes to rides that finish in the dark, and to differences of a minute or two | P1 | P1-1 | Resolved on live ([PR #23](https://github.com/kchan1028/ridewind/pull/23)) |
 | W2 | The verdict states a rain amount without its chance | P1 | P1-2 | Resolved on live ([PR #27](https://github.com/kchan1028/ridewind/pull/27)) |
 | W3 | Speed error appears far from the field and the typed value is reverted | P1 | P1-3 | Resolved on live ([PR #28](https://github.com/kchan1028/ridewind/pull/28)) |
-| W4 | Keyboard focus is lost after **Use**, a preset, or **Retry forecast** | P2 | *New* | Still present on live; fixed on `main` by [PR #48](https://github.com/kchan1028/ridewind/pull/48) ([#31](https://github.com/kchan1028/ridewind/issues/31)), not deployed |
-| W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Still present on live; fixed on `main` by [PR #48](https://github.com/kchan1028/ridewind/pull/48) ([#32](https://github.com/kchan1028/ridewind/issues/32)), not deployed |
-| W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Not rechecked; fixed on `main` by [PR #48](https://github.com/kchan1028/ridewind/pull/48) ([#33](https://github.com/kchan1028/ridewind/issues/33)), not deployed |
+| W4 | Keyboard focus is lost after **Use**, a preset, or **Retry forecast** | P2 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#31](https://github.com/kchan1028/ridewind/issues/31)) |
+| W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#32](https://github.com/kchan1028/ridewind/issues/32)) |
+| W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#33](https://github.com/kchan1028/ridewind/issues/33)) |
 | W7 | A saved route forgets its direction and departure | P2 | P2-4 | Resolved on live ([PR #43](https://github.com/kchan1028/ridewind/pull/43)) |
 | W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Partly resolved on live ([PR #36](https://github.com/kchan1028/ridewind/pull/36)): larger headline and one-line summary, but the bar is still 172 px |
 | W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Comparison resolved on live ([PR #40](https://github.com/kchan1028/ridewind/pull/40)); the point-by-point table still scrolls sideways |
 | W10 | Phone: the first screen is an empty map | P2 | P2-5 | Still present on live |
 | W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Resolved on live ([PR #25](https://github.com/kchan1028/ridewind/pull/25)) |
-| W12 | One forecast error shown three times | P3 | P3-1 | Not rechecked |
-| W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Still present on live; fixed on `main` by [PR #48](https://github.com/kchan1028/ridewind/pull/48) ([#34](https://github.com/kchan1028/ridewind/issues/34)), not deployed |
-| W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Still present on live; fixed on `main` by [PR #48](https://github.com/kchan1028/ridewind/pull/48) ([#35](https://github.com/kchan1028/ridewind/issues/35)), not deployed |
-| W15 | A comparison row that finishes late in the evening is labelled "before sunrise" | P3 | *New* | Found in the recheck; no issue yet |
+| W12 | One forecast error shown three times | P3 | P3-1 | Still present on live; [#57](https://github.com/kchan1028/ridewind/issues/57) |
+| W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#34](https://github.com/kchan1028/ridewind/issues/34)) |
+| W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#35](https://github.com/kchan1028/ridewind/issues/35)) |
+| W15 | A comparison row that finishes late in the evening is labelled "before sunrise" | P3 | *New* | Still present on live; [#58](https://github.com/kchan1028/ridewind/issues/58) |
 
 #### W1 · Best goes to dark rides and to trivial differences (P1)
 
@@ -451,8 +451,15 @@ After a fix ships, rerun the tasks that showed the problem, with new participant
 | W11 | #25 | `15a7709` | Walkthrough recheck, 14 Nov | T7, T10 | Resolved: the stepper is 48 px; presets, **Use**, **Open** and **Delete** are 44 px; **Open** and **Delete** are 16 px apart | Walkthrough, no participants |
 | W13 | #48 (not deployed) | `15a7709` | Walkthrough recheck, 14 Nov | T3 | Still present: after a preset, the status still reads "Using … 01:00 PM" | Walkthrough, no participants |
 | W14 | #48 (not deployed) | `15a7709` | Walkthrough recheck, 14 Nov | T1 | Still present: the sample menu goes back to "Try a sample route…" | Walkthrough, no participants |
+| W4 | #48 | `e504e98` | Walkthrough recheck 2, 14 Nov | T4, T11 | Resolved: focus stays on the **Use** button and the preset; after **Retry forecast** it moves to the verdict heading | Walkthrough, no participants |
+| W5 | #48 | `e504e98` | Walkthrough recheck 2, 14 Nov | T4 | Resolved: after **Use** on 4:00 PM and then 8:00 PM, the list still runs from 12:00 PM to 10:00 PM | Walkthrough, no participants |
+| W6 | #48 | `e504e98` | Walkthrough recheck 2, 14 Nov | T5 | Resolved: with power timing and no elevation, the verdict shows "Mostly tailwind … timed at 25 km/h average", with **Look up elevation** and **Estimate as if flat** in the verdict | Walkthrough, no participants |
+| W12 | none yet ([#57](https://github.com/kchan1028/ridewind/issues/57)) | `e504e98` | Walkthrough recheck 2, 14 Nov | T11 | Still present: the error appears in the status line, the verdict and an alert, with two **Retry forecast** buttons | Walkthrough, no participants |
+| W13 | #48 | `e504e98` | Walkthrough recheck 2, 14 Nov | T3 | Resolved: after **Use** and then a preset, the status line is empty | Walkthrough, no participants |
+| W14 | #48 | `e504e98` | Walkthrough recheck 2, 14 Nov | T1 | Resolved: the sample menu keeps the chosen sample, and resets after a GPX import | Walkthrough, no participants |
+| W15 | none yet ([#58](https://github.com/kchan1028/ridewind/issues/58)) | `e504e98` | Walkthrough recheck 2, 14 Nov | T4 | Still present: the 6:00 PM row reads "finish 11:35 PM · before sunrise" | Walkthrough, no participants |
 
-W6 and W12 weren't rechecked. These rechecks were done by Claude in the in-app Chromium browser, at 1280×800 and in a 375×812 phone emulation, without participants. They show whether a fix is live. They don't say whether riders find it clear, so participant retests are still needed under the rule below.
+Recheck 2 ran on `e504e98`, deployed after PR #48. These rechecks were done by Claude in the in-app Chromium browser, at 1280×800 and in a 375×812 phone emulation, without participants. They show whether a fix is live. They don't say whether riders find it clear, so participant retests are still needed under the rule below.
 
 ## How do findings reach GitHub issues and the roadmap?
 
