@@ -97,6 +97,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P1-3 · Field validation is far away, silent and destructive
 
+> **Status: fixed** in the inline field errors PR. Errors now appear under the field, are linked and announced, and the typed value is kept.
+
 - **Where:** speed in [`src/ui/app.ts:1015-1029`](../src/ui/app.ts); rider fields in [`src/ui/app.ts:844-861`](../src/ui/app.ts).
 - **Observed:**
   1. On the phone, type **100** in Average moving speed and leave the field. The value snaps back to **25**. The only message, "Enter an average speed between 5 and 60 km/h", appears in the status line **1,199 px above** the field, off screen.
