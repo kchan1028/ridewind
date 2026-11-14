@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDayClock, tzOffsetMs, utcToWallTime, wallTimeToUtc } from '../src/lib/time';
+import { formatClock, formatDayClock, formatWallClock, tzOffsetMs, utcToWallTime, wallTimeToUtc } from '../src/lib/time';
 
 describe('route timezone conversion', () => {
   it('converts winter and summer wall times in Amsterdam', () => {
@@ -37,7 +37,17 @@ describe('formatDayClock', () => {
   it('gives weekday, day of month and time in the route timezone', () => {
     // 2026-11-14 19:00 UTC is Saturday 14th, 11:00 in Los Angeles.
     const out = formatDayClock(Date.UTC(2026, 10, 14, 19, 0), 'America/Los_Angeles');
-    expect(out).toMatch(/^Sat 14, /);
+    expect(out).toMatch(/^Sat, Nov 14, /);
     expect(out).toContain('11:00');
+  });
+});
+
+describe('formatClock', () => {
+  it('has no leading zero in a 12-hour locale', () => {
+    // Tests run in an en-US locale.
+    expect(formatClock(Date.UTC(2026, 10, 14, 15, 36), 'UTC')).toBe('3:36 PM');
+  });
+  it('formats a stored HH:MM time the same way', () => {
+    expect(formatWallClock('08:05')).toBe('8:05 AM');
   });
 });

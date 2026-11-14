@@ -75,26 +75,40 @@ export function deviceTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }
 
+/**
+ * Time of day in the locale's own clock: "3:36 PM" for 12-hour locales (no
+ * leading zero), "15:36" for 24-hour ones. Every time on the page uses this.
+ */
 export function formatClock(utcMs: number, tz: string): string {
-  return new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: '2-digit', minute: '2-digit' }).format(utcMs);
+  return new Intl.DateTimeFormat(undefined, { timeZone: tz, hour: 'numeric', minute: '2-digit' }).format(utcMs);
 }
 
-/** Short day and time, e.g. "Sat 14, 11:00 AM": enough to tell days apart within the forecast window. */
-export function formatDayClock(utcMs: number, tz: string): string {
-  const parts = new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'short', day: 'numeric' }).formatToParts(utcMs);
-  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
-  return `${part('weekday')} ${part('day')}, ${formatClock(utcMs, tz)}`;
+/** A stored "HH:MM" wall time (such as a saved route's usual departure) in the locale's clock. */
+export function formatWallClock(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number) as [number, number];
+  return formatClock(Date.UTC(2000, 0, 1, h, m), 'UTC');
 }
 
+/** The one date style used on the page, e.g. "Sat, Nov 14". */
+export function formatShortDate(utcMs: number, tz?: string): string {
+  return new Intl.DateTimeFormat(undefined, { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' }).format(utcMs);
+}
+
+/** Date and time, e.g. "Sat, Nov 14, 11:00 AM". */
 export function formatDateTime(utcMs: number, tz: string): string {
   return new Intl.DateTimeFormat(undefined, {
     timeZone: tz,
     weekday: 'short',
-    day: 'numeric',
     month: 'short',
-    hour: '2-digit',
+    day: 'numeric',
+    hour: 'numeric',
     minute: '2-digit',
   }).format(utcMs);
+}
+
+/** Same as formatDateTime; kept as a name for the places that show a departure. */
+export function formatDayClock(utcMs: number, tz: string): string {
+  return formatDateTime(utcMs, tz);
 }
 
 export function formatOffset(tz: string, utcMs: number): string {
