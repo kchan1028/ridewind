@@ -48,14 +48,20 @@
               Import GPX
               <input type="file" id="gpx-input" accept=".gpx,application/gpx+xml,application/xml,text/xml" />
             </label>
-            <button type="button" class="btn" id="sample-btn">Try the sample route</button>
+            <label class="visually-hidden" for="sample-select">Sample route</label>
+            <select id="sample-select" class="sample-select">
+              <option value="" selected>Try a sample route…</option>
+              <option value="morgan-territory.gpx">Berkeley to Morgan Territory</option>
+              <option value="china-camp-nicasio.gpx">China Camp – Nicasio Valley</option>
+              <option value="prs-cw.gpx">PRS (clockwise)</option>
+            </select>
           </div>
           <p class="hint">Your file is read in this browser and is not uploaded. To get forecasts, about 20 rounded points along the route are sent to Open-Meteo.</p>
 
           <div id="route-card" class="route-card" hidden>
             <div class="route-title">
               <h3 id="route-name"></h3>
-              <span id="sample-badge" class="badge badge-sample" hidden>Sample route · approximate</span>
+              <span id="sample-badge" class="badge badge-sample" hidden>Sample route</span>
             </div>
             <dl class="facts">
               <div><dt>Distance</dt><dd id="fact-distance"></dd></div>

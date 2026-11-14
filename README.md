@@ -6,7 +6,7 @@ It's a static web page with no backend, accounts or database. It's built for per
 
 ## What it does
 
-- Imports GPX files with track points (`<trkpt>`) or route points (`<rtept>`), and includes a sample route you can load with one click. The sample is a simplified, approximate crossing of the Afsluitdijk in the Netherlands.
+- Imports GPX files with track points (`<trkpt>`) or route points (`<rtept>`), and includes three San Francisco Bay Area sample routes you can pick from a list (Berkeley to Morgan Territory, China Camp – Nicasio Valley, PRS clockwise). The map opens on the Bay Area.
 - Shows the route on an OpenStreetMap map with its distance and any elevation data the file contains. If a file has no elevation, climbing is shown as **unknown**, not as zero.
 - Lets you choose a departure time in the **route's own timezone**, which Open-Meteo works out from the coordinates, and reverse the route's direction.
 - Estimates when you'll reach each point, either from a constant average speed or from a **power-based physics model** that uses your power, weight, drag, rolling resistance, the gradient and the forecast wind. It then matches each point to the forecast for that time.
@@ -47,7 +47,7 @@ src/lib/          Pure logic, no DOM except GPX parsing
   storage.ts        localStorage settings, IndexedDB routes, export/import
 src/ui/           Leaflet map and DOM wiring
 tests/            Vitest unit tests
-public/samples/   The bundled sample route
+public/samples/   The bundled sample routes
 ```
 
 ## Weather data and attribution
@@ -80,7 +80,7 @@ The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap
 - Clearing your browser's site data, or using **Delete all local data**, removes everything permanently.
 - Saved routes keep only latitude, longitude and elevation. Timestamps, heart rate and other recorded data in the GPX are thrown away when the file is imported.
 - Your GPX file is never uploaded. The only things that leave your browser are the rounded sample coordinates sent to Open-Meteo and the map tile requests sent to OpenStreetMap.
-- Export files contain your routes, which can reveal where you live or ride. Don't commit them. `.gitignore` excludes `*.gpx` (except the sample) and `ridewind-export*.json`.
+- Export files contain your routes, which can reveal where you live or ride. Don't commit them. `.gitignore` excludes `*.gpx` (except the samples) and `ridewind-export*.json`.
 
 ## Model assumptions
 

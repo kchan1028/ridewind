@@ -874,7 +874,8 @@ select {
   margin: 0;
   font-weight: 600;
 }
-.compare-controls select {
+.compare-controls select,
+.actions .sample-select {
   width: auto;
 }
 .compare td {
