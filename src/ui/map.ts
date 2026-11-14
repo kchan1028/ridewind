@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { bearingAtDistance, cumulativeDistances, pointAtDistance, type LatLon } from '../lib/geo';
+import { bearingAtDistance, cumulativeDistances, haversineM, pointAtDistance, type LatLon } from '../lib/geo';
 import type { RidePlan, SegmentClass } from '../lib/ride';
 
 /** Wide translucent band drawn under wet sections; its width keeps it readable without colour vision. */
@@ -86,12 +86,15 @@ export class RouteMap {
         keyboard: false,
       }).addTo(this.routeLayer);
     }
-    // Permanent labels; for loops, push them to opposite sides so they don't overlap.
-    L.circleMarker([end.lat, end.lon], { radius: 8, color: '#14213d', weight: 3, fillColor: '#ffffff', fillOpacity: 1, interactive: false })
-      .bindTooltip('Finish', { permanent: true, direction: 'right', offset: [8, 0], className: 'endpoint-label' })
-      .addTo(this.routeLayer);
+    // Permanent labels. On a loop (ends within 200 m) one "Start / Finish" label replaces two that would collide.
+    const loop = haversineM(start, end) < 200;
+    if (!loop) {
+      L.circleMarker([end.lat, end.lon], { radius: 8, color: '#14213d', weight: 3, fillColor: '#ffffff', fillOpacity: 1, interactive: false })
+        .bindTooltip('Finish', { permanent: true, direction: 'right', offset: [8, 0], className: 'endpoint-label' })
+        .addTo(this.routeLayer);
+    }
     L.circleMarker([start.lat, start.lon], { radius: 8, color: '#ffffff', weight: 3, fillColor: '#14213d', fillOpacity: 1, interactive: false })
-      .bindTooltip('Start', { permanent: true, direction: 'left', offset: [-8, 0], className: 'endpoint-label endpoint-start' })
+      .bindTooltip(loop ? 'Start / Finish' : 'Start', { permanent: true, direction: 'left', offset: [-8, 0], className: 'endpoint-label endpoint-start' })
       .addTo(this.routeLayer);
     this.fit();
   }
