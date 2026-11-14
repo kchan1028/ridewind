@@ -332,6 +332,8 @@ function loadRoute(
 ): boolean {
   if (drawing) {
     if (!confirmDiscardDrawing()) {
+      // Nothing was loaded, so the sample menu mustn't claim a sample is.
+      $<HTMLSelectElement>('sample-select').value = '';
       setStatus('Kept the route you are drawing. Finish or cancel it first to open another route.', 'info');
       return false;
     }
