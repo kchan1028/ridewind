@@ -23,3 +23,4 @@ Start with the [README](../README.md) for what RideWind does and how to run it. 
 
 - [Security policy](../SECURITY.md): private vulnerability reporting and how data is handled.
 - [Accessibility](../ACCESSIBILITY.md): what's supported and known gaps.
+- [UX/UI audit (November 2026)](ux-ui-audit.md): prioritised usability findings and an implementation plan.
