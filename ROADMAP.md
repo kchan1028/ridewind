@@ -50,7 +50,7 @@ From the UX/UI audit's implementation plan:
 - [PR #28](https://github.com/kchan1028/ridewind/pull/28): speed and rider errors show under the field and keep what you typed (step 3).
 - [PR #36](https://github.com/kchan1028/ridewind/pull/36): a glanceable verdict bar with Details, forecast age and Refresh (step 4).
 - [PR #40](https://github.com/kchan1028/ridewind/pull/40): the departure comparison as cards on phones, with both directions visible (most of step 5).
-- The point-by-point table shows Distance, Arrive, Head/tail and Rain on phones, with **Show all columns** for the rest (the rest of step 5).
+- [PR #52](https://github.com/kchan1028/ridewind/pull/52): the point-by-point table shows Distance, Arrive, Head/tail and Rain on phones, with **Show all columns** for the rest (the rest of step 5).
 - [PR #50](https://github.com/kchan1028/ridewind/pull/50): old forecasts refresh automatically, and saved routes keep their last forecast for use offline (step 6).
 - [PR #43](https://github.com/kchan1028/ridewind/pull/43): saved routes remember the direction and usual departure time (step 7).
 - [PR #53](https://github.com/kchan1028/ridewind/pull/53): units follow the browser's locale, with a one-tap switch by the pace (step 8).
