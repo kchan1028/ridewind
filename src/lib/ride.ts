@@ -23,8 +23,8 @@ export interface SegmentResult {
   rain: boolean;
 }
 
-/** Hourly precipitation (mm) at or above which a section counts as wet on the map. */
-export const RAIN_MM_PER_H = 0.1;
+/** Hourly precipitation (mm) at or above which a section counts as wet; matches the "Dry" cutoff used in the summary. */
+export const RAIN_MM_PER_H = 0.05;
 
 export interface RideSummary {
   /** Metres of route in each class. */

@@ -3,10 +3,10 @@ import 'leaflet/dist/leaflet.css';
 import { bearingAtDistance, cumulativeDistances, pointAtDistance, type LatLon } from '../lib/geo';
 import type { RidePlan, SegmentClass } from '../lib/ride';
 
-/** Colours are paired with dash patterns so classes stay distinguishable without colour vision. */
 /** Wide translucent band drawn under wet sections; its width keeps it readable without colour vision. */
 export const RAIN_STYLE = { color: '#7b4fd6', weight: 18, opacity: 0.4 };
 
+/** Colours are paired with dash patterns so classes stay distinguishable without colour vision. */
 export const CLASS_STYLE: Record<SegmentClass, { color: string; dashArray?: string; weight: number; label: string }> = {
   headwind: { color: '#c8102e', weight: 6, label: 'Headwind' },
   crosswind: { color: '#d98e04', dashArray: '10 7', weight: 6, label: 'Crosswind' },
