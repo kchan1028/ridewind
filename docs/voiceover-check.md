@@ -42,7 +42,7 @@ For each step, do what it says, listen, and mark the result in the table at the 
 
 1. Tab to **Leave one hour later** and press it.
    *Expect:* the verdict is read again with the new finish time. Focus stays on the button.
-2. Tab to the quick departure buttons (for example **Tomorrow 08:00**) and press one.
+2. Tab to the quick departure buttons (for example **Tomorrow 8:00 AM**) and press one.
    *Expect:* the button is reported as selected or pressed, the verdict is read again, and focus stays on that button.
 
 ### 4. Compare departures
