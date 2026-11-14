@@ -45,9 +45,9 @@ describe('formatDayClock', () => {
 describe('formatClock', () => {
   it('has no leading zero in a 12-hour locale', () => {
     // Tests run in an en-US locale.
-    expect(formatClock(Date.UTC(2026, 10, 14, 15, 36), 'UTC')).toBe('3:36 PM');
+    expect(formatClock(Date.UTC(2026, 10, 14, 15, 36), 'UTC')).toMatch(/^3:36\sPM$/);
   });
   it('formats a stored HH:MM time the same way', () => {
-    expect(formatWallClock('08:05')).toBe('8:05 AM');
+    expect(formatWallClock('08:05')).toMatch(/^8:05\sAM$/);
   });
 });
