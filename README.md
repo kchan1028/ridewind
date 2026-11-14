@@ -13,7 +13,7 @@ It runs entirely in your browser. There's no account and no server, and your rou
 ## Why use it
 
 - See where the wind will hit you at the time you'll be there. The map is coloured by wind type, and one line sums up the ride, such as *Mostly crosswind · gusts 43 km/h · rain up to 4.3 mm/h · finish 01:35 PM · sunset 04:57 PM*.
-- Pick a better time or direction. Move the start an hour earlier or later, use a preset like *Tomorrow 08:00*, or compare up to six start times in both directions. RideWind marks the best one.
+- Pick a better time or direction. Move the start an hour earlier or later, use a preset like *Tomorrow 08:00*, or compare up to six start times in both directions. RideWind marks the best one that stays in daylight, or says when they're too close to call.
 - Base the timing on your power if you want to. Instead of a flat average speed, RideWind can use your power, weight, position on the bike, tyres, the slope and the wind. As a sanity check, a 200 W rider at 84 kg (rider plus bike) comes out at about 33 km/h on a calm, flat road.
 - Keep your rides private. Settings and saved routes stay in your browser. Only coordinates rounded to about 100 m go to the weather service, and timestamps and other recorded data in your GPX file are thrown away.
 
