@@ -17,6 +17,7 @@ Start with the [README](../README.md) for what RideWind does and how to run it. 
 - [Maintaining RideWind](maintaining.md): branch rules and how changes reach `main`.
 - [Contributing](../CONTRIBUTING.md): proposing changes, conventions and required checks.
 - [Roadmap](../ROADMAP.md): proposed priorities, none approved yet.
+- [Usability testing](usability-testing.md): plan for testing RideWind with cyclists, and the log of findings and retests.
 
 ## Policies
 
