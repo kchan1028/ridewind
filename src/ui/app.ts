@@ -433,10 +433,9 @@ function showForecastError(msg: string): void {
   state.forecastFromCache = false;
   state.tzFromForecast = false;
   state.tz = deviceTimeZone();
-  $('wx-error-msg').textContent = msg;
+  // The message and the one Retry button live in the verdict; this section only points there.
   show('wx-error', true);
-  // The verdict and the alert above the results both show this, so the status line stays clear.
-  // Announce it once, through the verdict's live region (an unhidden role="alert" isn't announced reliably).
+  // The verdict shows it, so the status line stays clear. Announce it once, through the verdict's live region.
   setStatus('');
   setVerdictMode('error', 'Forecast unavailable', msg);
   announce(`Forecast unavailable. ${msg}`);
@@ -1263,7 +1262,6 @@ export function initApp(): void {
     setStatus(state.reversed ? 'Route reversed.' : 'Route back in its original direction.', 'ok');
   });
   $('save-btn').addEventListener('click', () => void saveCurrentRoute());
-  $('retry-btn').addEventListener('click', () => void retryForecast($('retry-btn')));
   $('verdict-retry').addEventListener('click', () => void retryForecast($('verdict-retry')));
   $('verdict-refresh').addEventListener('click', () => void loadForecast());
   $('verdict-toggle').addEventListener('click', () => {

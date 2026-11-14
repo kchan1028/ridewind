@@ -94,7 +94,7 @@ Anything the rider might see goes through `AppError` ([`src/lib/errors.ts`](../s
 - a `message` written for the rider, such as *Couldn't reach Open-Meteo. Check your connection and retry. Your route is still loaded.*;
 - sometimes a `detail` with the technical reason, and for rate limits, `retryAfterSeconds`.
 
-`app.ts` shows the message in the status line and, for forecast errors, in an alert with a **Retry forecast** button. A failed forecast never clears the loaded route. Forecast requests give up after 20 seconds (`REQUEST_TIMEOUT_MS`), so the page never spins forever.
+`app.ts` shows the message in the status line. A forecast error shows in the verdict instead, with one **Retry forecast** button, and is announced once. A failed forecast never clears the loaded route. Forecast requests give up after 20 seconds (`REQUEST_TIMEOUT_MS`), so the page never spins forever.
 
 One error is a deliberate stop rather than a failure. In power mode, `simulateRide` throws `ELEVATION_MISSING` when the route lacks elevation, unless the rider has chosen **Estimate as if flat**. The app catches it and asks the rider to choose. This keeps a missing elevation profile from quietly turning into a flat course.
 
