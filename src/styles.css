@@ -893,3 +893,15 @@ select {
   min-height: 32px;
   margin-top: 4px;
 }
+.grid-fields .field {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.ch-note,
+.ch-label {
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}

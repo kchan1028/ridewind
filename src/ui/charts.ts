@@ -60,7 +60,8 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
   container.replaceChildren();
   if (steps.length === 0) return;
   const total = steps[steps.length - 1]!.endM;
-  const width = Math.max(280, Math.floor(container.clientWidth || 600));
+  // Minus 2 px for the figure border so the SVG never clips.
+  const width = Math.max(280, Math.floor(container.clientWidth || 600) - 2);
   const innerW = width - PAD.l - PAD.r;
   const x = (d: number) => (d / total) * innerW;
   const panels: Panel[] = [];
@@ -71,7 +72,9 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
     const toU = (m: number) => (u === 'metric' ? m : m * 3.28084);
     const unit = u === 'metric' ? 'm' : 'ft';
     const eles = withEle.map((s) => toU(s.eleM!));
-    const [lo, hi] = niceRange(Math.min(...eles), Math.max(...eles), u === 'metric' ? 20 : 60);
+    let [lo, hi] = niceRange(Math.min(...eles), Math.max(...eles), u === 'metric' ? 20 : 60);
+    // Padding should not invent below-sea-level values for a route that never goes there.
+    if (Math.min(...eles) >= 0 && lo < 0) [lo, hi] = [0, hi - lo];
     panels.push({
       title: 'Elevation',
       tag: 'From route',
