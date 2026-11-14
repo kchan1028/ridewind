@@ -5,9 +5,19 @@ import { airDensity, clampGradient, solveSpeed, windHeightFactor, type Exposure,
 import type { LocationForecast } from './weather';
 import { windComponents } from './wind';
 
-export type PaceModel =
+/** Planned stop time (coffee, food, lights) in minutes, spread evenly along the ride. Optional. */
+export interface StopPlan {
+  stopMinutes?: number;
+}
+
+export type PaceModel = (
   | { kind: 'constant'; speedKmh: number }
-  | { kind: 'power'; rider: RiderParams; exposure: Exposure };
+  | { kind: 'power'; rider: RiderParams; exposure: Exposure }
+) &
+  StopPlan;
+
+/** Longest planned stop time accepted, in minutes. */
+export const MAX_STOP_MINUTES = 600;
 
 /** Air temperature assumed when no forecast covers a step (ISA sea-level standard). */
 export const FALLBACK_TEMP_C = 15;
@@ -33,7 +43,11 @@ export interface SimStep {
 
 export interface Simulation {
   steps: SimStep[];
+  /** Total time from departure to finish, including planned stops, ms. */
   durationMs: number;
+  /** Planned stop time included in durationMs, ms. */
+  stopMs: number;
+  /** Average moving speed, not counting stops. */
   avgSpeedKmh: number;
   /** True when a power model ran without elevation because the rider explicitly chose to. */
   assumedFlat: boolean;
@@ -88,6 +102,10 @@ export function simulateRide(input: SimulationInput): Simulation {
 
   const windFactor = pace.kind === 'power' ? windHeightFactor(pace.exposure) : 1;
   const ele = (d: number) => elevationAtDistance(points, cum, d);
+  const stopMinutes = Math.min(MAX_STOP_MINUTES, Math.max(0, pace.stopMinutes ?? 0));
+  const stopMs = stopMinutes * 60_000;
+  // Stops are spread evenly by distance, so each step carries its share of the stop time.
+  const stopMsPerM = total > 0 ? stopMs / total : 0;
   const steps: SimStep[] = [];
   let t = 0;
   let noWeather = 0;
@@ -123,7 +141,7 @@ export function simulateRide(input: SimulationInput): Simulation {
     }
 
     steps.push({ startM: s, endM: e, startMs: t, speedKmh: v * 3.6, eleM, gradient, bearing, weather, headwind10Kmh });
-    t += (len / v) * 1000;
+    t += (len / v) * 1000 + len * stopMsPerM;
   }
 
   const durationMs = t;
@@ -145,7 +163,8 @@ export function simulateRide(input: SimulationInput): Simulation {
   return {
     steps,
     durationMs,
-    avgSpeedKmh: durationMs > 0 ? total / 1000 / (durationMs / 3600_000) : 0,
+    stopMs,
+    avgSpeedKmh: durationMs - stopMs > 0 ? total / 1000 / ((durationMs - stopMs) / 3600_000) : 0,
     assumedFlat: pace.kind === 'power' && !complete,
     stepsWithoutWeather: noWeather,
     elapsedAt,

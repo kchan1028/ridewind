@@ -41,7 +41,7 @@ The file has no elevation. This is on purpose: RideWind never treats missing ele
 ## Getting the forecast
 
 **"Open-Meteo's free usage limit has been reached for now."**
-Open-Meteo's free plan allows fewer than 10,000 calls a day, and each route costs about 20. Wait and press **Retry forecast**. If the service sent a wait time, the message includes it ("Try again in about N min."). Your route stays loaded.
+Open-Meteo's free plan allows fewer than 10,000 calls a day, and each route costs one call per forecast point: about 21 for a 100 km ride, and at most 40. Wait and press **Retry forecast**. If the service sent a wait time, the message includes it ("Try again in about N min."). Your route stays loaded.
 
 **"Couldn't reach Open-Meteo."** or **"Open-Meteo didn't respond in time."**
 Your connection dropped, or the request took longer than 20 seconds. Check you're online and press **Retry forecast**. Browser extensions that block requests can also cause this. Allow `api.open-meteo.com`.
@@ -56,7 +56,7 @@ The service turned the request down. This is rare. Note the route's location and
 You'd reach those parts after the forecast ends, which is 16 days out. Choose an earlier departure. RideWind never fills these gaps with made-up values. In power mode it assumes still air and 15 °C for those parts and shows a warning.
 
 **The forecast looks out of date.**
-RideWind fetches the forecast once per route and keeps it until you reload the page. To refresh it, load the route again.
+RideWind fetches the forecast once per route and keeps it until you reload the page. To get a newer one, press **Refresh forecast** under the results.
 
 ## Timing and estimates
 

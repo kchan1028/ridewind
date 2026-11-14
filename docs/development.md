@@ -107,9 +107,9 @@ Before you open the pull request, run `npm run build && npm run preview` too. Th
 
 ## Debugging
 
-**Forecast requests.** Open the browser's developer tools, go to the Network tab and filter by `open-meteo`. Loading a route sends one request to `api.open-meteo.com/v1/forecast` with up to 20 coordinates. The `X-RateLimit-Cost` response header shows how many free calls it used. Changing the departure time or speed sends no new request.
+**Forecast requests.** Open the browser's developer tools, go to the Network tab and filter by `open-meteo`. Loading a route sends one request to `api.open-meteo.com/v1/forecast` with up to 40 coordinates. The `X-RateLimit-Cost` response header shows how many free calls it used. Changing the departure time or speed sends no new request.
 
-**Rate limits while developing.** Each route you load costs about 20 of Open-Meteo's free calls, and the free limit is fewer than 10,000 a day. The forecast is only kept in memory, so after a page reload, loading a route fetches it again. If you hit the limit, the app shows *Open-Meteo's free usage limit has been reached for now* and you'll have to wait. For work on calculations, use the tests, which never call the network.
+**Rate limits while developing.** Each route you load costs one of Open-Meteo's free calls per forecast point (up to 40), and the free limit is fewer than 10,000 a day. The forecast is only kept in memory, so after a page reload, loading a route fetches it again. If you hit the limit, the app shows *Open-Meteo's free usage limit has been reached for now* and you'll have to wait. For work on calculations, use the tests, which never call the network.
 
 **Stored data.** In developer tools, open Application (Chrome) or Storage (Firefox). Settings are in Local Storage under `ridewind:settings:v1`. Saved routes are in IndexedDB, database `ridewind`, store `routes`. Delete them there, or use **Data & settings → Delete all local data** in the app.
 

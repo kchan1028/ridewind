@@ -12,8 +12,8 @@ Values marked **forecast** (solid dot) come straight from Open-Meteo. Values mar
 
 ## How the forecast is matched to your ride
 
-- **Arrival times** come from your average speed or from the physics model below. Neither one allows for stops.
-- **Forecast points:** RideWind picks up to 20 points spread evenly along the route, about 5 km apart. Each section of the map uses the nearest point's forecast, at the time you're expected to reach that section.
+- **Arrival times** come from your average speed or from the physics model below, plus any planned stop time (see below).
+- **Forecast points:** RideWind picks up to 40 points spread evenly along the route, about 5 km apart, which keeps that spacing on rides up to about 195 km. Each section of the map uses the nearest point's forecast, at the time you're expected to reach that section.
 - **Between hours:** Open-Meteo gives one value per hour. For temperature and wind speed, RideWind blends the two hours either side of your arrival in a straight line. Wind direction is blended the short way round the compass, so 350° to 10° passes through 0°, not 180°. Rain, chance of rain and gusts are reported by Open-Meteo for the hour *before* each timestamp, so RideWind uses the hour your arrival falls in. If you'd arrive after the forecast ends, the section shows "No forecast" and RideWind doesn't guess.
 - **Rain wording:** the summary leads with the highest chance of rain along the ride and gives the heaviest forecast rate as what to expect if it rains. Below a 20% chance it says *low chance of rain*, because a model can forecast a heavy rate at a low chance, and the rate alone would overstate the risk.
 - **Splitting the wind:** wind direction is where the wind blows *from*. If you're heading in direction θ and the wind comes from φ:
@@ -54,7 +54,8 @@ P = ( ½·ρ·CdA·v_air·|v_air|·v          aerodynamic drag, v_air = v + head
 - **Wind at rider height:** the 10 m forecast wind is scaled down to about 1.2 m, roughly where your body is, using v·(1.2/10)^α (the Hellmann power law). You pick how exposed the route is: open (α 0.14, about 74% of the forecast), mixed (α 0.25, about 59%) or sheltered (α 0.33, about 50%). Only the part of the wind along your direction of travel counts. The extra drag from wind hitting you side-on is ignored.
 - **Steps:** RideWind moves along the route 100 m at a time (the loop is drawn below). The slope is measured over 200 m centred on each step and capped at 25% up or down, so a bad elevation reading can't produce a wall. The clock moves forward step by step, so each step meets the forecast for when you'd actually get there.
 - **Limits:** speed never goes above your **max descent speed**, on the assumption that you brake. On very steep climbs it never drops below 4 km/h, about walking pace.
-- **Left out:** speeding up and slowing down, corners, traffic, stops, riding in a group, getting tired and changing your power. Where a step has no forecast, RideWind assumes still air and 15 °C and warns you.
+- **Planned stops:** you can add a total stop time in minutes, in either pace mode. It's spread evenly by distance, so halfway along you've used half of it. Later arrival times, the forecast they're matched to, and the finish all move back. The average speed shown is moving speed, without the stops.
+- **Left out:** speeding up and slowing down, corners, traffic, unplanned stops, riding in a group, getting tired and changing your power. Where a step has no forecast, RideWind assumes still air and 15 °C and warns you.
 - **No silent flat routes.** If the route has no elevation, or only some, power mode asks you to choose before showing results: look up elevation, or **Estimate as if flat**. A flat estimate is labelled "physics estimate, flat", the verdict says "(flat estimate)", and a warning is shown. In average-speed mode, the elevation chart says "No elevation data" instead of drawing a flat line.
 - **Defaults:** 180 W, 75 kg rider, 9 kg bike and kit, CdA 0.32 m² (hands on the hoods), Crr 0.005 (everyday road tyres), 55 km/h max descent, mixed exposure. Change them to match you.
 
@@ -93,8 +94,29 @@ Settings: 180 W, 75 kg rider, 9 kg bike and kit, CdA 0.32 m², Crr 0.005, 15 °C
 
 The tests check the model against sums worked out by hand for each force, check that working back from speed to power gives the same answer, and check that it reacts the right way to more power, wind, slope, drag, tyre friction and weight. A 200 W, 84 kg rider with CdA 0.32 and Crr 0.005 comes out at about 33 km/h on a calm, flat road.
 
+## How close are the estimates?
+
+In November 2026 the power model was run against five of the maintainer's own recorded road rides, 73 to 141 km long. Each ride used the rider's weight plus a 9 kg bike, the default CdA, Crr, descent cap and mixed exposure, the real start time, and Open-Meteo's archived forecast for that day. The prediction was compared with the ride's moving time.
+
+| Ride | Distance | Climbing | Normalised power | Predicted | Actual moving time | Difference |
+| --- | --- | --- | --- | --- | --- | --- |
+| A | 72.6 km | 358 m | 172 W | 2 h 33 min | 2 h 52 min | −11.0% |
+| B | 88.5 km | 564 m | 182 W | 2 h 58 min | 2 h 54 min | +1.9% |
+| C | 141.4 km | 1,081 m | 170 W | 5 h 19 min | 5 h 24 min | −1.6% |
+| D | 113.5 km | 1,247 m | 177 W | 4 h 25 min | 4 h 31 min | −2.5% |
+| E | 86.0 km | 95 m | 190 W | 2 h 41 min | 3 h 00 min | −10.5% |
+
+What this shows:
+
+- **Which power figure you enter matters most.** With normalised power the model was 4.7% fast on average. With average power, which counts coasting as zero, it was 5.6% slow on average and up to 11% slow. A steady figure between the two is a reasonable starting point.
+- **The worst misses were flat or stop-start rides** (A and E), where traffic, junctions and easy pedalling mean less steady effort than the power figure suggests.
+- **Wind changed these predictions by 0 to 3%.** All five were loops, where headwind and tailwind largely cancel. The wind matters more on point-to-point rides and for choosing a direction.
+- **Group rides need a lower CdA.** Three rides were in groups, where drafting cuts air drag below the default.
+
+Five rides from one rider is a small check, not a validation. Expect errors of around 10%, and adjust your power or CdA once you've compared a few of your own rides.
+
 ## Comparing start times and directions
 
 RideWind runs the same calculation for up to six start times (every 1, 2, 3 or 6 hours from the one you chose) in both directions. For each, it shows the ride time, the finish time (marked when it's after sunset or before sunrise), the share of the distance into a headwind and the highest chance of rain. It only lists options that finish before the forecast runs out. In power mode, **Best** is the quickest ride. In average-speed mode every ride takes the same time, so **Best** is the one with the least headwind. An option the forecast doesn't fully cover, or that starts before sunrise or finishes after sunset at the start point, is never marked Best. If the remaining options are within 5 minutes (power) or 3 km/h of average wind (average speed) of each other, none is marked and the table says there's no clear best.
 
-All of this is a planning aid built on forecasts and a simplified model. It hasn't been checked against your own rides and isn't race advice. RideWind doesn't claim to match any commercial cycling weather service.
+All of this is a planning aid built on forecasts and a simplified model. It's only been checked against a few real rides and isn't race advice. RideWind doesn't claim to match any commercial cycling weather service.
