@@ -8,7 +8,7 @@ import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
 import { MAX_STOP_MINUTES, simulateRide, type PaceModel, type Simulation } from '../lib/simulate';
 import { rideDaylight } from '../lib/daylight';
 import { departurePresets } from '../lib/presets';
-import { windVerdict } from '../lib/verdict';
+import { rainSummary, windVerdict } from '../lib/verdict';
 import * as store from '../lib/storage';
 import {
   deviceTimeZone,
@@ -139,10 +139,8 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   const mh = s.meanHeadwind;
   if (mh !== null && Math.abs(mh) >= 1) facts.push(`net ${formatSpeed(Math.abs(mh), u)} ${mh > 0 ? 'headwind' : 'tailwind'}`);
   if (s.gustMax !== null) facts.push(`gusts ${formatSpeed(s.gustMax, u)}`);
-  if (s.precipMax !== null) {
-    const p = s.precipProbabilityMax;
-    facts.push(s.precipMax < 0.05 ? (p !== null && p >= 30 ? `rain ${Math.round(p)}% chance` : 'dry') : `rain up to ${formatPrecip(s.precipMax, u)}/h`);
-  }
+  const rain = rainSummary(s.precipMax, s.precipProbabilityMax, (mm) => `${formatPrecip(mm, u)}/h`);
+  if (rain) facts.push(rain.fact);
   facts.push(`${formatDuration(plan.durationMs)}, finish ${formatClock(plan.finishMs, tz)}${sim.assumedFlat ? ' (flat estimate)' : ''}`);
   const light = rideDaylight(state.departureMs!, plan.finishMs, forecastsForSamples()[0]?.sun);
   if (light.kind === 'starts-before-sunrise') facts.push(`starts in the dark (sunrise ${formatClock(light.sunriseMs!, tz)})`);
@@ -556,7 +554,7 @@ function renderComparison(): void {
     lines.push(`${Math.round(r.headwindShare * 100)}% headwind`);
     if (pace.kind === 'constant' && r.meanHeadwind !== null)
       lines.push(`avg ${formatSpeed(Math.abs(r.meanHeadwind), u)} ${r.meanHeadwind >= 0 ? 'head' : 'tail'}`);
-    if (r.precipProbabilityMax !== null) lines.push(`rain ${Math.round(r.precipProbabilityMax)}%`);
+    if (r.precipProbabilityMax !== null) lines.push(`${Math.round(r.precipProbabilityMax)}% chance of rain`);
     if (!r.fullyForecast) lines.push('partly outside forecast');
     const txt = document.createElement('span');
     txt.textContent = lines.join(' · ');
@@ -660,8 +658,9 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
     s.windSpeedMin === null ? dash : `${formatSpeed(s.windSpeedMin, u).split(' ')[0]}–${formatSpeed(s.windSpeedMax!, u)}`;
   $('kpi-gust').textContent = s.gustMax === null ? '' : `Gusts up to ${formatSpeed(s.gustMax, u)}`;
   $('kpi-temp').textContent = s.tempMin === null ? dash : `${formatTemp(s.tempMin, u)} to ${formatTemp(s.tempMax!, u)}`;
-  $('kpi-rain').textContent = s.precipMax === null ? dash : s.precipMax < 0.05 ? 'Dry' : `Up to ${formatPrecip(s.precipMax, u)}/h`;
-  $('kpi-rain-prob').textContent = s.precipProbabilityMax === null ? '' : `Highest chance ${Math.round(s.precipProbabilityMax)}%`;
+  const rain = rainSummary(s.precipMax, s.precipProbabilityMax, (mm) => `${formatPrecip(mm, u)}/h`);
+  $('kpi-rain').textContent = rain ? rain.value : dash;
+  $('kpi-rain-prob').textContent = rain ? rain.sub : '';
 
   // Table
   const body = $('samples-body');
