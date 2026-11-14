@@ -2,6 +2,19 @@
 
 Your route file never leaves your browser. RideWind sends only up to 20 route points, rounded to about 100 m, to Open-Meteo for the forecast, and requests map tiles from OpenStreetMap. Settings and saved routes stay on your device. The details are below.
 
+```mermaid
+flowchart LR
+  subgraph Device[Your browser, on your device]
+    GPX[Your GPX file] --> App[RideWind]
+    App <--> Store[(Settings and saved routes<br/>localStorage and IndexedDB)]
+  end
+  App -- "Up to 20 points, rounded to about 100 m" --> OM[Open-Meteo<br/>forecast]
+  App -. "Only if you press Look up elevation:<br/>up to 200 points, rounded to about 11 m" .-> OME[Open-Meteo<br/>elevation]
+  App -- "Map tiles for the area on screen" --> OSM[OpenStreetMap]
+```
+
+Nothing else leaves your browser. There are no analytics, cookies or accounts.
+
 ## Weather data and attribution
 
 Weather comes from the [Open-Meteo Forecast API](https://open-meteo.com/en/docs), called directly from the browser. This was checked in November 2026:

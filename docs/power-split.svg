@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 382" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <title id="t">Where a rider's power goes, on the flat and on a climb</title>
+  <desc id="d">Stacked bars from RideWind's physics model at 180 W with default settings. Flat road, no wind: 32.0 km/h; Air 138 W, Tyres 37 W, Drivetrain 6 W. Flat road, 15 km/h headwind: 26.9 km/h; Air 144 W, Tyres 31 W, Drivetrain 5 W. 5% climb, no wind: 13.2 km/h; Air 10 W, Tyres 15 W, Gravity 151 W, Drivetrain 5 W.</desc>
+  <style>
+    .bg { fill: #ffffff; }
+    .h { fill: #14213d; font-weight: 700; font-size: 17px; }
+    .sub { fill: #3b4659; font-size: 13px; }
+    .lbl { fill: #14213d; font-size: 14px; font-weight: 600; }
+    .p { fill: #3b4659; font-size: 13px; }
+    .m { fill: #5f6b7a; font-size: 12px; }
+    .axis { stroke: #8a95a8; stroke-width: 1.5; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .h, .lbl { fill: #e6edf3; }
+      .sub, .p { fill: #9da7b3; }
+      .m { fill: #8b949e; }
+      .axis { stroke: #6e7681; }
+    }
+    .s1 { fill: #6250d6; } .s2 { fill: #eb6834; } .s3 { fill: #1baf7a; } .s4 { fill: #9aa3b2; }
+    .in1 { fill: #ffffff; font-size: 13px; font-weight: 600; }
+    .in2, .in3 { fill: #14213d; font-size: 13px; font-weight: 600; }
+    @media (prefers-color-scheme: dark) {
+      .s1 { fill: #9085e9; } .s2 { fill: #d95926; } .s3 { fill: #199e70; } .s4 { fill: #6e7681; }
+      .in1, .in2, .in3 { fill: #0d1117; }
+    }
+  </style>
+  <rect class="bg" width="760" height="382" rx="12"/>
+  <text class="h" x="24.0" y="36.0" text-anchor="start">On the flat, most of your power pushes air. On a climb, most of it lifts you.</text>
+  <text class="sub" x="24.0" y="58.0" text-anchor="start">Where a steady 180 W goes, from RideWind's physics model with its default settings.</text>
+  <rect class="s1" x="24" y="76" width="14" height="14" rx="3"/>
+  <text class="p" x="44.0" y="88.0" text-anchor="start">Air resistance</text>
+  <rect class="s2" x="166" y="76" width="14" height="14" rx="3"/>
+  <text class="p" x="186.0" y="88.0" text-anchor="start">Tyre rolling resistance</text>
+  <rect class="s3" x="371" y="76" width="14" height="14" rx="3"/>
+  <text class="p" x="391.0" y="88.0" text-anchor="start">Gravity</text>
+  <rect class="s4" x="464" y="76" width="14" height="14" rx="3"/>
+  <text class="p" x="484.0" y="88.0" text-anchor="start">Bearings and drivetrain</text>
+  <text class="lbl" x="24.0" y="135.0" text-anchor="start">Flat road, no wind</text>
+  <text class="p" x="24.0" y="153.0" text-anchor="start">32.0 km/h</text>
+  <rect class="s1" x="260.0" y="120" width="356.2" height="26" rx="4"/>
+  <text class="in1" x="268.0" y="138.0" text-anchor="start">Air 138 W</text>
+  <rect class="s2" x="618.2" y="120" width="94.8" height="26" rx="4"/>
+  <rect class="s4" x="714.9" y="120" width="15.1" height="26" rx="4"/>
+  <text class="m" x="260.0" y="164.0" text-anchor="start">Air 138 W · Tyres 37 W · Drivetrain 6 W</text>
+  <text class="lbl" x="24.0" y="209.0" text-anchor="start">Flat road, 15 km/h headwind</text>
+  <text class="p" x="24.0" y="227.0" text-anchor="start">26.9 km/h</text>
+  <rect class="s1" x="260.0" y="194" width="372.2" height="26" rx="4"/>
+  <text class="in1" x="268.0" y="212.0" text-anchor="start">Air 144 W</text>
+  <rect class="s2" x="634.2" y="194" width="79.6" height="26" rx="4"/>
+  <rect class="s4" x="715.8" y="194" width="14.2" height="26" rx="4"/>
+  <text class="m" x="260.0" y="238.0" text-anchor="start">Air 144 W · Tyres 31 W · Drivetrain 5 W</text>
+  <text class="lbl" x="24.0" y="283.0" text-anchor="start">5% climb, no wind</text>
+  <text class="p" x="24.0" y="301.0" text-anchor="start">13.2 km/h</text>
+  <rect class="s1" x="260.0" y="268" width="24.8" height="26" rx="4"/>
+  <rect class="s2" x="286.8" y="268" width="38.8" height="26" rx="4"/>
+  <rect class="s3" x="327.6" y="268" width="388.1" height="26" rx="4"/>
+  <text class="in3" x="335.6" y="286.0" text-anchor="start">Gravity 151 W</text>
+  <rect class="s4" x="717.7" y="268" width="12.3" height="26" rx="4"/>
+  <text class="m" x="260.0" y="312.0" text-anchor="start">Air 10 W · Tyres 15 W · Gravity 151 W · Drivetrain 5 W</text>
+  <text class="m" x="24.0" y="348.0" text-anchor="start">Default settings: 75 kg rider plus 9 kg bike and kit, CdA 0.32 m², Crr 0.005, 15 °C at sea level.</text>
+  <text class="m" x="24.0" y="365.0" text-anchor="start">The 15 km/h forecast wind is about 9 km/h at rider height with mixed exposure. Values are rounded.</text>
+</svg>
