@@ -58,6 +58,28 @@ You'd reach those parts after the forecast ends, which is 16 days out. Choose an
 **The forecast looks out of date.**
 RideWind fetches the forecast once per route and keeps it until you reload the page. To get a newer one, press **Refresh forecast** under the results.
 
+## Drawing a route
+
+When routing fails, the drawing goes back to its last complete version and the panel offers **Retry**, **Draw as straight line** and **Dismiss**.
+
+**"Couldn't reach the routing service."** or **"The routing service didn't respond in time."**
+The request didn't get through within 20 seconds, often because you're offline. Check your connection and press **Retry**, or draw that section as a straight line.
+
+**"The routing service is busy."**
+The server is rate limiting requests. Wait a few seconds and press **Retry**. RideWind already spaces requests at least 1.1 seconds apart.
+
+**"No road was found near that point."**
+The point is too far from any road or path the cycling profile can use. Move it closer to a road, or switch *New sections* to **Straight line**.
+
+**"The routing service couldn't find a cycling route between those points."**
+The roads between them don't connect for bikes in OpenStreetMap, for example across a motorway or a private road. Add a point on the road you want, or draw that section as a straight line.
+
+**"That section is too long for the routing service."**
+The public server limits one route to about 150 km. Add a point part way along.
+
+**The route follows a different road than you wanted.**
+Routing picks what the cycling profile prefers. Add a point on the road you want, and check the line in **Review route** before you use it.
+
 ## Timing and estimates
 
 **In power mode, the verdict says "timed at … average" and asks about elevation.**

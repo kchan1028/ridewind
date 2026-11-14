@@ -1,8 +1,26 @@
 import { AppError, isAppError } from '../lib/errors';
 import { BEST_MARGIN, BEST_MAX_RAIN_CHANCE, bestChoice, likelyWet, compareRides, daylightCutoff, departureOptions, nextDayDepartures, type CompareRow, type RouteVariant } from '../lib/compare';
-import { MAX_DRAWN_POINTS, addDrawnPoint, buildDrawnRoute, drawnDistanceM, gpxFileName, routeToGpx, undoDrawnPoint } from '../lib/draw';
+import { MAX_DRAWN_POINTS, gpxFileName, routeToGpx } from '../lib/draw';
+import {
+  EMPTY_ROUTE,
+  RouteSession,
+  addPoint,
+  closeLoop,
+  editorStats,
+  editorToRoute,
+  isComplete,
+  isLoop,
+  movePoint,
+  removePoint,
+  reverseEditorRoute,
+  type EditorRoute,
+  type LegMode,
+  type SessionView,
+} from '../lib/route-editor';
+import { MAX_LOCATIONS_PER_REQUEST, fetchRoutedLegs } from '../lib/routing';
+import { DEFAULT_ROUTING_MIN_INTERVAL_MS, DEFAULT_ROUTING_URL, routingAttribution, routingProviderName } from '../lib/routing-config';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
-import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type LatLon, type Route, type Sample } from '../lib/geo';
+import { cumulativeDistances, elevationStats, hasCompleteElevation, haversineM, reverseRoute, sampleRoute, type LatLon, type Route, type Sample } from '../lib/geo';
 import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
 import { RIDER_LIMITS, type Exposure, type RiderParams } from '../lib/physics';
 import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
@@ -90,6 +108,8 @@ interface State {
   cachedForecast: ForecastBundle | null;
   /** True while the shown forecast is that saved copy rather than a fresh one. */
   forecastFromCache: boolean;
+  /** The route is the drawing in progress: it changes with each completed edit and may reuse nearby forecast points. */
+  live: boolean;
 }
 
 const state: State = {
@@ -115,6 +135,7 @@ const state: State = {
   pendingDepartTime: null,
   cachedForecast: null,
   forecastFromCache: false,
+  live: false,
 };
 
 let map: RouteMap;
@@ -308,8 +329,41 @@ function show(id: string, visible: boolean): void {
 function loadRoute(
   route: Route,
   opts: { isSample?: boolean; savedId?: string | null; prefs?: store.RoutePrefs; cachedForecast?: ForecastBundle | null } = {},
+): boolean {
+  if (drawing) {
+    if (!confirmDiscardDrawing()) {
+      // Nothing was loaded, so the sample menu mustn't claim a sample is.
+      $<HTMLSelectElement>('sample-select').value = '';
+      setStatus('Kept the route you are drawing. Finish or cancel it first to open another route.', 'info');
+      return false;
+    }
+    stopDrawing();
+    beforeDrawing = null;
+  }
+  beginRoute(route, opts);
+  map.invalidateSize();
+  map.fit();
+  void loadForecast();
+  return true;
+}
+
+/**
+ * Resets per-route state for a new route and draws it, without fetching a
+ * forecast. `keepForecast` keeps the forecast in memory (a drawing in progress
+ * reuses nearby points); `live` marks the route as that drawing.
+ */
+function beginRoute(
+  route: Route,
+  opts: {
+    isSample?: boolean;
+    savedId?: string | null;
+    prefs?: store.RoutePrefs;
+    cachedForecast?: ForecastBundle | null;
+    keepForecast?: boolean;
+    live?: boolean;
+  } = {},
 ): void {
-  if (drawing) stopDrawing();
+  state.live = !!opts.live;
   state.original = route;
   // First route: leave the compact first-run layout so the map gets its full height.
   document.body.classList.remove('no-route');
@@ -319,8 +373,9 @@ function loadRoute(
   state.forecastFromCache = false;
   state.isSample = !!opts.isSample;
   state.savedId = opts.savedId ?? null;
-  state.forecast = null;
-  state.departureMs = null;
+  if (!opts.keepForecast) state.forecast = null;
+  // A drawing in progress keeps the departure the rider chose, even after Clear and Undo.
+  if (!opts.live) state.departureMs = null;
   state.compareFromMs = null;
   state.showLateDepartures = false;
   state.assumeFlat = false;
@@ -331,10 +386,9 @@ function loadRoute(
   window.clearTimeout(flashTimer);
   delete $('save-btn').dataset.flash;
   $('save-btn').textContent = state.savedId ? 'Update saved copy' : 'Save on this device';
+  if (state.forecast) chooseDefaultDeparture();
   applyRoute();
-  map.invalidateSize();
-  map.fit();
-  void loadForecast();
+  updateDepartureInput();
 }
 
 /** Rebuilds distances and forecast sample points after the route or its direction changes. */
@@ -343,7 +397,7 @@ function applyRoute(): void {
   state.route = state.reversed ? reverseRoute(state.original) : state.original;
   state.cum = cumulativeDistances(state.route.points);
   state.samples = sampleRoute(state.route.points, state.cum);
-  map.showRoute(state.route.points);
+  map.showRoute(state.route.points, state.route.manualRanges);
   renderRouteCard();
   recompute();
 }
@@ -382,7 +436,22 @@ function renderRouteCard(): void {
   show('card-lookup-ele', !complete);
   show('elevation-source', r.elevationSource === 'dem');
   show('dem-credit', r.elevationSource === 'dem');
+  show('routing-elevation-source', r.elevationSource === 'routing');
   show('export-gpx-btn', drawn);
+  const manual = r.manualRanges ?? [];
+  show('legend-manual', manual.length > 0);
+  show('manual-note', manual.length > 0);
+  if (manual.length) {
+    const m = manual.reduce((sum, x) => sum + (state.cum[x.end]! - state.cum[x.start]!), 0);
+    const one = manual.length === 1;
+    $('manual-note').textContent = `${one ? 'One section' : `${manual.length} sections`} (${formatDistance(m, u)}) ${
+      one ? 'is a straight line' : 'are straight lines'
+    } drawn by hand, not along roads. White dots mark ${one ? 'it' : 'them'} on the map.`;
+  }
+  // Drawn routes that used road-following keep the routing credit while they're shown.
+  // (Routes drawn before road-following existed have neither routing elevation nor manual ranges.)
+  const routed = drawn && (r.elevationSource === 'routing' || (manual.length > 0 && !(manual.length === 1 && manual[0]!.start === 0 && manual[0]!.end === r.points.length - 1)));
+  map.setRoutingAttribution(drawing || routed ? routingCredit : null);
   show('legend', true);
   $('reverse-btn').setAttribute('aria-pressed', String(state.reversed));
   $('direction-note').textContent = drawn
@@ -422,101 +491,465 @@ async function loadSample(file: string, label: string): Promise<void> {
 
 /* ---------- drawing a route ---------- */
 
-/** Points the rider has placed, in riding order. Straight lines join them. */
-let draft: LatLon[] = [];
+/** The routing server (see src/lib/routing-config.ts and docs/routing.md). Never a secret: this runs in the browser. */
+const routingUrl: string = import.meta.env.VITE_ROUTING_URL || DEFAULT_ROUTING_URL;
+const routingMinIntervalMs = Number(import.meta.env.VITE_ROUTING_MIN_INTERVAL_MS) || DEFAULT_ROUTING_MIN_INTERVAL_MS;
+const routingCredit = routingAttribution(routingUrl);
+/** While drawing, the forecast for new parts of the route is fetched after this long without an edit. */
+const LIVE_FORECAST_DELAY_MS = 1500;
+
 let drawing = false;
+let session: RouteSession | null = null;
+/** Index of the selected control point, or null. */
+let selected: number | null = null;
+let newLegMode: LegMode = 'routed';
+/** Whether a tap on the map adds a point. Off, the map only pans, which is handy on a phone. */
+let tapAdds = true;
+let shownRevision = 0;
+/** Announced before the next status line, then cleared. */
+let drawNote = '';
+let liveForecastTimer = 0;
+
+/** What was loaded before drawing started, put back if the drawing is cancelled. */
+type Snapshot = Pick<
+  State,
+  | 'original'
+  | 'reversed'
+  | 'isSample'
+  | 'savedId'
+  | 'forecast'
+  | 'tz'
+  | 'tzFromForecast'
+  | 'departureMs'
+  | 'assumeFlat'
+  | 'compareFromMs'
+  | 'showLateDepartures'
+  | 'cachedForecast'
+  | 'forecastFromCache'
+  | 'pendingDepartTime'
+> & { sample: string };
+let beforeDrawing: Snapshot | null = null;
 
 function setAriaDisabled(id: string, disabled: boolean): void {
   $(id).setAttribute('aria-disabled', String(disabled));
 }
 
-/** Redraws the draft and updates the count and distance; `message` is announced first. */
-function renderDraft(message = ''): void {
-  map.showDraft(draft);
-  const n = draft.length;
-  const summary = n === 0 ? 'No points yet.' : `${n} ${n === 1 ? 'point' : 'points'} · ${formatDistance(drawnDistanceM(draft), units())}`;
-  $('draw-status').textContent = message ? `${message} ${summary}` : summary;
-  setAriaDisabled('draw-undo', n === 0);
+const isAriaDisabled = (id: string) => $(id).getAttribute('aria-disabled') === 'true';
+const editorRoute = (): EditorRoute => session?.route ?? EMPTY_ROUTE;
+
+function confirmDiscardDrawing(): boolean {
+  return editorRoute().controls.length === 0 || confirm('Discard the route you are drawing? This can’t be undone.');
+}
+
+function snapshotState(): Snapshot {
+  const s = state;
+  return {
+    original: s.original,
+    reversed: s.reversed,
+    isSample: s.isSample,
+    savedId: s.savedId,
+    forecast: s.forecast,
+    tz: s.tz,
+    tzFromForecast: s.tzFromForecast,
+    departureMs: s.departureMs,
+    assumeFlat: s.assumeFlat,
+    compareFromMs: s.compareFromMs,
+    showLateDepartures: s.showLateDepartures,
+    cachedForecast: s.cachedForecast,
+    forecastFromCache: s.forecastFromCache,
+    pendingDepartTime: s.pendingDepartTime,
+    sample: $<HTMLSelectElement>('sample-select').value,
+  };
+}
+
+function restoreSnapshot(snap: Snapshot): void {
+  const { sample, ...rest } = snap;
+  Object.assign(state, rest);
+  state.live = false;
+  state.sim = null;
+  $<HTMLSelectElement>('sample-select').value = sample;
+  $('save-btn').textContent = state.savedId ? 'Update saved copy' : 'Save on this device';
+  document.body.classList.remove('no-route');
+  applyRoute();
+  updateDepartureInput();
+  map.invalidateSize();
+  map.fit();
+  if (!state.forecast) void loadForecast();
+}
+
+/** Empties the route, results and verdict, keeping the forecast in memory for reuse while drawing. */
+function clearRouteView(): void {
+  state.abort?.abort();
+  state.abort = null;
+  window.clearTimeout(liveForecastTimer);
+  state.live = false;
+  state.original = null;
+  state.route = null;
+  state.plan = null;
+  state.sim = null;
+  state.cum = [];
+  state.samples = [];
+  map.clearPlan();
+  show('route-card', false);
+  show('results', false);
+  show('wx-loading', false);
+  show('wx-error', false);
+  show('wx-empty', true);
+  $('verdict').hidden = true;
+  document.body.classList.remove('has-verdict');
+  updateDepartureInput();
+}
+
+/** While drawing, waits for a pause before fetching a forecast for the new parts of the route. */
+function scheduleLiveForecast(): void {
+  window.clearTimeout(liveForecastTimer);
+  show('results', false);
+  show('wx-empty', false);
+  show('wx-loading', true);
+  liveForecastTimer = window.setTimeout(() => {
+    if (state.live) void loadForecast();
+  }, LIVE_FORECAST_DELAY_MS);
+}
+
+/**
+ * After each completed edit, the drawing becomes the loaded route: distance,
+ * elevation, arrival times and wind are worked out again from its full road
+ * geometry. The departure time and pace the rider chose stay as they are.
+ */
+function updateLiveRoute(r: EditorRoute): void {
+  if (!drawing) return;
+  if (r.controls.length < 2) {
+    if (state.live) clearRouteView();
+    return;
+  }
+  if (!isComplete(r)) return;
+  const route = editorToRoute(r, $<HTMLInputElement>('draw-name').value);
+  if (!state.live) beginRoute(route, { keepForecast: true, live: true });
+  else {
+    state.original = route;
+    state.reversed = false;
+    state.sim = null;
+    applyRoute();
+  }
+  if (!state.forecast) scheduleLiveForecast();
+}
+
+function onSessionChange(view: SessionView): void {
+  if (selected !== null && selected >= view.route.controls.length) selected = null;
+  renderEditor(view);
+  if (view.completedRevision !== shownRevision) {
+    shownRevision = view.completedRevision;
+    updateLiveRoute(view.route);
+  }
+}
+
+/** Redraws the drawing and updates the status line, selection panel and buttons. */
+function renderEditor(view: SessionView | undefined = session?.view()): void {
+  if (!view) return;
+  const r = view.route;
+  map.showEditor(r, selected);
+  const n = r.controls.length;
+  const u = units();
+  let summary: string;
+  if (n === 0) summary = tapAdds ? 'No points yet. Tap the map to set the start.' : 'No points yet. Use Add point at centre, or turn on Tap adds points.';
+  else if (n === 1) summary = 'Start set. Tap the map again to extend the route.';
+  else {
+    const st = editorStats(r);
+    let dist = formatDistance(st.totalM, u);
+    if (st.manualM > 0 && st.routedM > 0) dist += ` (${formatDistance(st.routedM, u)} on roads, ${formatDistance(st.manualM, u)} straight)`;
+    else if (st.manualM > 0) dist += ' (all straight lines)';
+    const parts = [`${n} points`, dist];
+    if (st.gainM !== null && st.routedM > 0) parts.push(`↗ ${formatElevation(st.gainM, u)}`);
+    if (isLoop(r)) parts.push('loop');
+    summary = parts.join(' · ');
+  }
+  $('draw-status').textContent = drawNote ? `${drawNote} ${summary}` : summary;
+  drawNote = '';
+  show('draw-routing', view.routing);
+  $('draw-bar').setAttribute('aria-busy', String(view.routing));
+  show('draw-error', !!view.error);
+  if (view.error) {
+    $('draw-error-msg').textContent = view.error.message + (view.error.retryAfterSeconds ? ` Try again in ${view.error.retryAfterSeconds} seconds.` : '');
+  }
+  show('draw-selected', selected !== null);
+  if (selected !== null) {
+    const which = selected === 0 ? 'The start' : selected === n - 1 ? 'The finish' : `Point ${selected + 1} of ${n}`;
+    $('draw-selected-msg').textContent = `${which} is selected. Drag it on the map to move it, or use these buttons.`;
+  }
+  setAriaDisabled('draw-undo', !view.canUndo);
+  setAriaDisabled('draw-redo', !view.canRedo);
+  setAriaDisabled('draw-reverse', n < 2);
+  setAriaDisabled('draw-loop', n < 2 || isLoop(r));
   setAriaDisabled('draw-clear', n === 0);
-  setAriaDisabled('draw-finish', n < 2);
+  setAriaDisabled('draw-finish', n < 2 || view.routing);
+}
+
+/** Applies an edit; `note` is announced with the new status. */
+function applyEdit(fn: (r: EditorRoute) => EditorRoute | null, note: string): boolean {
+  if (!session) return false;
+  drawNote = note;
+  const ok = session.edit(fn);
+  if (!ok) drawNote = '';
+  return ok;
+}
+
+function addAt(p: LatLon): void {
+  const n = editorRoute().controls.length;
+  if (!applyEdit((r) => addPoint(r, p, newLegMode), n === 0 ? 'Start set.' : `Point ${n + 1} added.`) && n >= MAX_DRAWN_POINTS) {
+    drawNote = `A drawn route can have up to ${MAX_DRAWN_POINTS} points.`;
+    renderEditor();
+  }
+}
+
+function onMapTap(p: LatLon): void {
+  // With a point selected, a tap on the map just deselects it, so a stray tap doesn't add a point.
+  if (selected !== null) return selectPoint(null);
+  if (tapAdds) addAt(p);
+}
+
+function selectPoint(i: number | null): void {
+  if (selected === i) return;
+  selected = i;
+  renderEditor();
+}
+
+function removeSelected(): void {
+  if (selected === null) return;
+  const i = selected;
+  selected = null;
+  if (!applyEdit((r) => removePoint(r, i), 'Point removed.')) renderEditor();
+}
+
+function undoEdit(): void {
+  if (!session || isAriaDisabled('draw-undo')) return;
+  selected = null;
+  drawNote = 'Undone.';
+  if (!session.undo()) drawNote = '';
+}
+
+function redoEdit(): void {
+  if (!session || isAriaDisabled('draw-redo')) return;
+  selected = null;
+  drawNote = 'Redone.';
+  if (!session.redo()) drawNote = '';
 }
 
 function startDrawing(): void {
   if (!drawing) {
     drawing = true;
-    draft = [];
+    beforeDrawing = state.original ? snapshotState() : null;
+    selected = null;
+    session?.dispose();
+    session = new RouteSession((locs, signal) => fetchRoutedLegs(routingUrl, locs, { signal }), onSessionChange, {
+      minIntervalMs: routingMinIntervalMs,
+      maxLocations: MAX_LOCATIONS_PER_REQUEST,
+    });
+    shownRevision = session.view().completedRevision;
+    clearRouteView();
     $<HTMLInputElement>('draw-name').value = '';
     document.body.classList.add('drawing');
     show('draw-bar', true);
+    show('draw-edit', true);
+    show('draw-review', false);
     $('draw-start').setAttribute('aria-expanded', 'true');
-    map.startDrawing(addDraftPoint);
-    renderDraft();
+    map.startDrawing({
+      onMapTap,
+      onCentreKey: () => addAt(map.center()),
+      onSelect: (i) => selectPoint(i),
+      onDragEnd: (i, p) => {
+        if (!applyEdit((r) => movePoint(r, i, p), `${i === 0 ? 'Start' : `Point ${i + 1}`} moved.`)) renderEditor();
+      },
+    });
+    map.setRoutingAttribution(routingCredit);
+    $('draw-privacy').textContent = `Follow roads sends the points you place, unrounded, to ${routingProviderName(routingUrl)} to find the roads between them. Straight-line sections send nothing.`;
+    renderEditor();
   }
-  // On phones the map moves above the panel while drawing; bring the bar into view.
-  $('draw-bar').scrollIntoView({ block: 'start' });
+  // On phones the map moves above the panel while drawing, with the controls under it; bring both into view.
+  (window.matchMedia('(max-width: 899px)').matches ? $('map') : $('draw-bar')).scrollIntoView({ block: 'start' });
   $('draw-bar').focus({ preventScroll: true });
 }
 
 function stopDrawing(): void {
   drawing = false;
-  draft = [];
+  session?.dispose();
+  session = null;
+  selected = null;
+  window.clearTimeout(liveForecastTimer);
   map.stopDrawing();
   document.body.classList.remove('drawing');
   show('draw-bar', false);
   $('draw-start').setAttribute('aria-expanded', 'false');
 }
 
-function addDraftPoint(p: LatLon): void {
-  const next = addDrawnPoint(draft, p);
-  if (!next) {
-    if (draft.length >= MAX_DRAWN_POINTS) renderDraft(`A drawn route can have up to ${MAX_DRAWN_POINTS} points.`);
-    return;
+function cancelDrawing(): void {
+  if (!confirmDiscardDrawing()) return;
+  stopDrawing();
+  const snap = beforeDrawing;
+  beforeDrawing = null;
+  if (snap) restoreSnapshot(snap);
+  else {
+    clearRouteView();
+    map.setRoutingAttribution(null);
+    document.body.classList.add('no-route');
   }
-  draft = next;
-  renderDraft(`Point ${draft.length} added.`);
+  $('draw-start').focus();
 }
 
-function finishDrawing(): void {
-  if (draft.length < 2) {
-    renderDraft('Add at least two points to finish.');
+/** Shows the review step: the finished geometry, its straight-line sections and what road-following does not promise. */
+function openReview(): void {
+  const view = session?.view();
+  if (!view) return;
+  const r = view.route;
+  if (r.controls.length < 2 || view.routing) {
+    drawNote = r.controls.length < 2 ? 'Add at least two points to finish.' : 'Wait for the route to finish following the roads.';
+    renderEditor();
     return;
   }
-  const route = buildDrawnRoute(draft, $<HTMLInputElement>('draw-name').value);
-  setStatus(`Loaded your drawn route “${route.name}”. Save it on this device to keep it.`, 'ok');
-  loadRoute(route);
+  selected = null;
+  renderEditor();
+  const u = units();
+  const st = editorStats(r);
+  const facts = [formatDistance(st.totalM, u), `${r.controls.length} points`];
+  if (isLoop(r)) facts.push('loop');
+  if (st.gainM !== null && st.routedM > 0) facts.push(`↗ ${formatElevation(st.gainM, u)}`);
+  $('draw-review-facts').textContent =
+    `${facts.join(' · ')}. ` + (st.routedM > 0 ? `${formatDistance(st.routedM, u)} follows roads.` : 'No section follows roads.');
+  show('draw-review-manual', st.manualSections > 0);
+  if (st.manualSections > 0) {
+    const one = st.manualSections === 1;
+    $('draw-review-manual').textContent = `${one ? 'One section' : `${st.manualSections} sections`} (${formatDistance(st.manualM, u)}) ${
+      one ? 'is a straight line' : 'are straight lines'
+    } you drew by hand. ${one ? 'It doesn’t' : 'They don’t'} follow roads and ${one ? 'has' : 'have'} no elevation. ${
+      one ? 'It stays' : 'They stay'
+    } marked on the map after you finish.`;
+  }
+  $<HTMLInputElement>('draw-review-ok').checked = false;
+  setAriaDisabled('draw-confirm', true);
+  show('draw-edit', false);
+  show('draw-review', true);
+  map.fitDrawing(r);
+  $('draw-review-title').focus();
+}
+
+function backToEditing(): void {
+  show('draw-review', false);
+  show('draw-edit', true);
+  $('draw-finish').focus();
+}
+
+/** Uses the reviewed drawing as the route. Its geometry is kept exactly; it is never routed again. */
+function confirmDrawing(): void {
+  if (!session) return;
+  if (!$<HTMLInputElement>('draw-review-ok').checked) {
+    $('draw-review-ok').focus();
+    return;
+  }
+  const route = editorToRoute(session.route, $<HTMLInputElement>('draw-name').value);
+  const wasLive = state.live;
+  stopDrawing();
+  beforeDrawing = null;
+  if (wasLive) {
+    state.live = false;
+    state.original = route;
+    state.reversed = false;
+    state.sim = null;
+    applyRoute();
+    updateDepartureInput();
+    map.invalidateSize();
+    map.fit();
+  } else {
+    beginRoute(route);
+    map.invalidateSize();
+    map.fit();
+    void loadForecast();
+  }
+  setStatus(`Loaded your drawn route “${route.name}”. Save it on this device to keep it, or export it as GPX.`, 'ok');
   $('route-name').focus();
 }
 
 function bindDrawing(): void {
   $('draw-start').addEventListener('click', startDrawing);
-  $('draw-add').addEventListener('click', () => addDraftPoint(map.center()));
-  $('draw-undo').addEventListener('click', () => {
-    if (draft.length === 0) return;
-    draft = undoDrawnPoint(draft);
-    renderDraft('Last point removed.');
+  $('draw-add').addEventListener('click', () => addAt(map.center()));
+  $('draw-undo').addEventListener('click', undoEdit);
+  $('draw-redo').addEventListener('click', redoEdit);
+  $('draw-tap').addEventListener('click', () => {
+    tapAdds = !tapAdds;
+    $('draw-tap').setAttribute('aria-pressed', String(tapAdds));
+    $('map').classList.toggle('tap-off', !tapAdds);
+    drawNote = tapAdds ? 'Tapping the map adds points.' : 'Tapping the map no longer adds points. Drag to move the map.';
+    renderEditor();
+  });
+  for (const input of document.querySelectorAll<HTMLInputElement>('input[name="draw-mode"]')) {
+    input.addEventListener('change', () => {
+      if (input.checked) newLegMode = input.value === 'manual' ? 'manual' : 'routed';
+    });
+  }
+  $('draw-reverse').addEventListener('click', () => {
+    if (isAriaDisabled('draw-reverse')) return;
+    selected = null;
+    applyEdit(reverseEditorRoute, 'Reversed on the same roads. One-way streets aren’t checked again, so look over the route.');
+  });
+  $('draw-loop').addEventListener('click', () => {
+    if (isAriaDisabled('draw-loop')) return;
+    applyEdit((r) => closeLoop(r, newLegMode), 'Loop closed back to the start.');
   });
   $('draw-clear').addEventListener('click', () => {
-    if (draft.length === 0) return;
-    draft = [];
-    renderDraft('All points cleared.');
+    const n = editorRoute().controls.length;
+    if (n === 0 || !confirm(`Clear all ${n} ${n === 1 ? 'point' : 'points'}? Undo can bring them back.`)) return;
+    selected = null;
+    applyEdit(() => EMPTY_ROUTE, 'Route cleared. Undo brings it back.');
   });
-  const cancelDrawing = () => {
-    stopDrawing();
-    map.fit();
-    $('draw-start').focus();
-  };
+  $('draw-remove').addEventListener('click', removeSelected);
+  $('draw-move-centre').addEventListener('click', () => {
+    if (selected === null) return;
+    const i = selected;
+    applyEdit((r) => movePoint(r, i, map.center()), `${i === 0 ? 'Start' : `Point ${i + 1}`} moved to the centre crosshair.`);
+  });
+  $('draw-deselect').addEventListener('click', () => selectPoint(null));
+  $('draw-retry').addEventListener('click', () => {
+    drawNote = 'Trying again.';
+    session?.retry();
+  });
+  $('draw-straight').addEventListener('click', () => {
+    drawNote = 'Drawn as a straight line.';
+    session?.useStraightLines();
+  });
+  $('draw-dismiss').addEventListener('click', () => session?.dismissError());
   $('draw-cancel').addEventListener('click', cancelDrawing);
-  // Escape leaves draw mode too, unless it's closing something else first (a dialog, the date picker).
-  document.addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Escape' || !drawing || ev.defaultPrevented || document.querySelector('dialog[open]')) return;
-    cancelDrawing();
-  });
-  $('draw-finish').addEventListener('click', finishDrawing);
+  $('draw-finish').addEventListener('click', openReview);
+  $('draw-back').addEventListener('click', backToEditing);
+  $('draw-review-ok').addEventListener('change', () => setAriaDisabled('draw-confirm', !$<HTMLInputElement>('draw-review-ok').checked));
+  $('draw-confirm').addEventListener('click', confirmDrawing);
   $('draw-name').addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') {
       ev.preventDefault();
-      finishDrawing();
+      openReview();
     }
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (!drawing || ev.defaultPrevented) return;
+    const t = ev.target as HTMLElement | null;
+    const typing = !!t && (t instanceof HTMLTextAreaElement || (t instanceof HTMLInputElement && t.type !== 'checkbox' && t.type !== 'radio'));
+    const key = ev.key.toLowerCase();
+    if ((ev.metaKey || ev.ctrlKey) && !typing && (key === 'z' || key === 'y')) {
+      ev.preventDefault();
+      if (key === 'y' || ev.shiftKey) redoEdit();
+      else undoEdit();
+      return;
+    }
+    if ((ev.key === 'Delete' || ev.key === 'Backspace') && !typing && selected !== null) {
+      ev.preventDefault();
+      removeSelected();
+      return;
+    }
+    // Escape steps back: deselect, leave the review, then leave draw mode (unless it's closing a dialog first).
+    if (ev.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+    if (selected !== null) selectPoint(null);
+    else if (!$('draw-review').hidden) backToEditing();
+    else cancelDrawing();
+  });
+  window.addEventListener('beforeunload', (ev) => {
+    if (drawing && editorRoute().controls.length > 0) ev.preventDefault();
   });
   $('export-gpx-btn').addEventListener('click', () => {
     if (!state.route) return;
@@ -528,9 +961,37 @@ function bindDrawing(): void {
 /* ---------- forecast ---------- */
 
 function forecastsForSamples(): Array<LocationForecast | null> {
-  if (!state.forecast) return state.samples.map(() => null);
-  const byKey = new Map(state.forecast.locations.map((l) => [l.key, l]));
-  return state.samples.map((s) => byKey.get(coordKey(s)) ?? null);
+  return forecastsFor(state.samples);
+}
+
+/** While drawing, a sample this close to a point already forecast reuses it, so each edit doesn't fetch again. */
+const LIVE_REUSE_M = 4000;
+
+/**
+ * Forecasts for sample points, matched by their rounded key. While a route is
+ * being drawn, a point with no exact match uses the nearest forecast point
+ * within LIVE_REUSE_M, since the forecast grid is a few kilometres wide anyway.
+ * A finished route always gets an exact forecast.
+ */
+function forecastsFor(samples: Sample[]): Array<LocationForecast | null> {
+  const fc = state.forecast;
+  if (!fc) return samples.map(() => null);
+  const byKey = new Map(fc.locations.map((l) => [l.key, l]));
+  return samples.map((s) => {
+    const exact = byKey.get(coordKey(s));
+    if (exact || !state.live) return exact ?? null;
+    let best: LocationForecast | null = null;
+    let bestM = LIVE_REUSE_M;
+    for (const l of fc.locations) {
+      const [lat, lon] = l.key.split(',').map(Number);
+      const d = haversineM(s, { lat: lat!, lon: lon! });
+      if (d <= bestM) {
+        bestM = d;
+        best = l;
+      }
+    }
+    return best;
+  });
 }
 
 /**
@@ -756,7 +1217,9 @@ function recompute(): void {
   const forecasts = forecastsForSamples();
   if (forecasts.some((f) => f === null)) {
     // Sample positions changed (for example, rounding after reversing): fetch for the new points.
-    void loadForecast();
+    // While drawing, wait for a pause in editing so each click doesn't send a request.
+    if (state.live) scheduleLiveForecast();
+    else void loadForecast();
     return;
   }
   updateElevationGate();
@@ -785,13 +1248,12 @@ function variantFor(reversed: boolean): RouteVariant {
   const route = reversed ? reverseRoute(state.original!) : state.original!;
   const cum = cumulativeDistances(route.points);
   const samples = sampleRoute(route.points, cum);
-  const byKey = new Map(state.forecast!.locations.map((l) => [l.key, l]));
   return {
     direction: reversed ? 'reverse' : 'forward',
     points: route.points,
     cum,
     samples,
-    forecasts: samples.map((s) => byKey.get(coordKey(s)) ?? null),
+    forecasts: forecastsFor(samples),
   };
 }
 
@@ -1361,7 +1823,7 @@ function setUnits(u: UnitSystem): void {
   applySettingsToInputs();
   renderRouteCard();
   recompute();
-  if (drawing) renderDraft();
+  if (drawing) renderEditor();
 }
 
 function bindDataDialog(): void {

@@ -7,6 +7,7 @@ Start with the [README](../README.md) for what RideWind does and how to run it. 
 - [Product overview](../PRODUCT.md): who RideWind is for, its principles and non-goals.
 - [How RideWind estimates your ride](model.md): sampling, time matching, wind components, the physics model and comparisons.
 - [Data sources and privacy](data-and-privacy.md): Open-Meteo usage and attribution, map tiles, and what is stored in your browser.
+- [Drawing a route](routing.md): click-to-route editing, the routing service and why it was chosen, what it receives, and configuration.
 - [Troubleshooting](troubleshooting.md): error messages, their causes and fixes.
 
 ## Working on RideWind
