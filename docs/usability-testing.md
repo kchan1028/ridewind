@@ -268,7 +268,7 @@ The test browser already held one saved route (*Sample: Afsluitdijk crossing (ap
 
 Severity uses the audit's scale: **P0** blocks the task, **P1** is a major problem or misleading result, **P2** is real friction with a workaround, and **P3** is polish. Findings marked *New* aren't in the audit. The rest re-confirm audit findings on the live site, which keeps the audit's evidence and adds these repro steps.
 
-| ID | Finding | Severity | Audit | Status (rechecked on live builds `15a7709`, `e504e98`, `d4ddf9d` and `ca0c597`, 14 Nov) |
+| ID | Finding | Severity | Audit | Status (rechecked on the live site up to build `b480ce3`, 14 Nov) |
 | --- | --- | --- | --- | --- |
 | W1 | **Best** goes to rides that finish in the dark, and to differences of a minute or two | P1 | P1-1 | Resolved on live ([PR #23](https://github.com/kchan1028/ridewind/pull/23)) |
 | W2 | The verdict states a rain amount without its chance | P1 | P1-2 | Resolved on live ([PR #27](https://github.com/kchan1028/ridewind/pull/27)) |
@@ -277,7 +277,7 @@ Severity uses the audit's scale: **P0** blocks the task, **P1** is a major probl
 | W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#32](https://github.com/kchan1028/ridewind/issues/32)) |
 | W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Resolved on live ([PR #48](https://github.com/kchan1028/ridewind/pull/48), [#33](https://github.com/kchan1028/ridewind/issues/33)) |
 | W7 | A saved route forgets its direction and departure | P2 | P2-4 | Resolved on live ([PR #43](https://github.com/kchan1028/ridewind/pull/43)) |
-| W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Partly resolved on live ([PR #36](https://github.com/kchan1028/ridewind/pull/36)): collapsed bar with a 24 px headline, one line and 48 px buttons, but still 172 px of 812. Whether that's glanceable enough is for riders (T9) |
+| W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Resolved on live ([PR #36](https://github.com/kchan1028/ridewind/pull/36), [PR #78](https://github.com/kchan1028/ridewind/pull/78)): the bar shrinks to one row, 81 px, while you scroll the detail. Riders should still judge it outdoors (T9) |
 | W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Resolved on live ([PR #40](https://github.com/kchan1028/ridewind/pull/40), [PR #52](https://github.com/kchan1028/ridewind/pull/52)): both tables fit 341 px |
 | W10 | Phone: the first screen is an empty map | P2 | P2-5 | Resolved on live ([PR #54](https://github.com/kchan1028/ridewind/pull/54)): the first screen leads with a one-line explanation and the two actions |
 | W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Resolved on live ([PR #25](https://github.com/kchan1028/ridewind/pull/25)) |
@@ -464,8 +464,9 @@ After a fix ships, rerun the tasks that showed the problem, with new participant
 | W8 | #36 | `ca0c597` | Walkthrough recheck 5, 14 Nov | T9 (indoors only) | Unchanged since recheck 1: the collapsed bar is 172 px (headline 44, wind bar 10, summary 22, buttons 48, plus padding) and stays that size after scrolling | Walkthrough, no participants |
 | W9 | #40, #52 | `ca0c597` | Walkthrough recheck 5, 14 Nov | T2 | Resolved: the point-by-point table shows Distance, Arrive, Head / tail and Rain in 341 px, with **Show all columns** for the rest | Walkthrough, no participants |
 | W10 | #54 | `ca0c597` | Walkthrough recheck 5, 14 Nov | T1 | Resolved: no empty map first. "See the wind you'll ride into…" leads, **Import GPX** at 227 px and the sample menu at 279 px. The map appears once a route loads | Walkthrough, no participants |
+| W8 | #78 | `b480ce3` | Walkthrough recheck 6, 14 Nov | T9 (indoors only) | Resolved: 195 px at the result, 81 px once you scroll past the summary figures, with the hour buttons still 48 px. The finish line wraps to two lines instead of being cut off. A tap on +1 h keeps it compact, and the full bar returns at the top. The departure time is hidden on screen in compact mode but still read by screen readers | Walkthrough, no participants |
 
-Recheck 2 ran on `e504e98`, deployed after PR #48. Recheck 3 ran on `d4ddf9d`, deployed after PRs #60 and #62. Recheck 4 ran on `ca0c597`, deployed after PR #65. Recheck 5 checked the phone findings on the same build, at 375×812. These rechecks were done by Claude in the in-app Chromium browser, at 1280×800 and in a 375×812 phone emulation, without participants. They show whether a fix is live. They don't say whether riders find it clear, so participant retests are still needed under the rule below.
+Recheck 2 ran on `e504e98`, deployed after PR #48. Recheck 3 ran on `d4ddf9d`, deployed after PRs #60 and #62. Recheck 4 ran on `ca0c597`, deployed after PR #65. Recheck 5 checked the phone findings on the same build, at 375×812. Recheck 6 ran on `b480ce3`, deployed after PR #78. The browser pane was hidden, which stops animation frames and scroll events, so the check replaced `requestAnimationFrame` with a timer and sent scroll events by hand. The app's own logic decided when to shrink. These rechecks were done by Claude in the in-app Chromium browser, at 1280×800 and in a 375×812 phone emulation, without participants. They show whether a fix is live. They don't say whether riders find it clear, so participant retests are still needed under the rule below.
 
 ## How do findings reach GitHub issues and the roadmap?
 
