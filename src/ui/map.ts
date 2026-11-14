@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { LatLon } from '../lib/geo';
+import { bearingAtDistance, cumulativeDistances, pointAtDistance, type LatLon } from '../lib/geo';
 import type { RidePlan, SegmentClass } from '../lib/ride';
 
 /** Colours are paired with dash patterns so classes stay distinguishable without colour vision. */
@@ -38,11 +38,31 @@ export class RouteMap {
     L.polyline(latlngs, { color: '#14213d', weight: 3, opacity: 0.8, interactive: false }).addTo(this.routeLayer);
     const start = points[0]!;
     const end = points[points.length - 1]!;
-    L.circleMarker([end.lat, end.lon], { radius: 8, color: '#14213d', weight: 3, fillColor: '#ffffff', fillOpacity: 1 })
-      .bindTooltip('Finish')
+    // Direction of travel: small open chevrons, styled unlike the filled wind arrows.
+    const cum = cumulativeDistances(points);
+    const total = cum[cum.length - 1] ?? 0;
+    const count = Math.min(10, Math.max(3, Math.round(total / 4000)));
+    for (let k = 1; k <= count; k++) {
+      const d = (total * k) / (count + 1);
+      const p = pointAtDistance(points, cum, d);
+      const bearing = bearingAtDistance(points, cum, d);
+      L.marker([p.lat, p.lon], {
+        icon: L.divIcon({
+          className: 'dir-chevron',
+          html: `<svg viewBox="0 0 16 16" width="16" height="16" style="transform:rotate(${bearing}deg)" aria-hidden="true"><path d="M3 11 L8 5 L13 11"/></svg>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        }),
+        interactive: false,
+        keyboard: false,
+      }).addTo(this.routeLayer);
+    }
+    // Permanent labels; for loops, push them to opposite sides so they don't overlap.
+    L.circleMarker([end.lat, end.lon], { radius: 8, color: '#14213d', weight: 3, fillColor: '#ffffff', fillOpacity: 1, interactive: false })
+      .bindTooltip('Finish', { permanent: true, direction: 'right', offset: [8, 0], className: 'endpoint-label' })
       .addTo(this.routeLayer);
-    L.circleMarker([start.lat, start.lon], { radius: 8, color: '#ffffff', weight: 3, fillColor: '#14213d', fillOpacity: 1 })
-      .bindTooltip('Start')
+    L.circleMarker([start.lat, start.lon], { radius: 8, color: '#ffffff', weight: 3, fillColor: '#14213d', fillOpacity: 1, interactive: false })
+      .bindTooltip('Start', { permanent: true, direction: 'left', offset: [-8, 0], className: 'endpoint-label endpoint-start' })
       .addTo(this.routeLayer);
     this.fit();
   }
@@ -77,7 +97,8 @@ export class RouteMap {
         iconSize: [26, 26],
         iconAnchor: [13, 13],
       });
-      L.marker([r.sample.lat, r.sample.lon], { icon, keyboard: true, title: `Point ${i + 1} wind details` })
+      // Not a tab stop: the point-by-point table carries the same data for keyboard users.
+      L.marker([r.sample.lat, r.sample.lon], { icon, keyboard: false, title: `Point ${i + 1} wind details` })
         .bindPopup(describePoint(i))
         .addTo(this.planLayer);
     });

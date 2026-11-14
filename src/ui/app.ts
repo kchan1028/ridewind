@@ -6,6 +6,9 @@ import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
 import { RIDER_LIMITS, type Exposure, type RiderParams } from '../lib/physics';
 import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
 import { simulateRide, type PaceModel, type Simulation } from '../lib/simulate';
+import { rideDaylight } from '../lib/daylight';
+import { departurePresets } from '../lib/presets';
+import { windVerdict } from '../lib/verdict';
 import * as store from '../lib/storage';
 import {
   deviceTimeZone,
@@ -88,10 +91,73 @@ let map: RouteMap;
 
 /* ---------- helpers ---------- */
 
-function setStatus(message: string, kind: 'info' | 'error' | 'ok' = 'info'): void {
+function setStatus(message: string, kind: 'info' | 'error' | 'ok' | 'loading' = 'info'): void {
   const el = $('status');
   el.textContent = message;
   el.dataset.kind = kind;
+}
+
+/* ---------- verdict (answer-first summary) ---------- */
+
+type VerdictMode = 'loading' | 'error' | 'notice' | 'ready';
+
+function setVerdictMode(mode: VerdictMode, head: string, facts: string): void {
+  const v = $('verdict');
+  v.hidden = false;
+  v.dataset.mode = mode;
+  if (mode !== 'ready') delete v.dataset.tone;
+  document.body.classList.add('has-verdict');
+  $('verdict-head').textContent = head;
+  $('verdict-facts').textContent = facts;
+  show('verdict-detail', mode === 'ready');
+  show('depart-stepper', mode === 'ready');
+  show('verdict-retry', mode === 'error');
+  const r = state.route;
+  $('verdict-route').textContent = r
+    ? `${r.name} · ${formatDistance(state.cum[state.cum.length - 1] ?? 0, units())}${state.reversed ? ' · reversed' : ''}`
+    : '';
+}
+
+function announce(text: string): void {
+  const live = $('verdict-live');
+  if (live.textContent !== text) live.textContent = text;
+}
+
+function renderVerdict(plan: RidePlan, sim: Simulation): void {
+  const u = units();
+  const tz = state.tz;
+  const s = plan.summary;
+  const { headline, tone } = windVerdict(s.distanceByClass);
+  const facts: string[] = [];
+  const mh = s.meanHeadwind;
+  if (mh !== null && Math.abs(mh) >= 1) facts.push(`net ${formatSpeed(Math.abs(mh), u)} ${mh > 0 ? 'headwind' : 'tailwind'}`);
+  if (s.gustMax !== null) facts.push(`gusts ${formatSpeed(s.gustMax, u)}`);
+  if (s.precipMax !== null) {
+    const p = s.precipProbabilityMax;
+    facts.push(s.precipMax < 0.05 ? (p !== null && p >= 30 ? `rain ${Math.round(p)}% chance` : 'dry') : `rain up to ${formatPrecip(s.precipMax, u)}/h`);
+  }
+  facts.push(`${formatDuration(plan.durationMs)}, finish ${formatClock(plan.finishMs, tz)}${sim.assumedFlat ? ' (flat estimate)' : ''}`);
+  const light = rideDaylight(state.departureMs!, plan.finishMs, forecastsForSamples()[0]?.sun);
+  if (light.kind === 'starts-before-sunrise') facts.push(`starts in the dark (sunrise ${formatClock(light.sunriseMs!, tz)})`);
+  else if (light.kind === 'ends-after-sunset') facts.push(`finishes after sunset (${formatClock(light.sunsetMs!, tz)})`);
+  else if (light.kind === 'daylight') facts.push(`sunset ${formatClock(light.sunsetMs!, tz)}`);
+  setVerdictMode('ready', headline, facts.join(' · '));
+  $('verdict').dataset.tone = tone;
+  $('depart-label').textContent = `Leave ${formatDateTime(state.departureMs!, tz)}`;
+  const b = departureBounds();
+  ($('dep-earlier') as HTMLButtonElement).disabled = !b || state.departureMs! - HOUR < b.min;
+  ($('dep-later') as HTMLButtonElement).disabled = !b || state.departureMs! + HOUR > b.max;
+  announce(`${headline}. ${facts.join(', ')}.`);
+}
+
+function shiftDeparture(deltaMs: number): void {
+  const b = departureBounds();
+  if (!b || state.departureMs === null) return;
+  const next = state.departureMs + deltaMs;
+  if (next < b.min || next > b.max) return;
+  state.departureMs = next;
+  updateDepartureInput();
+  recompute();
 }
 
 function messageFor(e: unknown): string {
@@ -118,6 +184,10 @@ function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | 
   state.departureMs = null;
   state.assumeFlat = false;
   state.sim = null;
+  // A pending "Saved ✓" reset must not relabel the newly loaded route.
+  window.clearTimeout(flashTimer);
+  delete $('save-btn').dataset.flash;
+  $('save-btn').textContent = state.savedId ? 'Update saved copy' : 'Save on this device';
   applyRoute();
   map.invalidateSize();
   map.fit();
@@ -165,9 +235,11 @@ function renderRouteCard(): void {
   show('card-lookup-ele', !complete);
   show('elevation-source', r.elevationSource === 'dem');
   show('dem-credit', r.elevationSource === 'dem');
-  const rev = $('reverse-btn');
-  rev.setAttribute('aria-pressed', String(state.reversed));
-  rev.textContent = state.reversed ? 'Reversed: ride original direction' : 'Reverse direction';
+  show('legend', true);
+  $('reverse-btn').setAttribute('aria-pressed', String(state.reversed));
+  $('direction-note').textContent = state.reversed
+    ? 'Riding in reverse: from the file’s finish back to its start.'
+    : 'Riding in the file’s direction.';
 }
 
 async function importGpxFile(file: File): Promise<void> {
@@ -176,8 +248,8 @@ async function importGpxFile(file: File): Promise<void> {
       throw new AppError('GPX_TOO_LARGE', `That file is ${(file.size / 1048576).toFixed(0)} MB. RideWind accepts GPX files up to 25 MB.`);
     }
     const route = parseGpx(await file.text(), file.name.replace(/\.[^.]+$/, '') || 'Imported route');
-    loadRoute(route);
     setStatus(`Loaded “${route.name}”.`, 'ok');
+    loadRoute(route);
   } catch (e) {
     setStatus(`${messageFor(e)}${state.route ? ' Your previous route is still loaded.' : ''}`, 'error');
   }
@@ -188,8 +260,8 @@ async function loadSample(file: string, label: string): Promise<void> {
     const res = await fetch(sampleUrl(file));
     if (!res.ok) throw new Error(`sample HTTP ${res.status}`);
     const route = parseGpx(await res.text(), label);
-    loadRoute(route, { isSample: true });
     setStatus(`Loaded the sample route “${route.name}”.`, 'ok');
+    loadRoute(route, { isSample: true });
   } catch (e) {
     setStatus(isAppError(e) ? e.message : 'The sample route could not be loaded. Check your connection.', 'error');
   }
@@ -212,19 +284,28 @@ async function loadForecast(): Promise<void> {
   show('wx-error', false);
   show('results', false);
   show('wx-loading', true);
+  const name = state.route.name;
+  const loadingMsg = `Getting the forecast for “${name}” (${state.samples.length} points along the route)…`;
+  setStatus(loadingMsg, 'loading');
+  setVerdictMode('loading', 'Getting the forecast…', `${state.samples.length} points along the route. This usually takes a few seconds.`);
+  $('tz-note').textContent = 'Departure times become available once the forecast loads.';
   try {
     const fc = await fetchForecast(state.samples, { signal: ctrl.signal });
     if (ctrl.signal.aborted) return;
     state.forecast = fc;
     state.tzFromForecast = isValidTimeZone(fc.timezone);
     state.tz = state.tzFromForecast ? fc.timezone : deviceTimeZone();
+    if ($('status').textContent === loadingMsg) setStatus(`Forecast ready for “${name}”.`, 'ok');
   } catch (e) {
     if ((e as Error)?.name === 'AbortError' || ctrl.signal.aborted) return;
     state.forecast = null;
     state.tzFromForecast = false;
     state.tz = deviceTimeZone();
-    $('wx-error-msg').textContent = messageFor(e);
+    const msg = messageFor(e);
+    $('wx-error-msg').textContent = msg;
     show('wx-error', true);
+    setStatus(msg, 'error');
+    setVerdictMode('error', 'Forecast unavailable', msg);
   } finally {
     if (state.abort === ctrl) {
       state.abort = null;
@@ -324,6 +405,29 @@ function updateDepartureInput(): void {
   }
   if (b) note += ` Forecast available until ${formatDateTime(state.forecast!.windowEndMs, tz)}.`;
   $('tz-note').textContent = note;
+  renderPresets();
+}
+
+function renderPresets(): void {
+  const box = $('dep-presets');
+  const b = departureBounds();
+  const presets = state.forecast && b ? departurePresets(Date.now(), state.tz, b) : [];
+  box.hidden = presets.length === 0;
+  box.replaceChildren(
+    ...presets.map((p) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip';
+      btn.textContent = p.label;
+      btn.setAttribute('aria-pressed', String(p.ms === state.departureMs));
+      btn.addEventListener('click', () => {
+        state.departureMs = p.ms;
+        updateDepartureInput();
+        recompute();
+      });
+      return btn;
+    }),
+  );
 }
 
 /* ---------- results ---------- */
@@ -354,12 +458,14 @@ function recompute(): void {
       state.plan = null;
       map.clearPlan();
       show('results', false);
+      setVerdictMode('notice', 'Elevation needed for power timing', 'Look up elevation or choose to estimate as if flat, under Departure and pace.');
       return;
     }
     throw e;
   }
   state.plan = planRide({ ...base, elapsedAt: state.sim.elapsedAt });
   renderResults(state.plan, state.sim);
+  renderVerdict(state.plan, state.sim);
   map.showPlan(state.plan, describePoint);
 }
 
@@ -503,19 +609,11 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
   }
   bar.setAttribute('aria-label', `Share of route distance by wind type: ${parts.join(', ')}`);
 
-  const mh = plan.summary.meanHeadwind;
-  $('mean-headwind').textContent =
-    mh === null
-      ? ''
-      : Math.abs(mh) < 1
-        ? 'On average, wind along your direction of travel is roughly neutral.'
-        : `Averaged over the route, the wind component along your direction of travel is about ${formatSpeed(Math.abs(mh), u)} of ${mh > 0 ? 'headwind' : 'tailwind'}.`;
-
   // KPIs
   const s = plan.summary;
   const power = state.settings.paceMode === 'power';
   $('kpi-time').textContent = formatDuration(plan.durationMs);
-  $('kpi-time-tag').textContent = power ? (sim.assumedFlat ? 'Physics estimate · flat' : 'Physics estimate') : 'Estimate';
+  $('kpi-time-tag').textContent = power ? (sim.assumedFlat ? 'physics estimate, flat' : 'physics estimate') : 'estimate';
   $('kpi-finish').textContent = power
     ? `Finish about ${formatClock(plan.finishMs, tz)} · average ${formatSpeed(sim.avgSpeedKmh, u)} at ${state.settings.rider.powerW} W`
     : `Finish about ${formatClock(plan.finishMs, tz)} at ${formatSpeed(state.settings.speedKmh, u)}`;
@@ -529,16 +627,16 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
   // Table
   const body = $('samples-body');
   body.replaceChildren();
-  plan.samples.forEach((r, i) => {
+  plan.samples.forEach((r) => {
     const tr = document.createElement('tr');
     const wx = r.weather;
     const c = r.components;
     const cells: Array<string | Node> = [
-      `${i + 1} · ${formatDistance(r.sample.distanceM, u)}`,
+      formatDistance(r.sample.distanceM, u),
       formatClock(r.etaMs, tz),
+      c ? `${formatSpeed(Math.abs(c.headwind), u)} ${c.headwind >= 0 ? 'head' : 'tail'}` : noData(),
       wx?.windSpeed != null && wx.windDirection != null ? windCell(wx.windSpeed, wx.windDirection) : noData(),
       wx?.windGusts != null ? formatSpeed(wx.windGusts, u) : noData(),
-      c ? `${formatSpeed(Math.abs(c.headwind), u)} ${c.headwind >= 0 ? 'head' : 'tail'}` : noData(),
       c ? `${formatSpeed(Math.abs(c.crosswind), u)} ${Math.abs(c.crosswind) < 0.5 ? '' : c.crosswind > 0 ? 'from right' : 'from left'}`.trim() : noData(),
       wx?.temperature != null ? formatTemp(wx.temperature, u) : noData(),
       wx?.precipitation != null
@@ -548,7 +646,7 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
     cells.forEach((content, ci) => {
       const td = document.createElement(ci === 0 ? 'th' : 'td');
       if (ci === 0) td.setAttribute('scope', 'row');
-      if (ci === 4 && r.windClass) td.dataset.cls = r.windClass;
+      if (ci === 2 && r.windClass) td.dataset.cls = r.windClass;
       td.append(content);
       tr.append(td);
     });
@@ -636,8 +734,8 @@ async function renderSaved(): Promise<void> {
       load.textContent = 'Open';
       load.setAttribute('aria-label', `Open ${r.name}`);
       load.addEventListener('click', () => {
-        loadRoute(store.unpackRoute(r), { savedId: r.id });
         setStatus(`Opened “${r.name}”.`, 'ok');
+        loadRoute(store.unpackRoute(r), { savedId: r.id });
       });
       const del = document.createElement('button');
       del.type = 'button';
@@ -674,11 +772,24 @@ async function saveCurrentRoute(): Promise<void> {
     const saved = store.packRoute(state.original, state.savedId ?? undefined);
     await store.saveRoute(saved);
     state.savedId = saved.id;
-    setStatus(`Saved “${saved.name}” in this browser.`, 'ok');
+    flashButton($('save-btn') as HTMLButtonElement, 'Saved ✓', 'Update saved copy');
     void renderSaved();
   } catch (e) {
     setStatus(messageFor(e), 'error');
   }
+}
+
+/** Confirms an action on the control itself, then settles on a follow-up label. */
+let flashTimer = 0;
+
+function flashButton(btn: HTMLButtonElement, flash: string, after: string): void {
+  window.clearTimeout(flashTimer);
+  btn.textContent = flash;
+  btn.dataset.flash = 'true';
+  flashTimer = window.setTimeout(() => {
+    btn.textContent = after;
+    delete btn.dataset.flash;
+  }, 1800);
 }
 
 /* ---------- settings & data ---------- */
@@ -884,6 +995,9 @@ export function initApp(): void {
   });
   $('save-btn').addEventListener('click', () => void saveCurrentRoute());
   $('retry-btn').addEventListener('click', () => void loadForecast());
+  $('verdict-retry').addEventListener('click', () => void loadForecast());
+  $('dep-earlier').addEventListener('click', () => shiftDeparture(-HOUR));
+  $('dep-later').addEventListener('click', () => shiftDeparture(HOUR));
 
   $<HTMLInputElement>('departure').addEventListener('change', (ev) => {
     const v = (ev.target as HTMLInputElement).value;
@@ -897,18 +1011,31 @@ export function initApp(): void {
     }
   });
 
-  $<HTMLInputElement>('speed').addEventListener('change', (ev) => {
-    const input = ev.target as HTMLInputElement;
+  // Apply valid speeds as you type (debounced); only complain once you leave the field.
+  const applySpeed = (input: HTMLInputElement, strict: boolean) => {
     const kmh = displayToKmh(Number.parseFloat(input.value), units());
     if (!Number.isFinite(kmh) || kmh < 5 || kmh > 60) {
-      setStatus(`Enter an average speed between ${input.min} and ${input.max} ${speedUnit(units())}.`, 'error');
-      applySettingsToInputs();
+      if (strict) {
+        setStatus(`Enter an average speed between ${input.min} and ${input.max} ${speedUnit(units())}.`, 'error');
+        applySettingsToInputs();
+      }
       return;
     }
+    if (Math.abs(kmh - state.settings.speedKmh) < 1e-9) return;
     state.settings.speedKmh = kmh;
     persistSettings();
     updateDepartureInput();
     recompute();
+  };
+  let speedTimer = 0;
+  const speedInput = $<HTMLInputElement>('speed');
+  speedInput.addEventListener('input', () => {
+    window.clearTimeout(speedTimer);
+    speedTimer = window.setTimeout(() => applySpeed(speedInput, false), 400);
+  });
+  speedInput.addEventListener('change', () => {
+    window.clearTimeout(speedTimer);
+    applySpeed(speedInput, true);
   });
 
   bindDataDialog();

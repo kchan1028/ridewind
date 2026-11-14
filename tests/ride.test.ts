@@ -17,7 +17,7 @@ function forecast(dirFrom: number, speed = 20): LocationForecast {
     windDirection: fill(dirFrom),
     windGusts: fill(speed * 1.5),
   };
-  return { key: 'k', gridLat: 0, gridLon: 0, series };
+  return { key: 'k', gridLat: 0, gridLon: 0, series, sun: { sunrise: [], sunset: [] } };
 }
 
 // 20 km due east along the equator, then 20 km due north.

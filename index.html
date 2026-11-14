@@ -19,30 +19,37 @@
           <path d="M4 17h21a4 4 0 1 1-4 4" />
           <path d="M4 23h9" />
         </svg>
-        <span class="brand-name">RideWind</span>
+        <h1 class="brand-name">RideWind</h1>
         <span class="brand-tag">Wind and weather along your route</span>
       </div>
       <button type="button" class="btn btn-quiet" id="open-data">Data &amp; settings</button>
     </header>
 
     <main class="layout">
-      <section class="map-pane" aria-label="Route map">
-        <div id="map" role="region" aria-label="Interactive map of the route. The table in the conditions section lists the same data."></div>
-        <div class="legend" id="legend" aria-label="Map legend">
-          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-headwind" /></svg>Headwind</span>
-          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-crosswind" /></svg>Crosswind</span>
-          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-tailwind" /></svg>Tailwind</span>
-          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-calm" /></svg>Calm &lt;5 km/h</span>
-          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-unknown" /></svg>No forecast</span>
-          <span class="legend-item"><span class="legend-arrow" aria-hidden="true">➤</span>Arrows point where the wind blows</span>
-        </div>
-      </section>
-
       <div class="panel" id="controls" tabindex="-1">
         <div id="status" class="status" role="status" aria-live="polite"></div>
 
+        <section id="verdict" class="verdict" aria-labelledby="verdict-head" hidden>
+          <p class="verdict-route" id="verdict-route"></p>
+          <h2 class="verdict-head" id="verdict-head"></h2>
+          <p class="verdict-facts" id="verdict-facts"></p>
+          <div class="verdict-detail" id="verdict-detail">
+            <div class="wind-bar" id="wind-bar" role="img"></div>
+            <ul class="wind-bar-key" id="wind-bar-key"></ul>
+          </div>
+          <div class="verdict-actions">
+            <div class="depart-stepper" id="depart-stepper" role="group" aria-label="Change departure time">
+              <button type="button" class="btn btn-small" id="dep-earlier" aria-label="Leave one hour earlier">−1 h</button>
+              <span class="depart-label" id="depart-label"></span>
+              <button type="button" class="btn btn-small" id="dep-later" aria-label="Leave one hour later">+1 h</button>
+            </div>
+            <button type="button" class="btn btn-small" id="verdict-retry" hidden>Retry forecast</button>
+          </div>
+        </section>
+        <div id="verdict-live" class="visually-hidden" aria-live="polite"></div>
+
         <section class="step" aria-labelledby="h-route">
-          <h2 id="h-route"><span class="step-num" aria-hidden="true">1</span>Route</h2>
+          <h2 id="h-route">Route</h2>
           <div class="actions">
             <label class="btn btn-primary file-btn">
               Import GPX
@@ -69,6 +76,7 @@
               <div><dt>Descending</dt><dd id="fact-loss"></dd></div>
               <div><dt>Elevation range</dt><dd id="fact-range"></dd></div>
             </dl>
+            <p id="direction-note" class="hint direction-note"></p>
             <p id="elevation-note" class="note" hidden></p>
             <p id="elevation-source" class="hint" hidden>Elevation looked up from the Copernicus DEM (90 m terrain model) via Open-Meteo, not from your file.</p>
             <div class="actions">
@@ -86,10 +94,11 @@
         </section>
 
         <section class="step" aria-labelledby="h-ride">
-          <h2 id="h-ride"><span class="step-num" aria-hidden="true">2</span>Departure and pace</h2>
+          <h2 id="h-ride">Departure and pace</h2>
           <div class="field">
             <label for="departure">Departure time <span class="label-sub" id="tz-label"></span></label>
             <input type="datetime-local" id="departure" step="900" disabled />
+            <div class="presets" id="dep-presets" role="group" aria-label="Quick departure times" hidden></div>
             <p class="hint" id="tz-note">Import a route to choose a departure time.</p>
           </div>
           <fieldset class="field">
@@ -131,7 +140,7 @@
         </section>
 
         <section class="step" aria-labelledby="h-wx">
-          <h2 id="h-wx"><span class="step-num" aria-hidden="true">3</span>Conditions along the ride</h2>
+          <h2 id="h-wx">Conditions along the ride</h2>
           <p id="wx-empty" class="empty">Import a route or pick a sample to see the forecast.</p>
           <div id="wx-loading" class="empty" hidden>Getting the forecast…</div>
           <div id="wx-error" class="alert" role="alert" hidden>
@@ -142,18 +151,11 @@
           <div id="results" hidden>
             <p id="window-warning" class="alert alert-warn" hidden></p>
 
-            <div class="result-block">
-              <div class="block-head"><h3>Wind on your route</h3><span class="tag tag-est">Estimate</span></div>
-              <div class="wind-bar" id="wind-bar" role="img"></div>
-              <ul class="wind-bar-key" id="wind-bar-key"></ul>
-              <p class="kpi-line" id="mean-headwind"></p>
-            </div>
-
             <div class="kpis">
-              <div class="kpi"><span class="kpi-label">Ride time <span class="tag tag-est" id="kpi-time-tag">Estimate</span></span><span class="kpi-value" id="kpi-time"></span><span class="kpi-sub" id="kpi-finish"></span></div>
-              <div class="kpi"><span class="kpi-label">Wind <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-wind"></span><span class="kpi-sub" id="kpi-gust"></span></div>
-              <div class="kpi"><span class="kpi-label">Temperature <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-temp"></span></div>
-              <div class="kpi"><span class="kpi-label">Rain <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-rain"></span><span class="kpi-sub" id="kpi-rain-prob"></span></div>
+              <div class="kpi"><span class="kpi-label">Ride time <span class="src src-est" id="kpi-time-tag">estimate</span></span><span class="kpi-value" id="kpi-time"></span><span class="kpi-sub" id="kpi-finish"></span></div>
+              <div class="kpi"><span class="kpi-label">Wind <span class="src src-fc">forecast</span></span><span class="kpi-value" id="kpi-wind"></span><span class="kpi-sub" id="kpi-gust"></span></div>
+              <div class="kpi"><span class="kpi-label">Temperature <span class="src src-fc">forecast</span></span><span class="kpi-value" id="kpi-temp"></span></div>
+              <div class="kpi"><span class="kpi-label">Rain <span class="src src-fc">forecast</span></span><span class="kpi-value" id="kpi-rain"></span><span class="kpi-sub" id="kpi-rain-prob"></span></div>
             </div>
 
             <div class="result-block">
@@ -162,7 +164,7 @@
             </div>
 
             <div class="result-block">
-              <div class="block-head"><h3>Compare departures and directions</h3><span class="tag tag-est">Estimate</span></div>
+              <div class="block-head"><h3>Compare departures and directions</h3><span class="src src-est">estimate</span></div>
               <div class="field compare-controls">
                 <label for="compare-spacing">Try departures every</label>
                 <select id="compare-spacing">
@@ -194,11 +196,11 @@
                   <caption id="samples-caption">Forecast at each sampled point, matched to your estimated arrival time</caption>
                   <thead>
                     <tr>
-                      <th scope="col">Point</th>
+                      <th scope="col">Distance</th>
                       <th scope="col">Arrive <span class="th-sub">estimate</span></th>
+                      <th scope="col">Head / tail <span class="th-sub">calculated</span></th>
                       <th scope="col">Wind <span class="th-sub">forecast</span></th>
                       <th scope="col">Gust <span class="th-sub">forecast</span></th>
-                      <th scope="col">Head / tail <span class="th-sub">calculated</span></th>
                       <th scope="col">Cross <span class="th-sub">calculated</span></th>
                       <th scope="col">Temp <span class="th-sub">forecast</span></th>
                       <th scope="col">Rain <span class="th-sub">forecast</span></th>
@@ -215,8 +217,8 @@
         <section class="step about" aria-labelledby="h-about">
           <h2 id="h-about">Reading these numbers</h2>
           <ul>
-            <li><span class="tag tag-fc">Forecast</span> values come directly from Open-Meteo weather models for the hour you're estimated to arrive. Wind is the model's 10 m wind, not wind at handlebar height.</li>
-            <li><span class="tag tag-est">Estimate</span> and <em>calculated</em> values are RideWind's own arithmetic: arrival times assume a constant average speed, and the headwind and crosswind components come from that forecast wind and the route's direction.</li>
+            <li><span class="src src-fc">forecast</span> values come directly from Open-Meteo weather models for the hour you're estimated to arrive. Wind is the model's 10 m wind, not wind at handlebar height.</li>
+            <li><span class="src src-est">estimate</span> and <em>calculated</em> values are RideWind's own arithmetic: arrival times assume a constant average speed, and the headwind and crosswind components come from that forecast wind and the route's direction.</li>
             <li>Forecast wind does not fully account for shelter from buildings, trees, hedges, cuttings or local terrain. Exposed roads may feel stronger wind, and sheltered ones weaker.</li>
             <li>Headwind means the wind is within 45° of straight on, tailwind within 45° of directly behind, and anything else is crosswind. These are rough planning guides, not race advice.</li>
             <li>The power estimate uses a published steady-state cycling model (Martin et al., 1998) with your settings, gradient, air density and the wind along your direction of travel. It ignores stops, traffic, corners, accelerations and fatigue, so treat it as an approximation. It has not been validated against your own rides and is not a race prediction.</li>
@@ -230,6 +232,18 @@
           <p>A personal, non-commercial project. Not affiliated with any weather or cycling service.</p>
         </footer>
       </div>
+
+      <section class="map-pane" aria-label="Route map">
+        <div id="map" role="region" aria-label="Interactive map of the route. The table in the conditions section lists the same data."></div>
+        <div class="legend" id="legend" aria-label="Map legend" hidden>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-headwind" /></svg>Headwind</span>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-crosswind" /></svg>Crosswind</span>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-tailwind" /></svg>Tailwind</span>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-calm" /></svg>Calm &lt;5 km/h</span>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-unknown" /></svg>No forecast</span>
+          <span class="legend-item"><span class="legend-arrow" aria-hidden="true">➤</span>Arrows point where the wind blows</span>
+        </div>
+      </section>
     </main>
 
     <dialog id="data-dialog" aria-labelledby="data-title">
@@ -252,9 +266,14 @@
           <div class="actions">
             <button type="button" class="btn" id="export-btn">Export data</button>
             <label class="btn file-btn">Import data<input type="file" id="import-input" accept=".json,application/json" /></label>
-            <button type="button" class="btn btn-danger" id="delete-all-btn">Delete all local data</button>
           </div>
           <p id="data-status" class="hint" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="field danger-zone">
+          <h3>Delete everything</h3>
+          <p class="hint">Removes your settings and every saved route from this browser. This can't be undone, so export first if you want a copy.</p>
+          <button type="button" class="btn btn-danger" id="delete-all-btn">Delete all local data</button>
         </div>
       </form>
     </dialog>
