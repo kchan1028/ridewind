@@ -1,0 +1,24 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.log
+.DS_Store
+
+# Local secrets and personal data: never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Personal ride files and exports. Only the bundled sample route is tracked.
+*.gpx
+*.fit
+*.tcx
+!public/samples/*.gpx
+ridewind-export*.json
+personal/
+
+# Local editor/agent config
+.claude/
