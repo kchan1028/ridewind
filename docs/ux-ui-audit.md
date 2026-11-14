@@ -64,7 +64,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P1-1 · "Best" departure ignores daylight and trivial differences
 
-> **Status: fixed** in [#23](https://github.com/kchan1028/ridewind/pull/23). Dark rides are never Best, each option shows its finish time, and near-equal options get "No clear best". Capping rows at sunset is still open.
+> **Status: fixed** in [#23](https://github.com/kchan1028/ridewind/pull/23). Dark rides are never Best, each option shows its finish time, and near-equal options get "No clear best". The rows now stop at the last departure that finishes in daylight, with **Show later times** for the rest.
 
 - **Where:** Compare departures and directions. `bestRow` in [`src/lib/compare.ts:74`](../src/lib/compare.ts); rows are built in [`src/ui/app.ts:486`](../src/ui/app.ts).
 - **Observed:**
@@ -303,7 +303,7 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 
 | # | Change | Fixes | Impact | Effort | Notes |
 |---|---|---|---|---|---|
-| 1 | ~~Daylight-aware, threshold-based comparison~~ **Done in #23** | P1-1 | High | S–M | Row cap at sunset still open |
+| 1 | ~~Daylight-aware, threshold-based comparison~~ **Done in #23** | P1-1 | High | S–M | Row cap at sunset done too |
 | 2 | Rain wording led by probability, in the verdict, KPI and comparison | P1-2 | High | S | Copy plus `verdict` facts; test the thresholds |
 | 3 | Inline field validation helper (`aria-invalid`, `aria-describedby`, keep the typed value) | P1-3 | High | S | One helper for speed and the six rider fields |
 | 4 | Collapsible, glanceable verdict bar (collapsed on scroll, larger text, 48 px stepper, "Updated X min ago" and Refresh) | P2-1, P2-3 (part), P2-8 (part) | High | M | The biggest change for use outdoors; check with VoiceOver |

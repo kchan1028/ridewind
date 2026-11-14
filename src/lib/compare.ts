@@ -112,3 +112,17 @@ export function bestChoice(rows: CompareRow[], pace: PaceModel): BestChoice {
   const margin = pace.kind === 'power' ? BEST_MARGIN.durationMs : BEST_MARGIN.meanHeadwindKmh;
   return eligible.length > 1 && score(worst) - score(best) < margin ? { kind: 'similar' } : { kind: 'best', row: best };
 }
+
+/**
+ * How many departures to list before the rest are tucked behind "Show later
+ * times": up to and including the last departure where at least one direction
+ * finishes in daylight (or daylight is unknown). If none does, all are listed,
+ * so a night-time plan still shows its options.
+ */
+export function daylightCutoff(rows: CompareRow[], departures: number[]): number {
+  let last = -1;
+  departures.forEach((t, i) => {
+    if (rows.some((r) => r.departureMs === t && (r.daylight === 'daylight' || r.daylight === 'unknown'))) last = i;
+  });
+  return last === -1 ? departures.length : last + 1;
+}

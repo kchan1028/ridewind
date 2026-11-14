@@ -1497,3 +1497,8 @@ input[aria-invalid='true'] {
     padding-right: 6px;
   }
 }
+
+/* "Show later times" under the departure comparison */
+.compare-more {
+  margin-top: 8px;
+}

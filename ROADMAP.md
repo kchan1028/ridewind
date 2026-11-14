@@ -29,7 +29,6 @@ Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-imp
 | --- | --- | --- |
 | Smoother charts, units on the axes and fewer tick labels | Proposed | Up to 2 days |
 | Tidy-ups: no repeated status messages, one combined Start/Finish label on loops, one series for the temperature range | Proposed | Under half a day |
-| Limit the comparison to departures that finish before sunset | Proposed | Not sized |
 
 The audit asked for the riders' test in the [usability testing plan](docs/usability-testing.md) to decide what the verdict bar shows. The bar shipped first, so that test should now check it.
 
@@ -62,6 +61,7 @@ From the UX/UI audit's implementation plan:
 - [PR #36](https://github.com/kchan1028/ridewind/pull/36): a glanceable verdict bar with Details, forecast age and Refresh (step 4).
 - [PR #40](https://github.com/kchan1028/ridewind/pull/40): the departure comparison as cards on phones, with both directions visible (most of step 5).
 - The point-by-point table shows Distance, Arrive, Head/tail and Rain on phones, with **Show all columns** for the rest (the rest of step 5).
+- The comparison lists start times up to the last one that finishes in daylight, with **Show later times** for the rest (the open part of step 1).
 - [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
 
 The design review's P0 to P3 items have all shipped:
