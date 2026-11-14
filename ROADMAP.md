@@ -11,7 +11,7 @@ Bugs and checks that are open on GitHub.
 | Item | Status | Tracked in |
 | --- | --- | --- |
 | Test with screen readers and in Windows high contrast mode. Zoom and reflow are done. | Open | [#12](https://github.com/kchan1028/ridewind/issues/12) |
-| Click-to-route drawing: routes follow roads (FOSSGIS Valhalla, road-bike profile), with drag to move, select and remove points, undo and redo, reverse, close loop, protected clear, straight sections by hand, a review step, GPX export and live wind recalculation. See [drawing a route](docs/routing.md). | Built and checked locally on branch `feat/click-to-route` (14 November 2026). Not pushed, merged or deployed | No issue yet |
+| Click-to-route drawing: routes follow roads (FOSSGIS Valhalla, road-bike profile), with drag to move, select and remove points, undo and redo, reverse, close loop, protected clear, straight sections by hand, a review step, GPX export and live wind recalculation. See [drawing a route](docs/routing.md). | Merged on 14 November 2026. Not on the live site yet: deploying waits on the contact email below | [PR #88](https://github.com/kchan1028/ridewind/pull/88) |
 | Before deploying route drawing: show an easily found contact email for the site operator, which the FOSSGIS routing terms require, or switch to Stadia Maps with domain authentication. | Open, needs the owner | No issue yet |
 
 ## Next
