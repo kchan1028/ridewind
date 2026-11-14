@@ -19,12 +19,23 @@ export type SegmentClass = WindClass | 'unknown';
 export interface SegmentResult {
   latlngs: Array<[number, number]>;
   windClass: SegmentClass;
-  /** Forecast rain of at least RAIN_MM_PER_H when the rider reaches this section. */
-  rain: boolean;
+  /** Forecast rain strength when the rider reaches this section. */
+  rain: RainLevel;
 }
 
 /** Hourly precipitation (mm) at or above which a section counts as wet; matches the "Dry" cutoff used in the summary. */
 export const RAIN_MM_PER_H = 0.05;
+
+export type RainLevel = 'none' | 'light' | 'moderate' | 'heavy';
+
+/** Standard hourly rain-rate bands: light under 2.5 mm/h, moderate under 7.6 mm/h, heavy above. */
+export function rainLevel(mmPerH: number | null | undefined): RainLevel {
+  const mm = mmPerH ?? 0;
+  if (mm < RAIN_MM_PER_H) return 'none';
+  if (mm < 2.5) return 'light';
+  if (mm < 7.6) return 'moderate';
+  return 'heavy';
+}
 
 export interface RideSummary {
   /** Metres of route in each class. */
@@ -124,7 +135,7 @@ export function planRide(input: PlanInput): RidePlan {
       weightedM += lengthM;
     }
     distanceByClass[cls] += lengthM;
-    const rain = (w?.precipitation ?? 0) >= RAIN_MM_PER_H;
+    const rain = rainLevel(w?.precipitation);
 
     const latlngs = points.slice(chunk.startIndex, chunk.endIndex + 1).map((p) => [p.lat, p.lon] as [number, number]);
     const prev = segments[segments.length - 1];

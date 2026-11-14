@@ -617,7 +617,7 @@ function recompute(): void {
   state.plan = planRide({ ...base, elapsedAt: state.sim.elapsedAt });
   renderResults(state.plan, state.sim);
   renderVerdict(state.plan, state.sim);
-  map.showPlan(state.plan, describePoint);
+  map.showPlan(state.plan, describePoint, (mm) => `${formatPrecip(mm, units())}/h`);
 }
 
 function variantFor(reversed: boolean): RouteVariant {

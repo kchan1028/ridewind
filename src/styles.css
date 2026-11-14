@@ -269,10 +269,21 @@ a {
   stroke-dasharray: 2 5;
 }
 .lg-rain {
-  stroke: #7b4fd6;
-  stroke-opacity: 0.45;
-  stroke-width: 12;
+  /* Lighter than the map band so it reads on the dark legend bar. */
+  stroke: #a78bfa;
   stroke-linecap: round;
+}
+.lg-rain-light {
+  stroke-width: 6;
+  stroke-opacity: 0.55;
+}
+.lg-rain-moderate {
+  stroke-width: 10;
+  stroke-opacity: 0.75;
+}
+.lg-rain-heavy {
+  stroke-width: 14;
+  stroke-opacity: 1;
 }
 .lg-unknown {
   stroke: var(--unknown);
@@ -763,6 +774,33 @@ input:disabled {
 }
 
 /* ---------- map widgets ---------- */
+.rain-tag-icon {
+  background: none;
+  border: none;
+}
+.rain-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: #ffffff;
+  background: #5b21b6;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.rain-tag svg {
+  fill: currentColor;
+}
+.rain-tag.rain-light {
+  background: #7c4dcc;
+}
+.rain-tag.rain-heavy {
+  background: #3b0f80;
+}
 .wind-arrow svg {
   fill: #14213d;
   stroke: #ffffff;
