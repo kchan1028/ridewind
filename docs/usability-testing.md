@@ -1,8 +1,8 @@
 # Usability testing with cyclists
 
-**Status, 14 November 2026: no usability sessions have been run.** This page is a plan. The [completed research](#completed-research) section is empty on purpose, and it stays empty until a real session happens. Nothing here describes what riders think or do.
+**Status, 14 November 2026: no sessions with riders have been run.** Most of this page is a plan. One [expert walkthrough of the live site](#expert-walkthrough-of-the-live-site-14-november-2026) has been done: Claude, an AI assistant, worked through the main flows on desktop and phone. That walkthrough isn't participant research. It shows where the interface breaks, but not what riders think or do, so the [completed research](#completed-research) section stays empty until a real session happens.
 
-The plan tests RideWind's four core journeys from [PRODUCT.md](../PRODUCT.md#how-do-cyclists-use-it) with real riders. It turns the hypotheses in the [UX/UI audit](ux-ui-audit.md#5-unverified-assumptions-and-questions-for-cyclist-testing) into tasks you can observe. The audit was written from a designer's and a cyclist's point of view, without riders, so each of its findings is still a hypothesis until a session confirms or rejects it. (The audit is in [PR #22](https://github.com/kchan1028/ridewind/pull/22) until that merges.)
+The plan tests RideWind's four core journeys from [PRODUCT.md](../PRODUCT.md#how-do-cyclists-use-it) with real riders. It turns the hypotheses in the [UX/UI audit](ux-ui-audit.md#5-unverified-assumptions-and-questions-for-cyclist-testing) into tasks you can observe. The audit was written from a designer's and a cyclist's point of view, without riders, so each of its findings is still a hypothesis until a session confirms or rejects it.
 
 **Safety rule for every session: participants only touch the app while stopped.** No task is done while riding, and no session asks anyone to ride. Outdoor tasks happen standing or sitting at a safe spot off the road, with the bike parked.
 
@@ -229,9 +229,182 @@ Research question(s): R__
 Possible finding (link to findings log row, if any):
 ```
 
+## Expert walkthrough of the live site, 14 November 2026
+
+**What this is:** an inspection of <https://kchan1028.github.io/ridewind/> by Claude, an AI assistant, using the in-app Chromium browser. It walked through the task scenarios above without participants. It confirms what the interface does. It can't say how riders understand it, so none of these findings count towards the [validation rule](#how-do-findings-reach-github-issues-and-the-roadmap). Each one is a hypothesis that the participant sessions should check.
+
+**Build tested:** the live site was serving the deploy of `0d5ebd5`, the same build the [UX/UI audit](ux-ui-audit.md) inspected. Some fixes have merged to `main` since then but hadn't been deployed when this walkthrough ran, so the live site still shows the problems they fix. The **Status** column below says where that applies.
+
+### What was tested
+
+| Area | How | Viewport |
+| --- | --- | --- |
+| First screen and loading a sample (T1) | Opened the site; loaded all three samples | 1280×800 desktop; 375×812 phone with touch emulation |
+| Reading the verdict, KPIs, charts, point-by-point table (T2) | Read the page text and checked it against the screen | Both |
+| Changing departure: stepper, presets, comparison **Use** (T3, T4) | Clicked controls; recorded the departure, verdict and focus after each | Both |
+| Power model (T5) | Switched model; read defaults, limits and the ride-time KPI | Desktop |
+| Route with no elevation (T5) | Loaded a generated 11 km GPX with no elevation through the file input in script | Phone |
+| Invalid GPX | Loaded a text file named `.gpx` the same way | Phone |
+| Out-of-range speed (T6) | Entered 100 km/h and left the field | Desktop |
+| Reverse, save, reload, reopen (T7) | Saved a reversed sample, reloaded, reopened it | Desktop |
+| Data & settings dialog (T8) | Opened it; checked focus, modal state and Escape | Desktop |
+| Forecast failure and retry (T11) | Made the page's requests to Open-Meteo fail, loaded a sample, then retried | Phone |
+| Accessibility in the DOM | Headings, landmarks, `aria-invalid` and `aria-describedby`, focus after each action, target sizes | Both |
+
+The test browser already held one saved route (*Sample: Afsluitdijk crossing (approximate)*) from earlier work. The walkthrough left it alone. It deleted the route it saved itself and set the pace model back to constant speed.
+
+### What couldn't be verified
+
+- **How riders understand it:** reading the map arrows, the rain wording, whether **Best** is trusted, what a saved route should remember. Only participant sessions can answer these (R2–R4, R9).
+- **Outdoor use:** glare, gloves, one-handed use and arm's-length reading (T9, T10). Touch was emulated; target sizes were measured, not tapped.
+- **Real devices:** iOS Safari and Android Chrome weren't used. The phone results come from Chromium emulating a phone.
+- **Screen readers, 200% zoom and high-contrast mode:** only the markup was inspected. Nothing was listened to.
+- **The native file picker and real offline use:** files went through the file input from a script, and the forecast failure was simulated in the page, not with the network off. Losing the tab or reloading with no signal wasn't tested.
+- **Light theme, imperial units, export and import of data, and Delete all local data.** Delete wasn't run, so the existing test data wasn't wiped.
+- **Keyboard use of the map** and routes in other time zones.
+
+### Findings
+
+Severity uses the audit's scale: **P0** blocks the task, **P1** is a major problem or misleading result, **P2** is real friction with a workaround, and **P3** is polish. Findings marked *New* aren't in the audit. The rest re-confirm audit findings on the live site, which keeps the audit's evidence and adds these repro steps.
+
+| ID | Finding | Severity | Audit | Status (14 Nov) |
+| --- | --- | --- | --- | --- |
+| W1 | **Best** goes to rides that finish in the dark, and to differences of a minute or two | P1 | P1-1 | Fixed on `main` by [PR #23](https://github.com/kchan1028/ridewind/pull/23); not deployed |
+| W2 | The verdict states a rain amount without its chance | P1 | P1-2 | Fixed on `main` by [PR #27](https://github.com/kchan1028/ridewind/pull/27); not deployed |
+| W3 | Speed error appears far from the field and the typed value is reverted | P1 | P1-3 | Fix open in [PR #28](https://github.com/kchan1028/ridewind/pull/28) |
+| W4 | Keyboard focus is lost after **Use**, a preset, or **Retry forecast** | P2 | *New* | Open: [#31](https://github.com/kchan1028/ridewind/issues/31) |
+| W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Open: [#32](https://github.com/kchan1028/ridewind/issues/32) |
+| W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Open: [#33](https://github.com/kchan1028/ridewind/issues/33) |
+| W7 | A saved route forgets its direction and departure | P2 | P2-4 | Open |
+| W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Open |
+| W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Open |
+| W10 | Phone: the first screen is an empty map | P2 | P2-5 | Open |
+| W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Fix open in [PR #25](https://github.com/kchan1028/ridewind/pull/25) |
+| W12 | One forecast error shown three times | P3 | P3-1 | Open |
+| W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Open: [#34](https://github.com/kchan1028/ridewind/issues/34) |
+| W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Open: [#35](https://github.com/kchan1028/ridewind/issues/35) |
+
+#### W1 · Best goes to dark rides and to trivial differences (P1)
+
+- **Steps:**
+  1. Desktop, constant speed 25 km/h. Load **Berkeley to Morgan Territory**. The departure defaults to Sat 14 Nov, 11:00 AM.
+  2. The verdict gives 5 h 36 min and a 04:58 PM sunset. The comparison marks **3:00 PM** as Best.
+  3. Press **Use** on that row. The verdict reads "finish 08:35 PM · finishes after sunset (04:58 PM)".
+  4. Phone, power model at the defaults. Load **China Camp and Nicasio Valley**. Best is 1:00 PM at 3 h 12 min, against 3 h 14 min for 11:00 AM.
+- **Impact:** the main recommendation sends riders out in the dark, or makes them rearrange their day to save two minutes.
+- **Fix:** deploy `main`, then check the live site against these steps. PR #23 already makes this change.
+
+#### W2 · Rain amount without its chance (P1)
+
+- **Steps:** load **PRS (clockwise)**. The verdict reads "rain up to 4.7 mm/h". On **China Camp and Nicasio Valley**, it reads "rain up to 2.5 mm/h", while the Rain KPI gives the highest chance as 10%.
+- **Impact:** on a phone the verdict bar is the only summary in view, and it reads like a wet ride.
+- **Fix:** deploy `main` (PR #27), then recheck the wording with riders (R2, audit Q8).
+
+#### W3 · Speed error far from the field, value reverted (P1)
+
+- **Steps:** desktop. Type `100` in **Average moving speed** and leave the field.
+- **Observed:**
+  - The field goes back to 25.
+  - "Enter an average speed between 5 and 60 km/h" appears in the status line, 1,281 px above the field and off screen.
+  - The field has no `aria-invalid` or `aria-describedby`.
+- **Impact:** the rider doesn't know their entry was rejected. Screen-reader users get no link between the message and the field.
+- **Fix:** PR #28. Show the error under the field, keep the typed value, set `aria-invalid` and link the message to the field.
+
+#### W4 · Keyboard focus lost after Use, presets and Retry (P2, new)
+
+- **Steps:** with the keyboard, focus **Use** on any comparison row and press Enter. Then do the same with **Tomorrow 08:00**, and with **Retry forecast** after a forecast error.
+- **Observed:** each time, focus moves to `<body>`. The control was re-rendered or hidden. The next Tab starts again from the top of the page.
+- **Impact:** keyboard and screen-reader users lose their place in a long page, about 4,700 px on desktop, after the comparison's main action. WCAG 2.4.3, Focus Order. The −1 h / +1 h buttons keep focus, so the behaviour is also inconsistent.
+- **Fix:** after re-rendering, put focus back on the matching control: the new **Selected** cell, the same preset, or the verdict heading after a retry. Keep the preset buttons in the DOM instead of rebuilding them.
+
+#### W5 · Comparison restarts at the chosen departure (P2, new)
+
+- **Steps:** load **Berkeley to Morgan Territory** at 11:00 AM. The comparison lists 11:00 AM to 9:00 PM. Press **Use** on 3:00 PM, then on 7:00 PM.
+- **Observed:** after each **Use**, the list starts at the new departure. After two presses it runs from 7:00 PM to 5:00 AM the next day. The earlier options are gone, and the only way back is −1 h, one step at a time.
+- **Impact:** a rider trying options loses the ones they've already seen, and can't compare back to the original time. The list fills with night departures. This is the closest thing to a dead end found.
+- **Fix:** keep the comparison anchored to the first departure the rider chose, or to the start of that day, with **Selected** moving within it. Add "Earlier times" and "Later times" controls. Combine this with the daylight cap from PR #23.
+
+#### W6 · No wind verdict for a route without elevation in power mode (P2, new)
+
+- **Steps:** phone, power model. Import a GPX with no elevation data.
+- **Observed:** the verdict headline reads "Elevation needed for power timing", with "Look up elevation or choose to estimate as if flat, under Departure and pace". No wind summary is shown. The two buttons are further down the page, not in the verdict.
+- **Impact:** the rider's main question, the wind, goes unanswered because of a timing setting. On a phone the buttons are out of view.
+- **Fix:** show the wind verdict using constant-speed timing, labelled as such, until the rider chooses. Put **Look up elevation** and **Estimate as if flat** in the verdict too. The rule against quietly assuming flat (PRODUCT.md) still holds, because the fallback is labelled.
+
+#### W7 · Saved route forgets direction and departure (P2)
+
+- **Steps:** load a sample, press **Reverse direction**, change the departure, then **Save on this device**. Reload the page and open it from **Saved routes**.
+- **Observed:** it opens as "Riding in the file's direction" at the next hour. The pace model carries over, but as a global setting, not per route.
+- **Fix:** as in the audit, P2-4. Save the direction and the usual departure time with the route.
+
+#### W8 · Phone verdict bar is 178 px tall (P2)
+
+- **Steps:** 375×812, load any sample, scroll.
+- **Observed:** the fixed bar is 178 px, 22% of the screen. It covers the bottom rows of the comparison while the rider scrolls through it.
+- **Fix:** as in the audit, P2-1. A collapsed state with a larger headline. Riders should check what it shows (audit Q6).
+
+#### W9 · Phone: Reversed column cut off (P2)
+
+- **Steps:** 375×812, load **China Camp and Nicasio Valley**, scroll to the comparison.
+- **Observed:** the comparison table is 463 px wide inside a 341 px frame, and the point-by-point table is 774 px wide. The **Reversed** column and its **Use** buttons are clipped at the right edge. The page itself doesn't scroll sideways.
+- **Fix:** as in the audit, P2-2. Stack the two directions as cards, or add a direction toggle.
+
+#### W10 · Phone: empty map first (P2)
+
+- **Steps:** 375×812, fresh load.
+- **Observed:** the first screen is an empty Bay Area map. **Import GPX** and the sample menu start about 640 px down, and no sentence says what the app does.
+- **Fix:** as in the audit, P2-5.
+
+#### W11 · Small touch targets (P2)
+
+- **Observed at 375 px:**
+  - −1 h / +1 h: 40 px.
+  - Presets: 40 px.
+  - **Use**: 32 px.
+  - **Open** and **Delete**: 36 px, next to each other.
+  - The radio labels are 44 px, which is fine.
+- **Fix:** PR #25 (44 px buttons). Check that **Open** and **Delete** are spaced apart.
+
+#### W12 · One forecast error, three messages (P3)
+
+- **Steps:** make requests to Open-Meteo fail, then load **PRS (clockwise)**.
+- **Observed:** "Couldn't reach Open-Meteo. Check your connection and retry. Your route is still loaded." appears in the status line, the verdict and a `role=alert` box, with two **Retry forecast** buttons. Retry works once requests succeed, and the route stays loaded.
+- **Fix:** as in the audit, P3-1.
+
+#### W13 · Out-of-date status message (P3, new)
+
+- **Steps:** press **Use** on 7:00 PM. Then press −1 h, then **Tomorrow 08:00**.
+- **Observed:** the departure changes to 08:00 tomorrow, but the status line still reads "Using Sat, Nov 14, 07:00 PM, original direction."
+- **Impact:** the status contradicts the verdict. Screen-reader users who re-read the status hear the wrong time.
+- **Fix:** clear the status, or replace it, whenever the departure changes in another way.
+
+#### W14 · Sample menu doesn't show the loaded route (P3, new)
+
+- **Steps:** choose **Berkeley to Morgan Territory** from the sample menu.
+- **Observed:** the route loads and the menu goes back to "Try a sample route…".
+- **Impact:** minor. The route card shows the name, but the control looks as if nothing was chosen.
+- **Fix:** keep the chosen sample selected, and reset the menu only when a GPX is imported or a saved route is opened.
+
+### What worked well
+
+These held up and are worth keeping:
+
+- An invalid GPX file gives a specific message and keeps the previous route loaded.
+- A forecast failure keeps the route, and **Retry forecast** recovers.
+- A route with no elevation is never quietly treated as flat.
+- The verdict flags "finishes after sunset" for the selected departure.
+- **Data & settings** is a native modal dialog that puts focus on **Close** and has a proper label.
+- The heading structure is logical, the page has a skip link, and nothing scrolls sideways at 375 px.
+
+### What should happen next
+
+1. Deploy `main`, then rerun W1 and W2 on the live site and log the results in the [retesting log](#retesting-log) as walkthrough rechecks, not participant retests.
+2. Add W4, W5 and W6 to the participant tasks: T4 covers W5, T5 covers W6, and a keyboard or screen-reader participant covers W4.
+3. Issues are open for the new findings: [#31](https://github.com/kchan1028/ridewind/issues/31) (W4), [#32](https://github.com/kchan1028/ridewind/issues/32) (W5), [#33](https://github.com/kchan1028/ridewind/issues/33) (W6), [#34](https://github.com/kchan1028/ridewind/issues/34) (W13) and [#35](https://github.com/kchan1028/ridewind/issues/35) (W14). Each says it came from an expert walkthrough. W4 is an accessibility defect and doesn't need participant evidence. The others should be validated, under the rule above, before they go on the roadmap.
+
 ## Completed research
 
-**No sessions have been completed.** When a round runs, add a row here and fill in the logs below. Don't record planned or cancelled sessions as completed.
+**No sessions with riders have been completed.** The expert walkthrough above isn't counted here. When a round runs, add a row here and fill in the logs below. Don't record planned or cancelled sessions as completed.
 
 | Round | Dates | Build | Participants (codes and profiles) | Tasks run | Notes |
 | --- | --- | --- | --- | --- | --- |
