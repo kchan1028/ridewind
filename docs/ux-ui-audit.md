@@ -218,6 +218,22 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
   - Leave at least 8 px between Open and Delete.
   - Make Use a full-width row target in the phone card layout (see P2-2).
 
+### P2-9 · The desktop panel can't grow, so the comparison is cramped
+
+> **Status: open**, tracked in [#44](https://github.com/kchan1028/ridewind/issues/44).
+
+- **Where:** `.layout` at 900 px and up in [`src/styles.css:179`](../src/styles.css): `grid-template-columns: minmax(360px, 440px) minmax(0, 1fr)`.
+- **Observed:**
+  - The panel stops at 440 px however wide the window is; the map takes all the extra width.
+  - The departure comparison scrolls sideways and the Reversed column is cut off.
+  - Each comparison cell wraps to four lines ("19% headwind · avg 3 mph tail · rain 97%"), and Use drops to its own line.
+  - With the sticky verdict at the top, only a few departures are visible at once.
+- **Impact:** on a laptop or monitor, the rider can't see the verdict, both directions and the departure options together, which is the point of comparing. A bigger window doesn't help.
+- **Fix:**
+  - Let the panel grow with the window, for example `minmax(360px, clamp(440px, 36vw, 640px))`, so at 1440 px both directions fit without a sideways scroll.
+  - Add a drag handle between panel and map (`role="separator"`, arrow keys), remember the width, and call `map.invalidateSize()` after a resize.
+  - Optionally, an "expand panel" toggle while comparing departures.
+
 ### P3-1 · One error, three messages
 
 - **Observed:** with the forecast blocked, the same sentence appears in the status line, the verdict bar and the Conditions alert. A screen reader hears it at least twice (`role=status` and `role=alert`).
@@ -285,5 +301,6 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | 10 | Chart smoothing, axis units and tick thinning | P2-7 | Medium | S–M | |
 | 11 | Touch targets of at least 44 px and spacing between Open and Delete | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
 | 12 | De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range | P3-1 to P3-3 | Low | S | |
+| 13 | Wider, resizable desktop panel ([#44](https://github.com/kchan1028/ridewind/issues/44)) | P2-9 | Medium | S–M | No change below 900 px |
 
 Before step 4, run the riders' test from section 5, at least questions 2, 6 and 8, because the answers decide what the collapsed bar shows. After the changes, run a screen-reader pass (VoiceOver on iOS, NVDA), 200% zoom, and outdoor readability checks. `ACCESSIBILITY.md` lists all three as untested.
