@@ -2,7 +2,7 @@ import { rideDaylight, type DaylightKind } from './daylight';
 import type { Sample, TrackPoint } from './geo';
 import { planRide } from './ride';
 import { simulateRide, type PaceModel } from './simulate';
-import type { LocationForecast } from './weather';
+import type { LocationForecast, SunTimes } from './weather';
 
 export type Direction = 'forward' | 'reverse';
 
@@ -40,6 +40,34 @@ export function departureOptions(startMs: number, windowEndMs: number, rideMs: n
   for (let k = 0; k < count; k++) {
     const t = startMs + k * spacingMs;
     if (t + rideMs > windowEndMs) break;
+    out.push(t);
+  }
+  return out;
+}
+
+/**
+ * Departures in the next daylight period after `afterMs`, on the same
+ * `spacingMs` grid: from the first grid time at or after the next sunrise,
+ * while the estimated finish is before that day's sunset and inside the
+ * forecast window. Empty without sun times. Lets a plan made late in the day
+ * still offer tomorrow's daylight rides.
+ */
+export function nextDayDepartures(
+  afterMs: number,
+  sun: SunTimes | null | undefined,
+  windowEndMs: number,
+  rideMs: number,
+  spacingMs: number,
+  count: number,
+): number[] {
+  if (!sun || count <= 0 || spacingMs <= 0) return [];
+  const sunriseMs = sun.sunrise.map((t) => t * 1000).sort((a, b) => a - b).find((t) => t > afterMs);
+  if (sunriseMs === undefined) return [];
+  const sunsetMs = sun.sunset.map((t) => t * 1000).sort((a, b) => a - b).find((t) => t > sunriseMs);
+  if (sunsetMs === undefined) return [];
+  const out: number[] = [];
+  for (let t = afterMs + Math.ceil((sunriseMs - afterMs) / spacingMs) * spacingMs; out.length < count; t += spacingMs) {
+    if (t + rideMs > sunsetMs || t + rideMs > windowEndMs) break;
     out.push(t);
   }
   return out;

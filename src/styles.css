@@ -1540,3 +1540,18 @@ input[aria-invalid='true'] {
 .compare-more {
   margin-top: 8px;
 }
+
+/* First next-day departure in the comparison: a heavier rule marks the change of day. */
+.compare-new-day > th,
+.compare-new-day > td {
+  border-top: 2px solid var(--ink-soft);
+}
+@media (max-width: 599px) {
+  .compare-new-day > th,
+  .compare-new-day > td {
+    border-top: 0;
+  }
+  .compare tr.compare-new-day {
+    border-top: 2px solid var(--ink-soft);
+  }
+}
