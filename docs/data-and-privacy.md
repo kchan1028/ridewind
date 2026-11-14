@@ -6,6 +6,7 @@ Your route file never leaves your browser. RideWind sends only up to 40 route po
 flowchart LR
   subgraph Device[Your browser, on your device]
     GPX[Your GPX file] --> App[RideWind]
+    Draw[A route you draw on the map] --> App
     App <--> Store[(Settings and saved routes<br/>localStorage and IndexedDB)]
   end
   App -- "Up to 40 points, rounded to about 100 m" --> OM[Open-Meteo<br/>forecast]
@@ -46,5 +47,6 @@ The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap
 - Nothing syncs between devices or browsers. To move data, use **Data & settings → Export data** on one device and **Import data** on the other.
 - Clearing your browser's site data, or using **Delete all local data**, removes everything permanently.
 - Saved routes keep only latitude, longitude and elevation, plus the direction you ride them and your usual departure time of day (for example 08:00). Timestamps, heart rate and other recorded data in the GPX are thrown away when the file is imported.
+- A route you draw on the map stays in your browser like an imported one. Drawing sends nothing: the points aren't sent anywhere until the forecast request, which uses the same rounded sample points as any route. RideWind doesn't use a routing service, so drawn routes are straight lines between your points rather than following roads (a routing service would have to receive your points). **Export GPX** builds the file in your browser and downloads it, without timestamps.
 - Your GPX file is never uploaded. The only things that leave your browser are the rounded sample coordinates sent to Open-Meteo and the map tile requests sent to OpenStreetMap.
 - Export files contain your routes, which can reveal where you live or ride. Don't commit them. `.gitignore` excludes `*.gpx` (except the samples) and `ridewind-export*.json`.

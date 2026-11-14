@@ -1,7 +1,8 @@
 import { AppError, isAppError } from '../lib/errors';
 import { BEST_MARGIN, bestChoice, compareRides, daylightCutoff, departureOptions, nextDayDepartures, type CompareRow, type RouteVariant } from '../lib/compare';
+import { MAX_DRAWN_POINTS, addDrawnPoint, buildDrawnRoute, drawnDistanceM, gpxFileName, routeToGpx, undoDrawnPoint } from '../lib/draw';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
-import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type Route, type Sample } from '../lib/geo';
+import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type LatLon, type Route, type Sample } from '../lib/geo';
 import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
 import { RIDER_LIMITS, type Exposure, type RiderParams } from '../lib/physics';
 import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
@@ -13,8 +14,10 @@ import * as store from '../lib/storage';
 import {
   deviceTimeZone,
   formatClock,
+  formatDate,
   formatDateTime,
   formatDayClock,
+  formatWallClock,
   formatDuration,
   formatOffset,
   isValidTimeZone,
@@ -155,6 +158,44 @@ function setVerdictMode(mode: VerdictMode, head: string, message: string): void 
 }
 
 /** Shows the details (all facts, wind key, forecast time) instead of the one-line summary. */
+/**
+ * On phones, shrink the bottom bar to one row (hour buttons around the
+ * headline and the finish line) once the rider has scrolled past the summary
+ * figures into the detail, and give the full bar back near the top. It stays
+ * full while Details is open or keyboard focus is inside the bar (a tap on the
+ * hour buttons doesn't count, so the bar doesn't jump under the rider's finger).
+ */
+function bindCompactVerdict(): void {
+  const v = $('verdict');
+  const kpis = document.querySelector<HTMLElement>('.kpis');
+  const phone = window.matchMedia('(max-width: 899px)');
+  let queued = false;
+  const update = (): void => {
+    queued = false;
+    const compact =
+      phone.matches &&
+      !!kpis &&
+      kpis.offsetParent !== null &&
+      v.dataset.mode === 'ready' &&
+      v.dataset.expanded !== 'true' &&
+      $('verdict-elevation').hidden &&
+      !v.querySelector(':focus-visible') &&
+      kpis.getBoundingClientRect().bottom < 0;
+    if (compact) v.dataset.compact = 'true';
+    else delete v.dataset.compact;
+  };
+  const queue = (): void => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(update);
+  };
+  window.addEventListener('scroll', queue, { passive: true });
+  window.addEventListener('resize', queue);
+  v.addEventListener('focusin', queue);
+  v.addEventListener('focusout', queue);
+  new MutationObserver(queue).observe(v, { attributes: true, subtree: true, attributeFilter: ['data-mode', 'data-expanded', 'hidden'] });
+}
+
 function applyVerdictExpanded(expanded: boolean): void {
   const toggle = $('verdict-toggle');
   toggle.setAttribute('aria-expanded', String(expanded));
@@ -211,7 +252,9 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   const b = departureBounds();
   ($('dep-earlier') as HTMLButtonElement).disabled = !b || state.departureMs! - HOUR < b.min;
   ($('dep-later') as HTMLButtonElement).disabled = !b || state.departureMs! + HOUR > b.max;
-  announce(`${headline}. ${facts.join(', ')}.`);
+  // The facts are fragments ("net 1 mph tailwind, …"); read as a sentence, the first word needs a capital.
+  const sentence = facts.join(', ');
+  announce(`${headline}. ${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`);
 }
 
 function shiftDeparture(deltaMs: number): void {
@@ -262,6 +305,7 @@ function loadRoute(
   route: Route,
   opts: { isSample?: boolean; savedId?: string | null; prefs?: store.RoutePrefs; cachedForecast?: ForecastBundle | null } = {},
 ): void {
+  if (drawing) stopDrawing();
   state.original = route;
   // First route: leave the compact first-run layout so the map gets its full height.
   document.body.classList.remove('no-route');
@@ -311,11 +355,14 @@ function renderRouteCard(): void {
 
   const ele = elevationStats(r.points);
   const note = $('elevation-note');
+  const drawn = r.source === 'drawn';
   if (ele.gainM === null) {
     $('fact-gain').textContent = 'Unknown';
     $('fact-loss').textContent = 'Unknown';
     $('fact-range').textContent = 'Unknown';
-    note.textContent = 'This file has no elevation data, so climbing is unknown. RideWind does not assume the route is flat.';
+    note.textContent = drawn
+      ? 'A drawn route has no elevation data, so climbing is unknown until you look it up. RideWind does not assume the route is flat.'
+      : 'This file has no elevation data, so climbing is unknown. RideWind does not assume the route is flat.';
     note.hidden = false;
   } else {
     $('fact-gain').textContent = `↗ ${formatElevation(ele.gainM, u)}`;
@@ -331,11 +378,16 @@ function renderRouteCard(): void {
   show('card-lookup-ele', !complete);
   show('elevation-source', r.elevationSource === 'dem');
   show('dem-credit', r.elevationSource === 'dem');
+  show('export-gpx-btn', drawn);
   show('legend', true);
   $('reverse-btn').setAttribute('aria-pressed', String(state.reversed));
-  $('direction-note').textContent = state.reversed
-    ? 'Riding in reverse: from the file’s finish back to its start.'
-    : 'Riding in the file’s direction.';
+  $('direction-note').textContent = drawn
+    ? state.reversed
+      ? 'Riding in reverse: from your last point back to your first.'
+      : 'Riding in the order you drew it.'
+    : state.reversed
+      ? 'Riding in reverse: from the file’s finish back to its start.'
+      : 'Riding in the file’s direction.';
 }
 
 async function importGpxFile(file: File): Promise<void> {
@@ -362,6 +414,105 @@ async function loadSample(file: string, label: string): Promise<void> {
     setStatus(isAppError(e) ? e.message : 'The sample route could not be loaded. Check your connection.', 'error');
     if (!state.isSample) $<HTMLSelectElement>('sample-select').value = '';
   }
+}
+
+/* ---------- drawing a route ---------- */
+
+/** Points the rider has placed, in riding order. Straight lines join them. */
+let draft: LatLon[] = [];
+let drawing = false;
+
+function setAriaDisabled(id: string, disabled: boolean): void {
+  $(id).setAttribute('aria-disabled', String(disabled));
+}
+
+/** Redraws the draft and updates the count and distance; `message` is announced first. */
+function renderDraft(message = ''): void {
+  map.showDraft(draft);
+  const n = draft.length;
+  const summary = n === 0 ? 'No points yet.' : `${n} ${n === 1 ? 'point' : 'points'} · ${formatDistance(drawnDistanceM(draft), units())}`;
+  $('draw-status').textContent = message ? `${message} ${summary}` : summary;
+  setAriaDisabled('draw-undo', n === 0);
+  setAriaDisabled('draw-clear', n === 0);
+  setAriaDisabled('draw-finish', n < 2);
+}
+
+function startDrawing(): void {
+  if (!drawing) {
+    drawing = true;
+    draft = [];
+    $<HTMLInputElement>('draw-name').value = '';
+    document.body.classList.add('drawing');
+    show('draw-bar', true);
+    $('draw-start').setAttribute('aria-expanded', 'true');
+    map.startDrawing(addDraftPoint);
+    renderDraft();
+  }
+  // On phones the map moves above the panel while drawing; bring the bar into view.
+  $('draw-bar').scrollIntoView({ block: 'start' });
+  $('draw-bar').focus({ preventScroll: true });
+}
+
+function stopDrawing(): void {
+  drawing = false;
+  draft = [];
+  map.stopDrawing();
+  document.body.classList.remove('drawing');
+  show('draw-bar', false);
+  $('draw-start').setAttribute('aria-expanded', 'false');
+}
+
+function addDraftPoint(p: LatLon): void {
+  const next = addDrawnPoint(draft, p);
+  if (!next) {
+    if (draft.length >= MAX_DRAWN_POINTS) renderDraft(`A drawn route can have up to ${MAX_DRAWN_POINTS} points.`);
+    return;
+  }
+  draft = next;
+  renderDraft(`Point ${draft.length} added.`);
+}
+
+function finishDrawing(): void {
+  if (draft.length < 2) {
+    renderDraft('Add at least two points to finish.');
+    return;
+  }
+  const route = buildDrawnRoute(draft, $<HTMLInputElement>('draw-name').value);
+  setStatus(`Loaded your drawn route “${route.name}”. Save it on this device to keep it.`, 'ok');
+  loadRoute(route);
+  $('route-name').focus();
+}
+
+function bindDrawing(): void {
+  $('draw-start').addEventListener('click', startDrawing);
+  $('draw-add').addEventListener('click', () => addDraftPoint(map.center()));
+  $('draw-undo').addEventListener('click', () => {
+    if (draft.length === 0) return;
+    draft = undoDrawnPoint(draft);
+    renderDraft('Last point removed.');
+  });
+  $('draw-clear').addEventListener('click', () => {
+    if (draft.length === 0) return;
+    draft = [];
+    renderDraft('All points cleared.');
+  });
+  $('draw-cancel').addEventListener('click', () => {
+    stopDrawing();
+    map.fit();
+    $('draw-start').focus();
+  });
+  $('draw-finish').addEventListener('click', finishDrawing);
+  $('draw-name').addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      finishDrawing();
+    }
+  });
+  $('export-gpx-btn').addEventListener('click', () => {
+    if (!state.route) return;
+    downloadFile(gpxFileName(state.route.name), routeToGpx(state.route), 'application/gpx+xml');
+    setStatus(`Exported “${state.route.name}” as a GPX file.`, 'ok');
+  });
 }
 
 /* ---------- forecast ---------- */
@@ -858,7 +1009,7 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
       c ? `${formatSpeed(Math.abs(c.crosswind), u)} ${Math.abs(c.crosswind) < 0.5 ? '' : c.crosswind > 0 ? 'from right' : 'from left'}`.trim() : noData(),
       wx?.temperature != null ? formatTemp(wx.temperature, u) : noData(),
       wx?.precipitation != null
-        ? `${formatPrecip(wx.precipitation, u)}${wx.precipitationProbability != null ? ` · ${Math.round(wx.precipitationProbability)}%` : ''}`
+        ? `${formatPrecip(wx.precipitation, u)}/h${wx.precipitationProbability != null ? ` · ${Math.round(wx.precipitationProbability)}%` : ''}`
         : noData(),
     ];
     cells.forEach((content, ci) => {
@@ -949,8 +1100,8 @@ async function renderSaved(): Promise<void> {
       name.textContent = r.name;
       const meta = document.createElement('span');
       meta.className = 'hint';
-      const usual = [r.prefs?.reversed ? 'reversed' : '', r.prefs?.departTime ? `usually ${r.prefs.departTime}` : ''].filter(Boolean);
-      meta.textContent = [`Saved ${new Date(r.savedAt).toLocaleDateString()}`, ...usual].join(' · ');
+      const usual = [r.prefs?.reversed ? 'reversed' : '', r.prefs?.departTime ? `usually ${formatWallClock(r.prefs.departTime)}` : ''].filter(Boolean);
+      meta.textContent = [`Saved ${formatDate(r.savedAt, deviceTimeZone())}`, ...usual].join(' · ');
       const load = document.createElement('button');
       load.type = 'button';
       load.className = 'btn btn-small';
@@ -1164,7 +1315,11 @@ function persistSettings(): void {
 }
 
 function downloadJson(filename: string, data: unknown): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  downloadFile(filename, JSON.stringify(data, null, 2), 'application/json');
+}
+
+function downloadFile(filename: string, text: string, type: string): void {
+  const blob = new Blob([text], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1181,6 +1336,7 @@ function setUnits(u: UnitSystem): void {
   applySettingsToInputs();
   renderRouteCard();
   recompute();
+  if (drawing) renderDraft();
 }
 
 function bindDataDialog(): void {
@@ -1303,6 +1459,7 @@ export function initApp(): void {
     const h = Math.ceil(entry?.borderBoxSize?.[0]?.blockSize ?? $('verdict').offsetHeight);
     document.body.style.setProperty('--verdict-h', `${h}px`);
   }).observe($('verdict'));
+  bindCompactVerdict();
   // Same single request as a normal load; the departure time and settings are kept.
   $('refresh-forecast').addEventListener('click', () => void loadForecast());
   $('dep-earlier').addEventListener('click', () => shiftDeparture(-HOUR));
@@ -1349,5 +1506,6 @@ export function initApp(): void {
 
   bindDataDialog();
   bindPaceForm();
+  bindDrawing();
   void renderSaved();
 }

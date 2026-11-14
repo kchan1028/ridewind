@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDayClock, tzOffsetMs, utcToWallTime, wallTimeToUtc } from '../src/lib/time';
+import { formatClock, formatDate, formatDayClock, formatWallClock, tzOffsetMs, utcToWallTime, wallTimeToUtc } from '../src/lib/time';
 
 describe('route timezone conversion', () => {
   it('converts winter and summer wall times in Amsterdam', () => {
@@ -37,7 +37,33 @@ describe('formatDayClock', () => {
   it('gives weekday, day of month and time in the route timezone', () => {
     // 2026-11-14 19:00 UTC is Saturday 14th, 11:00 in Los Angeles.
     const out = formatDayClock(Date.UTC(2026, 10, 14, 19, 0), 'America/Los_Angeles');
-    expect(out).toMatch(/^Sat 14, /);
+    expect(out).toMatch(/^Sat, Nov 14, /);
     expect(out).toContain('11:00');
+    expect(out).not.toMatch(/\b0\d:/);
+  });
+});
+
+describe('formatClock', () => {
+  it('has no leading zero on a 12-hour clock', () => {
+    const out = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hour12
+      ? formatClock(Date.UTC(2026, 10, 14, 15, 36), 'UTC')
+      : null;
+    if (out !== null) expect(out).toMatch(/^3:36/);
+  });
+});
+
+describe('formatWallClock', () => {
+  it('formats a saved HH:mm with the same clock as the rest of the page', () => {
+    expect(formatWallClock('08:00')).toBe(formatClock(Date.UTC(2000, 0, 1, 8, 0), 'UTC'));
+  });
+});
+
+describe('formatDate', () => {
+  const now = Date.UTC(2026, 10, 14, 12);
+  it('gives weekday, month and day', () => {
+    expect(formatDate(Date.UTC(2026, 10, 14, 12), 'UTC', now)).toMatch(/^Sat, Nov 14$/);
+  });
+  it('adds the year for another year', () => {
+    expect(formatDate(Date.UTC(2025, 10, 14, 12), 'UTC', now)).toContain('2025');
   });
 });

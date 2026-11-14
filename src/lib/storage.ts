@@ -250,7 +250,7 @@ export function parseImport(text: string): ExportFile {
       id: r.id,
       name: r.name.slice(0, 100),
       savedAt: typeof r.savedAt === 'number' ? r.savedAt : Date.now(),
-      source: r.source === 'route' ? 'route' : 'track',
+      source: r.source === 'route' || r.source === 'drawn' ? r.source : 'track',
       ...(r.elevationSource === 'dem' ? { elevationSource: 'dem' as const } : {}),
       points: r.points,
       ...(prefs ? { prefs } : {}),

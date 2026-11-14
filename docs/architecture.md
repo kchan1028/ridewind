@@ -27,7 +27,7 @@ Everything inside the box runs in the rider's browser. The three services on the
 
 ## What happens when a route loads
 
-1. **Parse.** `app.ts` refuses files over 25 MB (`MAX_GPX_BYTES`). Then [`parseGpx`](../src/lib/gpx.ts) reads the file with the browser's `DOMParser`. It keeps only latitude, longitude and elevation, and throws an `AppError` with a plain message if the file is empty, not GPX or has fewer than two usable points.
+1. **Parse.** A drawn route skips this step: [`buildDrawnRoute`](../src/lib/draw.ts) turns the points into a `Route` and calls the same `loadRoute`. For a file, `app.ts` refuses files over 25 MB (`MAX_GPX_BYTES`). Then [`parseGpx`](../src/lib/gpx.ts) reads the file with the browser's `DOMParser`. It keeps only latitude, longitude and elevation, and throws an `AppError` with a plain message if the file is empty, not GPX or has fewer than two usable points.
 2. **Measure.** [`cumulativeDistances`](../src/lib/geo.ts) works out how far along the route each point is. [`sampleRoute`](../src/lib/geo.ts) picks up to 40 evenly spaced points, about 5 km apart, for the forecast.
 3. **Fetch the forecast.** [`fetchForecast`](../src/lib/weather.ts) sends one request for all sample points, rounded to about 100 m. It gets 16 days of hourly temperature, rain and wind, plus sunrise and sunset. The response is checked and kept in memory as a `ForecastBundle`.
 4. **Pick a departure.** The forecast tells the app the route's timezone. [`src/lib/time.ts`](../src/lib/time.ts) converts between that local time and UTC, so departure times mean the same thing wherever the rider's device is.
@@ -63,6 +63,7 @@ These modules are plain TypeScript with no access to the page. Most take numbers
 | Module | What it's responsible for |
 | --- | --- |
 | [`gpx.ts`](../src/lib/gpx.ts) | Reads GPX track points or route points into a `Route`. Throws on bad files. |
+| [`draw.ts`](../src/lib/draw.ts) | Adds and undoes points of a route drawn on the map, fills each straight leg with points every 100 m, builds the `Route` (source `drawn`, no elevation) and writes GPX for **Export GPX**. |
 | [`geo.ts`](../src/lib/geo.ts) | Distances, bearings, forecast sample points, map sections, elevation gain and loss, and reversing a route. |
 | [`weather.ts`](../src/lib/weather.ts) | Builds the Open-Meteo forecast request, checks the response, and turns network problems into `AppError`s. Its `openMeteoGet` is shared with the elevation lookup. |
 | [`forecast-match.ts`](../src/lib/forecast-match.ts) | Finds the forecast at an exact time by blending the hours either side of it. |
@@ -83,7 +84,7 @@ These modules are plain TypeScript with no access to the page. Most take numbers
 There's no UI framework. [`index.html`](../index.html) holds all the markup. [`src/main.ts`](../src/main.ts) loads the styles and calls `initApp()`.
 
 - [`app.ts`](../src/ui/app.ts) keeps one `state` object (the current route, forecast, departure time, plan and settings) and the functions that change it. `loadRoute` starts everything for a new route. `loadForecast` fetches the weather. `recompute` reruns the simulation and redraws. Event handlers are attached in `initApp`.
-- [`map.ts`](../src/ui/map.ts) wraps [Leaflet](https://leafletjs.com/). It draws the route, colours each section by wind type with a matching dash pattern, and adds wind arrows.
+- [`map.ts`](../src/ui/map.ts) wraps [Leaflet](https://leafletjs.com/). It draws the route, colours each section by wind type with a matching dash pattern, and adds wind arrows. In draw mode it hides the route, reports clicks, taps and Enter (at the centre crosshair) as new points, and shows the draft.
 - [`charts.ts`](../src/ui/charts.ts) draws the elevation, wind, speed and temperature charts as SVG, each with a text summary for screen readers.
 
 ## Errors

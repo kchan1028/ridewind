@@ -81,7 +81,7 @@
 
         <section class="step" aria-labelledby="h-route">
           <h2 id="h-route">Route</h2>
-          <p class="intro">See the wind you'll ride into, timed to when you reach each part of your route. Import a GPX file or try a sample to start.</p>
+          <p class="intro">See the wind you'll ride into, timed to when you reach each part of your route. Import a GPX file, draw a route on the map or try a sample to start.</p>
           <div class="actions">
             <label class="btn btn-primary file-btn">
               Import GPX
@@ -94,12 +94,13 @@
               <option value="china-camp-nicasio.gpx">China Camp and Nicasio Valley</option>
               <option value="prs-cw.gpx">PRS (clockwise)</option>
             </select>
+            <button type="button" class="btn" id="draw-start" aria-controls="draw-bar" aria-expanded="false">Draw a route</button>
           </div>
-          <p class="hint">Your file is read in this browser and is not uploaded. To get forecasts, up to 40 rounded points along the route, about 5 km apart, are sent to Open-Meteo.</p>
+          <p class="hint">Your file, or the route you draw, stays in this browser and is not uploaded. To get forecasts, up to 40 rounded points along the route, about 5 km apart, are sent to Open-Meteo.</p>
 
           <div id="route-card" class="route-card" hidden>
             <div class="route-title">
-              <h3 id="route-name"></h3>
+              <h3 id="route-name" tabindex="-1"></h3>
               <span id="sample-badge" class="badge badge-sample" hidden>Sample route</span>
             </div>
             <dl class="facts">
@@ -115,6 +116,7 @@
               <button type="button" class="btn" id="reverse-btn" aria-pressed="false">Reverse direction</button>
               <button type="button" class="btn" id="save-btn">Save on this device</button>
               <button type="button" class="btn lookup-ele" id="card-lookup-ele" hidden>Look up elevation</button>
+              <button type="button" class="btn" id="export-gpx-btn" hidden>Export GPX</button>
             </div>
           </div>
 
@@ -276,6 +278,21 @@
 
       <section class="map-pane" aria-label="Route map">
         <div class="panel-resizer" id="panel-resizer" role="separator" aria-orientation="vertical" aria-controls="controls" aria-label="Resize side panel. Arrow keys change the width, Enter resets it." tabindex="0"></div>
+        <div class="draw-bar" id="draw-bar" role="group" aria-labelledby="draw-title" tabindex="-1" hidden>
+          <p class="draw-title" id="draw-title"><strong>Draw a route</strong> <span class="draw-help">Tap or click the map to add points in riding order. Straight lines join them, so add a point at each turn.</span></p>
+          <p class="draw-status" id="draw-status" aria-live="polite">No points yet.</p>
+          <div class="actions">
+            <button type="button" class="btn btn-small" id="draw-add">Add point at centre</button>
+            <button type="button" class="btn btn-small" id="draw-undo" aria-disabled="true">Undo last point</button>
+            <button type="button" class="btn btn-small" id="draw-clear" aria-disabled="true">Clear</button>
+            <button type="button" class="btn btn-small btn-quiet" id="draw-cancel">Cancel</button>
+          </div>
+          <div class="draw-finish">
+            <label for="draw-name">Route name</label>
+            <input type="text" id="draw-name" maxlength="100" placeholder="Drawn route" autocomplete="off" enterkeyhint="done" />
+            <button type="button" class="btn btn-primary btn-small" id="draw-finish" aria-disabled="true">Finish route</button>
+          </div>
+        </div>
         <div id="map" role="region" aria-label="Interactive map of the route. The table in the conditions section lists the same data."></div>
         <div class="legend" id="legend" aria-label="Map legend" hidden>
           <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-headwind" /></svg>Headwind</span>

@@ -60,6 +60,8 @@ export class RouteMap {
   private rainTags: Array<{ marker: L.Marker; mm: number }> = [];
   private routeLayer = L.layerGroup();
   private planLayer = L.layerGroup();
+  private drawLayer = L.layerGroup();
+  private drawOff: (() => void) | null = null;
 
   constructor(el: HTMLElement) {
     this.map = L.map(el, { zoomControl: true, attributionControl: true }).setView([37.85, -122.2], 9); // San Francisco Bay Area
@@ -128,7 +130,8 @@ export class RouteMap {
         .bindTooltip('Start', { permanent: true, direction: 'left', offset: [-8, 0], className: 'endpoint-label endpoint-start' })
         .addTo(this.routeLayer);
     }
-    this.fit();
+    // While drawing, the route is hidden; don't move the rider's view.
+    if (!this.drawOff) this.fit();
   }
 
   fit(): void {
@@ -137,6 +140,76 @@ export class RouteMap {
 
   invalidateSize(): void {
     this.map.invalidateSize();
+  }
+
+  /**
+   * Draw mode: the current route is hidden, and each click or tap on the map, or
+   * Enter or Space while the map has focus (adding at the centre crosshair),
+   * calls `onAdd`. Double-click zoom is off so a quick second tap adds a point.
+   */
+  startDrawing(onAdd: (p: LatLon) => void): void {
+    this.stopDrawing();
+    const container = this.map.getContainer();
+    this.map.removeLayer(this.routeLayer);
+    this.map.removeLayer(this.planLayer);
+    this.drawLayer.clearLayers().addTo(this.map);
+    this.map.doubleClickZoom.disable();
+    container.classList.add('is-drawing');
+    const label = container.getAttribute('aria-label') ?? '';
+    container.setAttribute(
+      'aria-label',
+      'Map for drawing a route. Use the arrow keys to move the map and press Enter to add a point at the centre crosshair.',
+    );
+    const onClick = (e: L.LeafletMouseEvent) => {
+      const ll = e.latlng.wrap();
+      onAdd({ lat: ll.lat, lon: ll.lng });
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target !== container || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      onAdd(this.center());
+    };
+    this.map.on('click', onClick);
+    container.addEventListener('keydown', onKey);
+    this.drawOff = () => {
+      this.map.off('click', onClick);
+      container.removeEventListener('keydown', onKey);
+      container.classList.remove('is-drawing');
+      container.setAttribute('aria-label', label);
+      this.map.doubleClickZoom.enable();
+      this.map.removeLayer(this.drawLayer);
+      this.routeLayer.addTo(this.map);
+      this.planLayer.addTo(this.map);
+    };
+  }
+
+  /** Leaves draw mode and shows the current route again. */
+  stopDrawing(): void {
+    this.drawOff?.();
+    this.drawOff = null;
+  }
+
+  center(): LatLon {
+    const c = this.map.getCenter().wrap();
+    return { lat: c.lat, lon: c.lng };
+  }
+
+  /** Redraws the draft: straight legs between the points, with the first point marked. */
+  showDraft(points: LatLon[]): void {
+    this.drawLayer.clearLayers();
+    const latlngs = points.map((p) => [p.lat, p.lon] as [number, number]);
+    if (latlngs.length > 1) L.polyline(latlngs, { color: '#14213d', weight: 4, opacity: 0.9, dashArray: '8 6', interactive: false }).addTo(this.drawLayer);
+    latlngs.forEach((ll, i) => {
+      const first = i === 0;
+      L.circleMarker(ll, {
+        radius: first ? 8 : 5,
+        color: first ? '#ffffff' : '#14213d',
+        weight: first ? 3 : 2,
+        fillColor: first ? '#14213d' : '#ffffff',
+        fillOpacity: 1,
+        interactive: false,
+      }).addTo(this.drawLayer);
+    });
   }
 
   clearPlan(): void {
