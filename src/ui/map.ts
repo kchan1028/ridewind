@@ -110,7 +110,8 @@ export class RouteMap {
         .bindTooltip('Start', { permanent: true, direction: 'left', offset: [-8, 0], className: 'endpoint-label endpoint-start' })
         .addTo(this.routeLayer);
     }
-    this.fit();
+    // While drawing, the route is hidden; don't move the rider's view.
+    if (!this.drawOff) this.fit();
   }
 
   fit(): void {
