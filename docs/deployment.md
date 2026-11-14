@@ -1,6 +1,6 @@
 # Deploying RideWind
 
-The app builds to static files in `dist/` and can run on any static host. The repository includes a GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) that only runs when you start it manually, so nothing is published until you choose to:
+RideWind builds to plain files in `dist/`, so any static host can serve it. This repository includes a GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) that only runs when you start it manually, so nothing is published until you choose to:
 
 1. Go to **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**.
 2. Go to **Actions → Deploy to GitHub Pages → Run workflow**.
