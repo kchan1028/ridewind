@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="RideWind: forecast wind, headwinds and tailwinds along your cycling route." />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="theme-color" content="#14213d" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>RideWind</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#controls">Skip to ride controls</a>
+
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path d="M4 11h15a4 4 0 1 0-4-4" />
+          <path d="M4 17h21a4 4 0 1 1-4 4" />
+          <path d="M4 23h9" />
+        </svg>
+        <span class="brand-name">RideWind</span>
+        <span class="brand-tag">Wind and weather along your route</span>
+      </div>
+      <button type="button" class="btn btn-quiet" id="open-data">Data &amp; settings</button>
+    </header>
+
+    <main class="layout">
+      <section class="map-pane" aria-label="Route map">
+        <div id="map" role="region" aria-label="Interactive map of the route. The table in the conditions section lists the same data."></div>
+        <div class="legend" id="legend" aria-label="Map legend">
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-headwind" /></svg>Headwind</span>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-crosswind" /></svg>Crosswind</span>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-tailwind" /></svg>Tailwind</span>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-calm" /></svg>Calm &lt;5 km/h</span>
+          <span class="legend-item"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="lg lg-unknown" /></svg>No forecast</span>
+          <span class="legend-item"><span class="legend-arrow" aria-hidden="true">➤</span>Arrows point where the wind blows</span>
+        </div>
+      </section>
+
+      <div class="panel" id="controls" tabindex="-1">
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+
+        <section class="step" aria-labelledby="h-route">
+          <h2 id="h-route"><span class="step-num" aria-hidden="true">1</span>Route</h2>
+          <div class="actions">
+            <label class="btn btn-primary file-btn">
+              Import GPX
+              <input type="file" id="gpx-input" accept=".gpx,application/gpx+xml,application/xml,text/xml" />
+            </label>
+            <button type="button" class="btn" id="sample-btn">Try the sample route</button>
+          </div>
+          <p class="hint">Your file is read in this browser and is not uploaded. To get forecasts, about 20 rounded points along the route are sent to Open-Meteo.</p>
+
+          <div id="route-card" class="route-card" hidden>
+            <div class="route-title">
+              <h3 id="route-name"></h3>
+              <span id="sample-badge" class="badge badge-sample" hidden>Sample route · approximate</span>
+            </div>
+            <dl class="facts">
+              <div><dt>Distance</dt><dd id="fact-distance"></dd></div>
+              <div><dt>Climbing</dt><dd id="fact-gain"></dd></div>
+              <div><dt>Descending</dt><dd id="fact-loss"></dd></div>
+              <div><dt>Elevation range</dt><dd id="fact-range"></dd></div>
+            </dl>
+            <p id="elevation-note" class="note" hidden></p>
+            <div class="actions">
+              <button type="button" class="btn" id="reverse-btn" aria-pressed="false">Reverse direction</button>
+              <button type="button" class="btn" id="save-btn">Save on this device</button>
+            </div>
+          </div>
+
+          <details class="saved" id="saved">
+            <summary>Saved routes <span id="saved-count"></span></summary>
+            <ul id="saved-list" class="saved-list"></ul>
+            <p class="hint">Saved routes stay in this browser on this device. They don't sync to your other devices.</p>
+          </details>
+        </section>
+
+        <section class="step" aria-labelledby="h-ride">
+          <h2 id="h-ride"><span class="step-num" aria-hidden="true">2</span>Departure and pace</h2>
+          <div class="field">
+            <label for="departure">Departure time <span class="label-sub" id="tz-label"></span></label>
+            <input type="datetime-local" id="departure" step="900" disabled />
+            <p class="hint" id="tz-note">Import a route to choose a departure time.</p>
+          </div>
+          <div class="field">
+            <label for="speed">Average moving speed (<span id="speed-unit">km/h</span>)</label>
+            <input type="number" id="speed" inputmode="decimal" min="5" max="60" step="0.5" required />
+            <p class="hint">A constant speed used only to estimate when you'll reach each point.</p>
+          </div>
+        </section>
+
+        <section class="step" aria-labelledby="h-wx">
+          <h2 id="h-wx"><span class="step-num" aria-hidden="true">3</span>Conditions along the ride</h2>
+          <p id="wx-empty" class="empty">Import a route or try the sample to see the forecast.</p>
+          <div id="wx-loading" class="empty" hidden>Getting the forecast…</div>
+          <div id="wx-error" class="alert" role="alert" hidden>
+            <p id="wx-error-msg"></p>
+            <button type="button" class="btn" id="retry-btn">Retry forecast</button>
+          </div>
+
+          <div id="results" hidden>
+            <p id="window-warning" class="alert alert-warn" hidden></p>
+
+            <div class="result-block">
+              <div class="block-head"><h3>Wind on your route</h3><span class="tag tag-est">Estimate</span></div>
+              <div class="wind-bar" id="wind-bar" role="img"></div>
+              <ul class="wind-bar-key" id="wind-bar-key"></ul>
+              <p class="kpi-line" id="mean-headwind"></p>
+            </div>
+
+            <div class="kpis">
+              <div class="kpi"><span class="kpi-label">Ride time <span class="tag tag-est">Estimate</span></span><span class="kpi-value" id="kpi-time"></span><span class="kpi-sub" id="kpi-finish"></span></div>
+              <div class="kpi"><span class="kpi-label">Wind <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-wind"></span><span class="kpi-sub" id="kpi-gust"></span></div>
+              <div class="kpi"><span class="kpi-label">Temperature <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-temp"></span></div>
+              <div class="kpi"><span class="kpi-label">Rain <span class="tag tag-fc">Forecast</span></span><span class="kpi-value" id="kpi-rain"></span><span class="kpi-sub" id="kpi-rain-prob"></span></div>
+            </div>
+
+            <div class="result-block">
+              <div class="block-head"><h3>Point by point</h3></div>
+              <div class="table-wrap" tabindex="0" role="region" aria-labelledby="samples-caption">
+                <table class="samples">
+                  <caption id="samples-caption">Forecast at each sampled point, matched to your estimated arrival time</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Point</th>
+                      <th scope="col">Arrive <span class="th-sub">estimate</span></th>
+                      <th scope="col">Wind <span class="th-sub">forecast</span></th>
+                      <th scope="col">Gust <span class="th-sub">forecast</span></th>
+                      <th scope="col">Head / tail <span class="th-sub">calculated</span></th>
+                      <th scope="col">Cross <span class="th-sub">calculated</span></th>
+                      <th scope="col">Temp <span class="th-sub">forecast</span></th>
+                      <th scope="col">Rain <span class="th-sub">forecast</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="samples-body"></tbody>
+                </table>
+              </div>
+              <p class="meta" id="data-stamp"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="step about" aria-labelledby="h-about">
+          <h2 id="h-about">Reading these numbers</h2>
+          <ul>
+            <li><span class="tag tag-fc">Forecast</span> values come directly from Open-Meteo weather models for the hour you're estimated to arrive. Wind is the model's 10 m wind, not wind at handlebar height.</li>
+            <li><span class="tag tag-est">Estimate</span> and <em>calculated</em> values are RideWind's own arithmetic: arrival times assume a constant average speed, and the headwind and crosswind components come from that forecast wind and the route's direction.</li>
+            <li>Forecast wind does not fully account for shelter from buildings, trees, hedges, cuttings or local terrain. Exposed roads may feel stronger wind, and sheltered ones weaker.</li>
+            <li>Headwind means the wind is within 45° of straight on, tailwind within 45° of directly behind, and anything else is crosswind. These are rough planning guides, not race advice.</li>
+          </ul>
+        </section>
+
+        <footer class="credits">
+          <p><a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. RideWind calculates its estimates from this data.</p>
+          <p>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, available under the ODbL.</p>
+          <p>A personal, non-commercial project. Not affiliated with any weather or cycling service.</p>
+        </footer>
+      </div>
+    </main>
+
+    <dialog id="data-dialog" aria-labelledby="data-title">
+      <form method="dialog" class="dialog-body">
+        <div class="dialog-head">
+          <h2 id="data-title">Data &amp; settings</h2>
+          <button class="btn btn-quiet" value="close" aria-label="Close">✕</button>
+        </div>
+
+        <fieldset class="field">
+          <legend>Units</legend>
+          <label class="radio"><input type="radio" name="units" value="metric" /> Metric (km, km/h, °C)</label>
+          <label class="radio"><input type="radio" name="units" value="imperial" /> Imperial (mi, mph, °F)</label>
+        </fieldset>
+
+        <div class="field">
+          <h3>Your data stays in this browser</h3>
+          <p class="hint">Settings and saved routes are stored only in this browser on this device. RideWind has no accounts and no server, so nothing syncs between devices. Clearing your browser's site data deletes them. To move data to another device, export it here and import it there.</p>
+          <p class="hint">Export files contain your saved routes. Treat them as personal, because routes can reveal where you live or ride.</p>
+          <div class="actions">
+            <button type="button" class="btn" id="export-btn">Export data</button>
+            <label class="btn file-btn">Import data<input type="file" id="import-input" accept=".json,application/json" /></label>
+            <button type="button" class="btn btn-danger" id="delete-all-btn">Delete all local data</button>
+          </div>
+          <p id="data-status" class="hint" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
