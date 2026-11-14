@@ -184,7 +184,8 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   facts.push(`${formatDuration(plan.durationMs)}, ${finish}`);
   const light = rideDaylight(state.departureMs!, plan.finishMs, forecastsForSamples()[0]?.sun);
   let daylight = '';
-  if (light.kind === 'starts-before-sunrise') daylight = `starts in the dark (sunrise ${formatClock(light.sunriseMs!, tz)})`;
+  if (light.kind === 'starts-after-sunset') daylight = `starts after sunset (${formatClock(light.sunsetMs!, tz)})`;
+  else if (light.kind === 'starts-before-sunrise') daylight = `starts in the dark (sunrise ${formatClock(light.sunriseMs!, tz)})`;
   else if (light.kind === 'ends-after-sunset') daylight = `finishes after sunset (${formatClock(light.sunsetMs!, tz)})`;
   else if (light.kind === 'daylight') daylight = `sunset ${formatClock(light.sunsetMs!, tz)}`;
   if (daylight) facts.push(daylight);
@@ -683,8 +684,9 @@ function renderComparison(): void {
     const lines: string[] = [];
     if (pace.kind === 'power') lines.push(formatDuration(r.durationMs));
     lines.push(`finish ${formatClock(r.finishMs, tz)}`);
-    if (r.daylight === 'ends-after-sunset') lines.push('after sunset');
-    else if (r.daylight === 'starts-before-sunrise') lines.push('before sunrise');
+    if (r.daylight === 'starts-after-sunset') lines.push('starts after sunset');
+    else if (r.daylight === 'starts-before-sunrise') lines.push('starts before sunrise');
+    else if (r.daylight === 'ends-after-sunset') lines.push('finishes after sunset');
     lines.push(`${Math.round(r.headwindShare * 100)}% headwind`);
     if (pace.kind === 'constant' && r.meanHeadwind !== null)
       lines.push(`avg ${formatSpeed(Math.abs(r.meanHeadwind), u)} ${r.meanHeadwind >= 0 ? 'head' : 'tail'}`);
