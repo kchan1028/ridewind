@@ -49,6 +49,11 @@
   box-sizing: border-box;
 }
 
+/* The hidden attribute must win over component display rules (e.g. .btn's inline-flex). */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
@@ -904,4 +909,196 @@ select {
   stroke: var(--surface);
   stroke-width: 3px;
   stroke-linejoin: round;
+}
+
+/* ---------- answer-first: status, verdict, direction cues ---------- */
+.status[data-kind='loading'] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.status[data-kind='loading']::before,
+.verdict[data-mode='loading'] .verdict-head::before {
+  content: '';
+  flex: none;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border: 2px solid var(--line);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  vertical-align: -1px;
+  animation: rw-spin 0.7s linear infinite;
+}
+.status[data-kind='loading']::before {
+  margin-right: 0;
+}
+@keyframes rw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.verdict {
+  position: sticky;
+  top: 0;
+  z-index: 500;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--ink);
+  border-radius: var(--radius);
+}
+.verdict[data-tone='headwind'] {
+  border-left-color: var(--head);
+}
+.verdict[data-tone='tailwind'] {
+  border-left-color: var(--tail);
+}
+.verdict[data-tone='crosswind'] {
+  border-left: 5px dashed var(--cross-fill);
+}
+.verdict[data-mode='error'] {
+  border-left-color: var(--err-line);
+  background: var(--err-bg);
+}
+.verdict[data-mode='notice'] {
+  border-left-color: var(--warn-line);
+}
+.verdict-route {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.verdict-head {
+  display: block;
+  margin: 2px 0 2px;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.verdict-facts {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+.verdict-detail .wind-bar-key {
+  font-size: 0.8125rem;
+}
+.verdict-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+.verdict-actions:empty {
+  display: none;
+}
+.depart-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.depart-stepper .btn {
+  min-height: 40px;
+  min-width: 56px;
+}
+.depart-label {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+/* Direction of travel and endpoints on the map */
+.dir-chevron svg {
+  fill: none;
+  stroke: #14213d;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff);
+}
+.leaflet-tooltip.endpoint-label {
+  padding: 1px 6px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #14213d;
+  background: #fff;
+  border: 1px solid #14213d;
+  border-radius: 3px;
+  box-shadow: none;
+}
+.leaflet-tooltip.endpoint-start {
+  color: #fff;
+  background: #14213d;
+}
+
+/* Keep the distance column visible while the table scrolls sideways */
+.samples:not(.compare) thead th:first-child,
+.samples:not(.compare) tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  box-shadow: 1px 0 0 var(--line);
+}
+
+/* Mobile: the verdict becomes a bottom bar so it shares the screen with the map */
+@media (max-width: 899px) {
+  .verdict {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1100;
+    margin: 0;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-radius: 10px 10px 0 0;
+    border-width: 1px 0 0;
+    border-left-width: 0;
+    border-top: 4px solid var(--ink);
+    box-shadow: 0 -4px 16px rgba(10, 15, 25, 0.18);
+  }
+  .verdict[data-tone='headwind'] {
+    border-top-color: var(--head);
+  }
+  .verdict[data-tone='tailwind'] {
+    border-top-color: var(--tail);
+  }
+  .verdict[data-tone='crosswind'] {
+    border-left: 0;
+    border-top: 4px dashed var(--cross-fill);
+  }
+  .verdict[data-mode='error'] {
+    border-top-color: var(--err-line);
+  }
+  .verdict-head {
+    font-size: 1.2rem;
+  }
+  .verdict-facts {
+    margin-bottom: 6px;
+    font-size: 0.8125rem;
+  }
+  .verdict-detail .wind-bar-key {
+    display: none;
+  }
+  .verdict-detail .wind-bar {
+    height: 10px;
+  }
+  .verdict-actions {
+    margin-top: 8px;
+  }
+  body.has-verdict {
+    padding-bottom: 190px;
+  }
 }

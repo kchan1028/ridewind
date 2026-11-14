@@ -41,8 +41,27 @@
       <div class="panel" id="controls" tabindex="-1">
         <div id="status" class="status" role="status" aria-live="polite"></div>
 
+        <section id="verdict" class="verdict" aria-labelledby="verdict-head" hidden>
+          <p class="verdict-route" id="verdict-route"></p>
+          <h2 class="verdict-head" id="verdict-head"></h2>
+          <p class="verdict-facts" id="verdict-facts"></p>
+          <div class="verdict-detail" id="verdict-detail">
+            <div class="wind-bar" id="wind-bar" role="img"></div>
+            <ul class="wind-bar-key" id="wind-bar-key"></ul>
+          </div>
+          <div class="verdict-actions">
+            <div class="depart-stepper" id="depart-stepper" role="group" aria-label="Change departure time">
+              <button type="button" class="btn btn-small" id="dep-earlier" aria-label="Leave one hour earlier">−1 h</button>
+              <span class="depart-label" id="depart-label"></span>
+              <button type="button" class="btn btn-small" id="dep-later" aria-label="Leave one hour later">+1 h</button>
+            </div>
+            <button type="button" class="btn btn-small" id="verdict-retry" hidden>Retry forecast</button>
+          </div>
+        </section>
+        <div id="verdict-live" class="visually-hidden" aria-live="polite"></div>
+
         <section class="step" aria-labelledby="h-route">
-          <h2 id="h-route"><span class="step-num" aria-hidden="true">1</span>Route</h2>
+          <h2 id="h-route">Route</h2>
           <div class="actions">
             <label class="btn btn-primary file-btn">
               Import GPX
@@ -80,7 +99,7 @@
         </section>
 
         <section class="step" aria-labelledby="h-ride">
-          <h2 id="h-ride"><span class="step-num" aria-hidden="true">2</span>Departure and pace</h2>
+          <h2 id="h-ride">Departure and pace</h2>
           <div class="field">
             <label for="departure">Departure time <span class="label-sub" id="tz-label"></span></label>
             <input type="datetime-local" id="departure" step="900" disabled />
@@ -125,7 +144,7 @@
         </section>
 
         <section class="step" aria-labelledby="h-wx">
-          <h2 id="h-wx"><span class="step-num" aria-hidden="true">3</span>Conditions along the ride</h2>
+          <h2 id="h-wx">Conditions along the ride</h2>
           <p id="wx-empty" class="empty">Import a route or try the sample to see the forecast.</p>
           <div id="wx-loading" class="empty" hidden>Getting the forecast…</div>
           <div id="wx-error" class="alert" role="alert" hidden>
@@ -135,13 +154,6 @@
 
           <div id="results" hidden>
             <p id="window-warning" class="alert alert-warn" hidden></p>
-
-            <div class="result-block">
-              <div class="block-head"><h3>Wind on your route</h3><span class="tag tag-est">Estimate</span></div>
-              <div class="wind-bar" id="wind-bar" role="img"></div>
-              <ul class="wind-bar-key" id="wind-bar-key"></ul>
-              <p class="kpi-line" id="mean-headwind"></p>
-            </div>
 
             <div class="kpis">
               <div class="kpi"><span class="kpi-label">Ride time <span class="tag tag-est" id="kpi-time-tag">Estimate</span></span><span class="kpi-value" id="kpi-time"></span><span class="kpi-sub" id="kpi-finish"></span></div>
@@ -188,11 +200,11 @@
                   <caption id="samples-caption">Forecast at each sampled point, matched to your estimated arrival time</caption>
                   <thead>
                     <tr>
-                      <th scope="col">Point</th>
+                      <th scope="col">Distance</th>
                       <th scope="col">Arrive <span class="th-sub">estimate</span></th>
+                      <th scope="col">Head / tail <span class="th-sub">calculated</span></th>
                       <th scope="col">Wind <span class="th-sub">forecast</span></th>
                       <th scope="col">Gust <span class="th-sub">forecast</span></th>
-                      <th scope="col">Head / tail <span class="th-sub">calculated</span></th>
                       <th scope="col">Cross <span class="th-sub">calculated</span></th>
                       <th scope="col">Temp <span class="th-sub">forecast</span></th>
                       <th scope="col">Rain <span class="th-sub">forecast</span></th>
