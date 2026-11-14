@@ -1,5 +1,14 @@
 export type UnitSystem = 'metric' | 'imperial';
 
+/** Regions that use miles and Fahrenheit day to day. */
+const IMPERIAL_REGIONS = new Set(['US', 'LR', 'MM']);
+
+/** Units to start with before the rider picks: imperial for US-style locales ("en-US"), otherwise metric. */
+export function defaultUnits(lang: string | undefined = globalThis.navigator?.language): UnitSystem {
+  const region = lang?.split(/[-_]/)[1]?.toUpperCase();
+  return region && IMPERIAL_REGIONS.has(region) ? 'imperial' : 'metric';
+}
+
 const KM_PER_MI = 1.609344;
 const FT_PER_M = 3.28084;
 
