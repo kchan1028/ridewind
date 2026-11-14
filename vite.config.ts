@@ -8,7 +8,7 @@ function cspMeta(): Plugin {
     name: 'ridewind-csp-meta',
     apply: 'build',
     transformIndexHtml() {
-      return [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: contentSecurityPolicy(cspDirectives(process.env.VITE_ROUTING_URL || undefined)) }, injectTo: 'head-prepend' }];
+      return [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: contentSecurityPolicy(cspDirectives(process.env.VITE_ROUTING_URL || undefined, process.env.VITE_GEOCODE_URL || undefined)) }, injectTo: 'head-prepend' }];
     },
   };
 }

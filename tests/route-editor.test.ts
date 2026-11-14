@@ -11,6 +11,8 @@ import {
   editorStats,
   editorToRoute,
   fillLegs,
+  insertPoint,
+  legMidpoint,
   isComplete,
   isLoop,
   joinLegs,
@@ -80,6 +82,36 @@ describe('editing operations', () => {
     expect(removePoint(r, 0)!.legs).toHaveLength(1);
     expect(removePoint(r, 2)!.controls).toEqual([A, B]);
     expect(removePoint(build(A, B), 0)).toEqual({ controls: [B], legs: [] });
+  });
+
+  it('inserting a point in a section splits it into two legs in the same mode', () => {
+    const cache = new Map([
+      [legKey(A, B, 'routed'), road(A, B)],
+      [legKey(B, C, 'routed'), road(B, C)],
+    ]);
+    const r = fillLegs(addPoint(build(A, B, C), D, 'manual')!, cache);
+    const M = { lat: 37.874, lon: -122.267 };
+    const ins = insertPoint(r, 0, M)!;
+    expect(ins.controls).toEqual([A, M, B, C, D]);
+    expect(ins.legs.map((l) => [l.mode, l.points === null])).toEqual([
+      ['routed', true],
+      ['routed', true],
+      ['routed', false],
+      ['manual', false],
+    ]);
+    expect(ins.legs[2]).toBe(r.legs[1]); // other legs untouched
+    expect(insertPoint(r, 2, { lat: 37.88, lon: -122.268 })!.legs.slice(2, 4).map((l) => l.mode)).toEqual(['manual', 'manual']);
+    expect(insertPoint(r, 0, A)).toBeNull(); // on top of an end
+    expect(insertPoint(r, 9, M)).toBeNull();
+  });
+
+  it('finds the middle of a section along its geometry', () => {
+    const cache = new Map([[legKey(A, B, 'routed'), road(A, B)]]);
+    const r = fillLegs(build(A, B), cache);
+    const mid = legMidpoint(r, 0)!;
+    expect(mid.lat).toBeCloseTo(road(A, B)[1]!.lat, 3); // the offset road, not the straight line
+    expect(legMidpoint(build(A, B), 0)!.lon).toBeCloseTo((A.lon + B.lon) / 2, 6); // straight while pending
+    expect(legMidpoint(r, 3)).toBeNull();
   });
 
   it('reversing keeps exactly the same roads, backwards', () => {

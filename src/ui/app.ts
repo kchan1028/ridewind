@@ -8,7 +8,9 @@ import {
   closeLoop,
   editorStats,
   editorToRoute,
+  insertPoint,
   isComplete,
+  legMidpoint,
   isLoop,
   movePoint,
   removePoint,
@@ -18,6 +20,7 @@ import {
   type SessionView,
 } from '../lib/route-editor';
 import { MAX_LOCATIONS_PER_REQUEST, fetchRoutedLegs } from '../lib/routing';
+import { DEFAULT_GEOCODE_URL, PlaceSearch, type Place } from '../lib/geocode';
 import { DEFAULT_ROUTING_MIN_INTERVAL_MS, DEFAULT_ROUTING_URL, routingAttribution, routingProviderName } from '../lib/routing-config';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
 import { cumulativeDistances, elevationStats, hasCompleteElevation, haversineM, reverseRoute, sampleRoute, type LatLon, type Route, type Sample } from '../lib/geo';
@@ -652,7 +655,7 @@ function renderEditor(view: SessionView | undefined = session?.view()): void {
   const u = units();
   let summary: string;
   if (n === 0) summary = tapAdds ? 'No points yet. Tap the map to set the start.' : 'No points yet. Use Add point at centre, or turn on Tap adds points.';
-  else if (n === 1) summary = 'Start set. Tap the map again to extend the route.';
+  else if (n === 1) summary = '1 point. Tap the map again to extend the route.';
   else {
     const st = editorStats(r);
     let dist = formatDistance(st.totalM, u);
@@ -675,6 +678,7 @@ function renderEditor(view: SessionView | undefined = session?.view()): void {
   if (selected !== null) {
     const which = selected === 0 ? 'The start' : selected === n - 1 ? 'The finish' : `Point ${selected + 1} of ${n}`;
     $('draw-selected-msg').textContent = `${which} is selected. Drag it on the map to move it, or use these buttons.`;
+    setAriaDisabled('draw-insert-before', selected === 0 || !r.legs[selected - 1]?.points);
   }
   setAriaDisabled('draw-undo', !view.canUndo);
   setAriaDisabled('draw-redo', !view.canRedo);
@@ -720,6 +724,13 @@ function removeSelected(): void {
   if (!applyEdit((r) => removePoint(r, i), 'Point removed.')) renderEditor();
 }
 
+/** Adds a point inside section `leg` and selects it, so it can be moved straight away. */
+function insertAt(leg: number, p: LatLon): void {
+  selected = null;
+  if (applyEdit((r) => insertPoint(r, leg, p), `Point ${leg + 2} added between points ${leg + 1} and ${leg + 2}.`)) selectPoint(leg + 1);
+  else renderEditor();
+}
+
 function undoEdit(): void {
   if (!session || isAriaDisabled('draw-undo')) return;
   selected = null;
@@ -759,9 +770,10 @@ function startDrawing(): void {
       onDragEnd: (i, p) => {
         if (!applyEdit((r) => movePoint(r, i, p), `${i === 0 ? 'Start' : `Point ${i + 1}`} moved.`)) renderEditor();
       },
+      onInsert: insertAt,
     });
     map.setRoutingAttribution(routingCredit);
-    $('draw-privacy').textContent = `Follow roads sends the points you place, unrounded, to ${routingProviderName(routingUrl)} to find the roads between them. Straight-line sections send nothing.`;
+    $('draw-privacy').textContent = `Follow roads sends the points you place, unrounded, to ${routingProviderName(routingUrl)} to find the roads between them. Straight-line sections send nothing. Find a place sends what you type to OpenStreetMap's Nominatim search, only when you press Search.`;
     renderEditor();
   }
   // On phones the map moves above the panel while drawing, with the controls under it; bring both into view.
@@ -771,6 +783,10 @@ function startDrawing(): void {
 
 function stopDrawing(): void {
   drawing = false;
+  searchCtrl?.abort();
+  clearSearchResults();
+  shownPlace = null;
+  show('draw-place', false);
   session?.dispose();
   session = null;
   selected = null;
@@ -867,7 +883,97 @@ function confirmDrawing(): void {
   $('route-name').focus();
 }
 
+/* ---------- finding a place ---------- */
+
+/** Nominatim by default; searches only on submit, spaced and cached as its usage policy asks (see src/lib/geocode.ts). */
+const placeSearch = new PlaceSearch(import.meta.env.VITE_GEOCODE_URL || DEFAULT_GEOCODE_URL);
+let searchCtrl: AbortController | null = null;
+let shownPlace: Place | null = null;
+
+function clearSearchResults(): void {
+  $('draw-search-results').replaceChildren();
+  show('draw-search-results', false);
+}
+
+function showPlace(place: Place): void {
+  shownPlace = place;
+  clearSearchResults();
+  map.showPlace(place);
+  $('draw-search-status').textContent = '';
+  show('draw-place', true);
+  $('draw-place-name').textContent = `Showing ${place.name}.`;
+  $('draw-place-add').focus();
+}
+
+async function runSearch(): Promise<void> {
+  const q = $<HTMLInputElement>('draw-search-q').value.trim();
+  const status = $('draw-search-status');
+  if (q.length < 2) {
+    status.textContent = 'Type an address, town or landmark first.';
+    return;
+  }
+  searchCtrl?.abort();
+  const ctrl = new AbortController();
+  searchCtrl = ctrl;
+  clearSearchResults();
+  status.textContent = 'Searching…';
+  $('draw-search').setAttribute('aria-busy', 'true');
+  try {
+    const places = await placeSearch.search(q, { language: navigator.language, near: map.center(), signal: ctrl.signal });
+    if (ctrl.signal.aborted) return;
+    if (places.length === 0) {
+      status.textContent = `No places found for “${q}”. Try adding a town or postcode.`;
+      return;
+    }
+    if (places.length === 1) return showPlace(places[0]!);
+    status.textContent = `${places.length} places found. Choose one.`;
+    const list = $('draw-search-results');
+    list.replaceChildren(
+      ...places.map((p) => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'search-result';
+        btn.textContent = p.name;
+        btn.addEventListener('click', () => showPlace(p));
+        li.append(btn);
+        return li;
+      }),
+    );
+    show('draw-search-results', true);
+  } catch (e) {
+    if ((e as Error)?.name === 'AbortError' || ctrl.signal.aborted) return;
+    status.textContent = messageFor(e);
+  } finally {
+    if (searchCtrl === ctrl) {
+      searchCtrl = null;
+      $('draw-search').removeAttribute('aria-busy');
+    }
+  }
+}
+
+function bindPlaceSearch(): void {
+  $('draw-search').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    void runSearch();
+  });
+  $('draw-place-add').addEventListener('click', () => {
+    if (!shownPlace) return;
+    addAt({ lat: shownPlace.lat, lon: shownPlace.lon });
+    show('draw-place', false);
+    map.showPlace(null);
+    shownPlace = null;
+  });
+  $('draw-place-clear').addEventListener('click', () => {
+    show('draw-place', false);
+    map.showPlace(null);
+    shownPlace = null;
+    $('draw-search-q').focus();
+  });
+}
+
 function bindDrawing(): void {
+  bindPlaceSearch();
   $('draw-start').addEventListener('click', startDrawing);
   $('draw-add').addEventListener('click', () => addAt(map.center()));
   $('draw-undo').addEventListener('click', undoEdit);
@@ -900,6 +1006,12 @@ function bindDrawing(): void {
     applyEdit(() => EMPTY_ROUTE, 'Route cleared. Undo brings it back.');
   });
   $('draw-remove').addEventListener('click', removeSelected);
+  // Keyboard path to changing a section in between: add a point halfway along the section before the selected point.
+  $('draw-insert-before').addEventListener('click', () => {
+    if (selected === null || selected === 0 || isAriaDisabled('draw-insert-before')) return;
+    const mid = legMidpoint(editorRoute(), selected - 1);
+    if (mid) insertAt(selected - 1, mid);
+  });
   $('draw-move-centre').addEventListener('click', () => {
     if (selected === null) return;
     const i = selected;
@@ -944,6 +1056,10 @@ function bindDrawing(): void {
     }
     // Escape steps back: deselect, leave the review, then leave draw mode (unless it's closing a dialog first).
     if (ev.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+    if (t?.id === 'draw-search-q') {
+      clearSearchResults();
+      return;
+    }
     if (selected !== null) selectPoint(null);
     else if (!$('draw-review').hidden) backToEditing();
     else cancelDrawing();

@@ -10,10 +10,10 @@ describe('content security policy', () => {
   });
 
   it('adds the routing server, and only an https one', () => {
-    expect(cspDirectives()['connect-src']).toEqual(["'self'", 'https://api.open-meteo.com', 'https://valhalla1.openstreetmap.de']);
+    expect(cspDirectives()['connect-src']).toEqual(["'self'", 'https://api.open-meteo.com', 'https://valhalla1.openstreetmap.de', 'https://nominatim.openstreetmap.org']);
     expect(cspDirectives('https://api.stadiamaps.com/route/v1')['connect-src']).toContain('https://api.stadiamaps.com');
-    expect(cspDirectives('http://evil.example/route')['connect-src']).toHaveLength(2);
-    expect(policy).toContain('connect-src \'self\' https://api.open-meteo.com https://valhalla1.openstreetmap.de');
+    expect(cspDirectives('http://evil.example/route', 'http://evil.example/search')['connect-src']).toHaveLength(2);
+    expect(policy).toContain("connect-src 'self' https://api.open-meteo.com https://valhalla1.openstreetmap.de https://nominatim.openstreetmap.org");
   });
 
   it('never allows inline or eval', () => {

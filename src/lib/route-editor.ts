@@ -66,6 +66,38 @@ export function movePoint(r: EditorRoute, i: number, p: LatLon): EditorRoute | n
 }
 
 /**
+ * Inserts a control point inside leg `leg` (between points `leg` and `leg + 1`),
+ * splitting it into two legs in the same mode. This is how a section is
+ * changed in between its ends: drag its middle to the road you want.
+ */
+export function insertPoint(r: EditorRoute, leg: number, p: LatLon): EditorRoute | null {
+  if (leg < 0 || leg >= r.legs.length || r.controls.length >= MAX_DRAWN_POINTS || !validPoint(p)) return null;
+  const next = clean(p);
+  const a = r.controls[leg]!;
+  const b = r.controls[leg + 1]!;
+  if (haversineM(a, next) < MIN_DRAWN_GAP_M || haversineM(b, next) < MIN_DRAWN_GAP_M) return null;
+  const mode = r.legs[leg]!.mode;
+  return {
+    controls: [...r.controls.slice(0, leg + 1), next, ...r.controls.slice(leg + 1)],
+    legs: [...r.legs.slice(0, leg), pendingLeg(mode), pendingLeg(mode), ...r.legs.slice(leg + 1)],
+  };
+}
+
+/** The point halfway along leg `leg`'s geometry (or the straight line, while it routes). */
+export function legMidpoint(r: EditorRoute, leg: number): LatLon | null {
+  const l = r.legs[leg];
+  if (!l) return null;
+  const pts = l.points ?? [r.controls[leg]!, r.controls[leg + 1]!];
+  const cum = cumulativeDistances(pts);
+  const half = (cum[cum.length - 1] ?? 0) / 2;
+  const k = cum.findIndex((d) => d >= half);
+  if (k <= 0) return { lat: pts[0]!.lat, lon: pts[0]!.lon };
+  const seg = cum[k]! - cum[k - 1]!;
+  const f = seg > 0 ? (half - cum[k - 1]!) / seg : 0;
+  return { lat: pts[k - 1]!.lat + (pts[k]!.lat - pts[k - 1]!.lat) * f, lon: pts[k - 1]!.lon + (pts[k]!.lon - pts[k - 1]!.lon) * f };
+}
+
+/**
  * Removes control point `i`. Removing a middle point joins its neighbours with
  * one leg, which follows roads only if both legs it replaces did.
  */

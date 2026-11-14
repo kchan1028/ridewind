@@ -1873,6 +1873,118 @@ body.drawing .legend {
     animation: none;
   }
 }
+/* Find a place */
+.draw-search {
+  margin: 0 0 8px;
+}
+.draw-search label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+}
+.draw-search-row {
+  display: flex;
+  gap: 8px;
+}
+.draw-search-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+.draw-search-status {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.draw-search-status:empty {
+  display: none;
+}
+.draw-search-results {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.search-result {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  text-align: left;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.draw-search-results li:last-child .search-result {
+  border-bottom: 0;
+}
+.search-result:hover,
+.search-result:focus-visible {
+  background: var(--paper);
+}
+.draw-place {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+.draw-place p {
+  margin: 0 0 6px;
+}
+.place-pin-icon {
+  background: transparent;
+  border: 0;
+}
+.place-pin {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 50% 0;
+  background: #c8102e;
+  border: 3px solid #fff;
+  transform: rotate(-45deg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+/* Middle handles: a small hollow dot with a 32 px target. */
+.ctrl-mid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+}
+.mid-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #14213d;
+  box-sizing: border-box;
+  cursor: grab;
+  opacity: 0.85;
+}
+.mid-dot.is-dragging {
+  cursor: grabbing;
+  transform: scale(1.4);
+  opacity: 1;
+}
+/* Wide screens: the panel scrolls rather than squeezing the map. */
+@media (min-width: 900px) {
+  .draw-bar {
+    max-height: 42vh;
+    overflow-y: auto;
+    flex: none;
+  }
+}
 /* While drawing, the route card's actions belong to the finished route. */
 body.drawing #route-card .actions {
   display: none;
