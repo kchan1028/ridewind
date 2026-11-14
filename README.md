@@ -66,6 +66,8 @@ RideWind is a planning aid. Forecast wind doesn't fully account for shelter from
 
 ## Documentation
 
+- [Product overview](PRODUCT.md): who RideWind is for, the problems it solves, its principles and what it won't do.
+- [Roadmap](ROADMAP.md): proposed Now, Next and Later priorities, none approved yet.
 - [How RideWind estimates your ride](docs/model.md): sampling, time matching, wind components, the physics model (Martin et al., 1998) and comparisons.
 - [Data sources and privacy](docs/data-and-privacy.md): Open-Meteo usage and limits, attribution, map tiles, and what is stored in your browser.
 - [Deploying RideWind](docs/deployment.md): building the static site and publishing it with GitHub Pages.
