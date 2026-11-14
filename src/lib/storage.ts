@@ -69,6 +69,14 @@ export function clearSettings(storage: Storage | undefined = globalThis.localSto
 /** Compact point tuple: [lat, lon, ele|null]. No timestamps are stored. */
 type PackedPoint = [number, number, number | null];
 
+/** How the rider usually rides a saved route, restored when it's opened. */
+export interface RoutePrefs {
+  /** Ride it from the file's finish back to its start. */
+  reversed: boolean;
+  /** Usual departure time on the route's local clock, "HH:MM". */
+  departTime?: string;
+}
+
 export interface SavedRoute {
   id: string;
   name: string;
@@ -76,6 +84,19 @@ export interface SavedRoute {
   source: Route['source'];
   elevationSource?: Route['elevationSource'];
   points: PackedPoint[];
+  prefs?: RoutePrefs;
+}
+
+const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Keeps only well-formed preferences; anything else is dropped. */
+export function validRoutePrefs(v: unknown): RoutePrefs | undefined {
+  const o = v as Partial<RoutePrefs> | null | undefined;
+  if (!o || typeof o !== 'object') return undefined;
+  const reversed = o.reversed === true;
+  const departTime = typeof o.departTime === 'string' && HHMM_RE.test(o.departTime) ? o.departTime : undefined;
+  if (!reversed && !departTime) return undefined;
+  return { reversed, ...(departTime ? { departTime } : {}) };
 }
 
 const DB_NAME = 'ridewind';
@@ -116,14 +137,16 @@ async function withStore<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) =>
   }
 }
 
-export function packRoute(route: Route, id: string = crypto.randomUUID(), savedAt = Date.now()): SavedRoute {
+export function packRoute(route: Route, id: string = crypto.randomUUID(), savedAt = Date.now(), prefs?: RoutePrefs): SavedRoute {
+  const p = validRoutePrefs(prefs);
   return {
     id,
     name: route.name,
     savedAt,
     source: route.source,
     ...(route.elevationSource ? { elevationSource: route.elevationSource } : {}),
-    points: route.points.map((p) => [p.lat, p.lon, p.ele]),
+    points: route.points.map((pt) => [pt.lat, pt.lon, pt.ele]),
+    ...(p ? { prefs: p } : {}),
   };
 }
 
@@ -196,6 +219,7 @@ export function parseImport(text: string): ExportFile {
     if (typeof r?.id !== 'string' || typeof r.name !== 'string' || !Array.isArray(r.points) || r.points.length < 2 || !r.points.every(validPoint)) {
       throw fail(`route ${i + 1} is malformed`);
     }
+    const prefs = validRoutePrefs(r.prefs);
     return {
       id: r.id,
       name: r.name.slice(0, 100),
@@ -203,6 +227,7 @@ export function parseImport(text: string): ExportFile {
       source: r.source === 'route' ? 'route' : 'track',
       ...(r.elevationSource === 'dem' ? { elevationSource: 'dem' as const } : {}),
       points: r.points,
+      ...(prefs ? { prefs } : {}),
     };
   });
   return { app: 'ridewind', version: 1, exportedAt: String(d.exportedAt ?? ''), settings: validSettings(d.settings), routes };

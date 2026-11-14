@@ -162,6 +162,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-4 · Saved routes don't remember how you ride them
 
+> **Status: fixed** in the saved route preferences PR. Saving keeps the direction and the departure's time of day; opening restores them (the next time that time comes round), and the saved list shows "reversed · usually 08:00". Pace stays a global setting.
+
 - **Where:** `packRoute(state.original)` in [`src/ui/app.ts:772`](../src/ui/app.ts) saves geometry only.
 - **Source:** reopening a saved route resets it to the file's direction and the next hour. The pace model is global, not per route.
 - **Impact:** a weekly "Saturday loop, anticlockwise, 08:00, 28 km/h" needs three or four steps every time, and it's easy to forget the reverse, which flips the whole verdict.

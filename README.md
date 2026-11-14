@@ -66,7 +66,7 @@ Mostly crosswind
 gusts 43 km/h · rain up to 4.3 mm/h · 5 h 36 min, finish 01:35 PM · sunset 04:57 PM
 ```
 
-Forecasts change, so your numbers will differ. To keep a route, press **Save on this device**. Data is never synced; to move it to another device, use **Data & settings → Export data** and then **Import data**.
+Forecasts change, so your numbers will differ. To keep a route, press **Save on this device**. It also remembers the direction and the time of day you picked, and puts them back when you open the route. Data is never synced; to move it to another device, use **Data & settings → Export data** and then **Import data**.
 
 RideWind is a planning aid. Forecast wind doesn't fully account for shelter from buildings, trees or terrain, and the estimates have only been checked against five real rides (see [how close the estimates are](docs/model.md#how-close-are-the-estimates)). For the details, see [how RideWind estimates your ride](docs/model.md).
 
