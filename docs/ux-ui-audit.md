@@ -171,6 +171,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-5 · First run on a phone opens on an empty map
 
+> **Status: fixed** in the first-run PR. Until a route loads, the Route section opens with one sentence on what the app does, and below 900 px the panel comes first and the empty map shrinks to a 160 px strip below it. At 375×812, Import GPX starts at 227 px (was about 640 px). The full map returns at the top once a route loads.
+
 - **Observed:**
   - At 375 px, the first screen is a 52 vh map of the Bay Area with nothing on it.
   - Import GPX and the sample select start at about 640 px.
@@ -301,7 +303,7 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | 6 | Auto-refresh when the forecast is stale, plus a cached last forecast for saved routes (offline fallback) | P2-3 | Medium | M | Respect the OSM tile policy (no tile caching) |
 | 7 | Saved routes remember the direction and usual departure time | P2-4 | Medium | S–M | Schema version bump in `storage.ts` |
 | 8 | Units from the locale, plus an inline speed-unit switch | P2-6 | Medium | S | |
-| 9 | Compact first-run screen on the phone (short map, value sentence, two actions) | P2-5 | Medium | S | |
+| 9 | ~~Compact first-run screen on the phone (short map, value sentence, two actions)~~ **Done** | P2-5 | Medium | S | |
 | 10 | Chart smoothing, axis units and tick thinning | P2-7 | Medium | S–M | |
 | 11 | Touch targets of at least 44 px and spacing between Open and Delete | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
 | 12 | De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range | P3-1 to P3-3 | Low | S | |
