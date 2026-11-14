@@ -89,8 +89,8 @@ export type BestChoice =
  * The most favourable option that is fully forecast and starts and finishes
  * in daylight (or where daylight is unknown): shortest predicted time for a
  * power model; for a constant-speed model (where every time is equal) the
- * lowest mean headwind. When the best and worst eligible options differ by
- * less than BEST_MARGIN, no winner is named.
+ * lowest mean headwind. When two or more eligible options differ by less
+ * than BEST_MARGIN from best to worst, no winner is named.
  */
 export function bestChoice(rows: CompareRow[], pace: PaceModel): BestChoice {
   const eligible = rows.filter(
@@ -104,5 +104,5 @@ export function bestChoice(rows: CompareRow[], pace: PaceModel): BestChoice {
   const best = eligible.reduce((a, b) => (score(b) < score(a) ? b : a));
   const worst = eligible.reduce((a, b) => (score(b) > score(a) ? b : a));
   const margin = pace.kind === 'power' ? BEST_MARGIN.durationMs : BEST_MARGIN.meanHeadwindKmh;
-  return score(worst) - score(best) < margin ? { kind: 'similar' } : { kind: 'best', row: best };
+  return eligible.length > 1 && score(worst) - score(best) < margin ? { kind: 'similar' } : { kind: 'best', row: best };
 }

@@ -104,6 +104,12 @@ describe('bestChoice and daylight', () => {
     expect(bestChoice(rows, constant).kind).toBe('none');
   });
 
+  it('marks the only daylight option as best', () => {
+    const rows = compareRides([variant('forward', { sun })], [T0 * 1000, (T0 + 2 * 3600) * 1000], constant);
+    const choice = bestChoice(rows, constant);
+    expect(choice.kind === 'best' && choice.row.departureMs).toBe(T0 * 1000);
+  });
+
   it('names no winner when the options are too close to notice', () => {
     const rows = compareRides(both({ windKmh: 1 }), [T0 * 1000], constant);
     expect(bestChoice(rows, constant).kind).toBe('similar');
