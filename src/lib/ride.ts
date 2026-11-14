@@ -54,7 +54,7 @@ export interface PlanInput {
   departureMs: number;
   /** Constant average speed. Ignored when `elapsedAt` is given. */
   speedKmh?: number;
-  /** Elapsed ms from departure at a distance, e.g. from simulateRide(). */
+  /** Elapsed ms from departure at a distance, for example from simulateRide(). */
   elapsedAt?: (distanceM: number) => number;
 }
 

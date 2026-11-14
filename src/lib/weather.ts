@@ -37,7 +37,7 @@ export interface LocationForecast {
   gridLat: number;
   gridLon: number;
   series: HourlySeries;
-  /** Sunrise and sunset per forecast day (Unix seconds); empty when unavailable, e.g. polar day or night. */
+  /** Sunrise and sunset per forecast day (Unix seconds); empty when unavailable, for example in polar day or night. */
   sun: SunTimes;
 }
 

@@ -38,7 +38,7 @@ export function isValidTimeZone(tz: string): boolean {
   }
 }
 
-/** Offset of `tz` from UTC at the given instant, in milliseconds (e.g. +3600000 for CET). */
+/** Offset of `tz` from UTC at the given instant, in milliseconds (for example +3600000 for CET). */
 export function tzOffsetMs(tz: string, utcMs: number): number {
   const p = wallParts(utcMs, tz);
   const asUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);

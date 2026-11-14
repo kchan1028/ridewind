@@ -1,6 +1,6 @@
 # Maintaining RideWind
 
-How changes reach `main`, and how the repository is protected.
+Every change reaches `main` through a pull request that passes the `test-build` check, and only the owner can merge. The rules behind that are below.
 
 ## Branch rules
 

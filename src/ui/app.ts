@@ -1,5 +1,5 @@
 import { AppError, isAppError } from '../lib/errors';
-import { bestRow, compareRides, departureOptions, type CompareRow, type RouteVariant } from '../lib/compare';
+import { BEST_MARGIN, bestChoice, compareRides, departureOptions, type CompareRow, type RouteVariant } from '../lib/compare';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
 import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type Route, type Sample } from '../lib/geo';
 import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
@@ -46,8 +46,15 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => {
 const HOUR = 3600_000;
 const sampleUrl = (file: string) => `${import.meta.env.BASE_URL}samples/${file}`;
 
+/**
+ * Everything the page knows about the current ride. There is one instance,
+ * `state`, and every handler reads and updates it before calling recompute().
+ * See docs/architecture.md for how a route moves through these fields.
+ */
 interface State {
+  /** The route as imported, in its original direction. */
   original: Route | null;
+  /** `original`, or its reverse when `reversed` is true. All calculations use this. */
   route: Route | null;
   reversed: boolean;
   isSample: boolean;
@@ -175,6 +182,7 @@ function show(id: string, visible: boolean): void {
 
 /* ---------- route ---------- */
 
+/** Starts over with a new route: resets per-route state, draws it and fetches its forecast. */
 function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | null } = {}): void {
   state.original = route;
   state.reversed = false;
@@ -194,6 +202,7 @@ function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | 
   void loadForecast();
 }
 
+/** Rebuilds distances and forecast sample points after the route or its direction changes. */
 function applyRoute(): void {
   if (!state.original) return;
   state.route = state.reversed ? reverseRoute(state.original) : state.original;
@@ -275,6 +284,12 @@ function forecastsForSamples(): Array<LocationForecast | null> {
   return state.samples.map((s) => byKey.get(coordKey(s)) ?? null);
 }
 
+/**
+ * Fetches one forecast for the current sample points and takes the route's
+ * timezone from it. A newer call aborts an older one, so a slow response for
+ * a previous route can't overwrite the current one. On failure the route stays
+ * loaded and the rider sees the error with a retry button.
+ */
 async function loadForecast(): Promise<void> {
   if (!state.route) return;
   state.abort?.abort();
@@ -432,6 +447,12 @@ function renderPresets(): void {
 
 /* ---------- results ---------- */
 
+/**
+ * Reruns the simulation and ride plan from the forecast already in memory and
+ * redraws the results. Called after any change to departure, pace, direction
+ * or settings. It sends no network request unless the sample points no longer
+ * match the forecast.
+ */
 function recompute(): void {
   if (!state.route) return;
   show('wx-empty', false);
@@ -443,7 +464,7 @@ function recompute(): void {
   }
   const forecasts = forecastsForSamples();
   if (forecasts.some((f) => f === null)) {
-    // Sample positions changed (e.g. rounding after reversing): fetch for the new points.
+    // Sample positions changed (for example, rounding after reversing): fetch for the new points.
     void loadForecast();
     return;
   }
@@ -496,11 +517,22 @@ function renderComparison(): void {
   // Columns: the original GPX direction, then reversed.
   const variants = [variantFor(false), variantFor(true)];
   const rows = compareRides(variants, departures, pace, state.assumeFlat);
-  const best = bestRow(rows, pace);
+  const choice = bestChoice(rows, pace);
+  const best = choice.kind === 'best' ? choice.row : null;
+  const outcome =
+    choice.kind === 'similar'
+      ? pace.kind === 'power'
+        ? ` No clear best: the daylight options are within ${BEST_MARGIN.durationMs / 60_000} minutes of each other.`
+        : ` No clear best: average wind differs by less than ${formatSpeed(BEST_MARGIN.meanHeadwindKmh, u)} between the daylight options.`
+      : choice.kind === 'none'
+        ? ' No option here is fully forecast and in daylight, so none is marked Best.'
+        : '';
   $('compare-caption').textContent =
-    pace.kind === 'power'
-      ? 'Predicted ride time, share of distance into a headwind and highest chance of rain. Best is the shortest predicted time.'
-      : 'Share of distance into a headwind, average wind along the route and highest chance of rain. Best is the least headwind (times are equal at a constant speed).';
+    (pace.kind === 'power'
+      ? 'Predicted ride time, finish time, share of distance into a headwind and highest chance of rain. Best is the shortest predicted time'
+      : 'Finish time, share of distance into a headwind, average wind along the route and highest chance of rain. Best is the least headwind (times are equal at a constant speed)') +
+    ', among rides that start and finish in daylight and differ enough to notice.' +
+    outcome;
   if (departures.length === 0) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
@@ -515,6 +547,9 @@ function renderComparison(): void {
     if (!r) return td;
     const lines: string[] = [];
     if (pace.kind === 'power') lines.push(formatDuration(r.durationMs));
+    lines.push(`finish ${formatClock(r.finishMs, tz)}`);
+    if (r.daylight === 'ends-after-sunset') lines.push('after sunset');
+    else if (r.daylight === 'starts-before-sunrise') lines.push('before sunrise');
     lines.push(`${Math.round(r.headwindShare * 100)}% headwind`);
     if (pace.kind === 'constant' && r.meanHeadwind !== null)
       lines.push(`avg ${formatSpeed(Math.abs(r.meanHeadwind), u)} ${r.meanHeadwind >= 0 ? 'head' : 'tail'}`);
@@ -971,6 +1006,7 @@ function bindDataDialog(): void {
 
 /* ---------- init ---------- */
 
+/** Entry point, called once from main.ts: builds the map, restores settings and attaches every event handler. */
 export function initApp(): void {
   map = new RouteMap($('map'));
   applySettingsToInputs();

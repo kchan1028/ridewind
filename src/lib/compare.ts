@@ -1,3 +1,4 @@
+import { rideDaylight, type DaylightKind } from './daylight';
 import type { Sample, TrackPoint } from './geo';
 import { planRide } from './ride';
 import { simulateRide, type PaceModel } from './simulate';
@@ -26,6 +27,8 @@ export interface CompareRow {
   precipProbabilityMax: number | null;
   /** True when every sampled point had a forecast at its arrival time. */
   fullyForecast: boolean;
+  /** Whether the ride stays in daylight, from the start point's sunrise and sunset. */
+  daylight: DaylightKind;
 }
 
 /**
@@ -42,6 +45,12 @@ export function departureOptions(startMs: number, windowEndMs: number, rideMs: n
   return out;
 }
 
+/**
+ * Runs the full simulation and ride plan for every departure and route
+ * direction, one row per pair. Reuses each variant's forecasts, so it makes no
+ * network requests. Throws ELEVATION_MISSING for a power model on a route
+ * without elevation unless `assumeFlat` is set, the same as simulateRide().
+ */
 export function compareRides(variants: RouteVariant[], departures: number[], pace: PaceModel, assumeFlat = false): CompareRow[] {
   const rows: CompareRow[] = [];
   for (const departureMs of departures) {
@@ -60,20 +69,46 @@ export function compareRides(variants: RouteVariant[], departures: number[], pac
         gustMax: plan.summary.gustMax,
         precipProbabilityMax: plan.summary.precipProbabilityMax,
         fullyForecast: plan.summary.samplesWithoutForecast === 0,
+        daylight: rideDaylight(departureMs, departureMs + sim.durationMs, v.forecasts[0]?.sun).kind,
       });
     }
   }
   return rows;
 }
 
+/** Smallest gap between options that is worth calling a winner. */
+export const BEST_MARGIN = {
+  /** Predicted ride time, power model. */
+  durationMs: 5 * 60_000,
+  /** Distance-weighted mean headwind, km/h, constant-speed model. */
+  meanHeadwindKmh: 3,
+};
+
+export type BestChoice =
+  | { kind: 'best'; row: CompareRow }
+  /** No option is fully forecast and in daylight. */
+  | { kind: 'none' }
+  /** The eligible options are too close to call. */
+  | { kind: 'similar' };
+
 /**
- * The most favourable fully forecast option: shortest predicted time for a
+ * The most favourable option that is fully forecast and starts and finishes
+ * in daylight (or where daylight is unknown): shortest predicted time for a
  * power model; for a constant-speed model (where every time is equal) the
- * lowest mean headwind.
+ * lowest mean headwind. When two or more eligible options differ by less
+ * than BEST_MARGIN from best to worst, no winner is named.
  */
-export function bestRow(rows: CompareRow[], pace: PaceModel): CompareRow | null {
-  const eligible = rows.filter((r) => r.fullyForecast && (pace.kind === 'power' || r.meanHeadwind !== null));
-  if (eligible.length === 0) return null;
+export function bestChoice(rows: CompareRow[], pace: PaceModel): BestChoice {
+  const eligible = rows.filter(
+    (r) =>
+      r.fullyForecast &&
+      (r.daylight === 'daylight' || r.daylight === 'unknown') &&
+      (pace.kind === 'power' || r.meanHeadwind !== null),
+  );
+  if (eligible.length === 0) return { kind: 'none' };
   const score = (r: CompareRow) => (pace.kind === 'power' ? r.durationMs : r.meanHeadwind!);
-  return eligible.reduce((a, b) => (score(b) < score(a) ? b : a));
+  const best = eligible.reduce((a, b) => (score(b) < score(a) ? b : a));
+  const worst = eligible.reduce((a, b) => (score(b) > score(a) ? b : a));
+  const margin = pace.kind === 'power' ? BEST_MARGIN.durationMs : BEST_MARGIN.meanHeadwindKmh;
+  return eligible.length > 1 && score(worst) - score(best) < margin ? { kind: 'similar' } : { kind: 'best', row: best };
 }
