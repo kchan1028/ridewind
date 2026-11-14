@@ -8,7 +8,7 @@ flowchart LR
     GPX[Your GPX file] --> App[RideWind]
     App <--> Store[(Settings and saved routes<br/>localStorage and IndexedDB)]
   end
-  App -- "Up to 20 points, rounded to about 100 m" --> OM[Open-Meteo<br/>forecast]
+  App -- "Up to 40 points, rounded to about 100 m" --> OM[Open-Meteo<br/>forecast]
   App -. "Only if you press Look up elevation:<br/>up to 200 points, rounded to about 11 m" .-> OME[Open-Meteo<br/>elevation]
   App -- "Map tiles for the area on screen" --> OSM[OpenStreetMap]
 ```
