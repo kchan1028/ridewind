@@ -71,6 +71,8 @@ interface State {
   sim: Simulation | null;
   /** The rider explicitly chose a flat-route power estimate for this route. */
   assumeFlat: boolean;
+  /** First departure of the comparison list. Use keeps it, so earlier options stay listed; other departure changes clear it. */
+  compareFromMs: number | null;
   elevationBusy: boolean;
   settings: store.Settings;
   abort: AbortController | null;
@@ -97,6 +99,7 @@ const state: State = {
   plan: null,
   sim: null,
   assumeFlat: false,
+  compareFromMs: null,
   elevationBusy: false,
   settings: store.loadSettings(),
   abort: null,
@@ -138,6 +141,7 @@ function setVerdictMode(mode: VerdictMode, head: string, message: string): void 
   applyVerdictExpanded(mode === 'ready' && verdictExpanded);
   show('depart-stepper', mode === 'ready');
   show('verdict-retry', mode === 'error');
+  show('verdict-elevation', false);
   const r = state.route;
   $('verdict-route').textContent = r
     ? `${r.name} · ${formatDistance(state.cum[state.cum.length - 1] ?? 0, units())}${state.reversed ? ' · reversed' : ''}`
@@ -189,7 +193,10 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
   if (state.forecastFromCache) key.push(`saved forecast from ${formatDayClock(fc.fetchedAt, deviceTimeZone())}`);
   else if (ageMs >= STALE_FORECAST_MS) key.push(`forecast ${Math.floor(ageMs / HOUR)} h old`);
 
+  if (elevationChoicePending()) key.push(`timed at ${formatSpeed(state.settings.speedKmh, u)} average`);
+
   setVerdictMode('ready', headline, key.join(' · '));
+  show('verdict-elevation', elevationChoicePending());
   $('verdict-facts').textContent = facts.join(' · ');
   $('verdict-age').textContent = `Forecast updated ${formatDateTime(fc.fetchedAt, deviceTimeZone())} (your device time).`;
   $('verdict').dataset.tone = tone;
@@ -205,9 +212,27 @@ function shiftDeparture(deltaMs: number): void {
   if (!b || state.departureMs === null) return;
   const next = state.departureMs + deltaMs;
   if (next < b.min || next > b.max) return;
-  state.departureMs = next;
+  setDeparture(next);
+}
+
+/**
+ * Sets a departure chosen any way other than the comparison's Use button: the
+ * stepper, a preset or the date field. The comparison list restarts from it, and
+ * a "Using …" status from an earlier Use is cleared so it can't contradict the verdict.
+ */
+function setDeparture(ms: number): void {
+  state.departureMs = ms;
+  state.compareFromMs = null;
+  if ($('status').textContent?.startsWith('Using ')) setStatus('');
   updateDepartureInput();
   recompute();
+}
+
+/** Retries the forecast, then puts focus back where the rider can carry on. */
+async function retryForecast(button: HTMLElement): Promise<void> {
+  await loadForecast();
+  if (!button.hidden && button.offsetParent !== null) button.focus();
+  else $('verdict-head').focus();
 }
 
 function messageFor(e: unknown): string {
@@ -239,8 +264,11 @@ function loadRoute(
   state.savedId = opts.savedId ?? null;
   state.forecast = null;
   state.departureMs = null;
+  state.compareFromMs = null;
   state.assumeFlat = false;
   state.sim = null;
+  // The sample menu shows the sample that's loaded; anything else resets it.
+  if (!opts.isSample) $<HTMLSelectElement>('sample-select').value = '';
   // A pending "Saved ✓" reset must not relabel the newly loaded route.
   window.clearTimeout(flashTimer);
   delete $('save-btn').dataset.flash;
@@ -322,6 +350,7 @@ async function loadSample(file: string, label: string): Promise<void> {
     loadRoute(route, { isSample: true });
   } catch (e) {
     setStatus(isAppError(e) ? e.message : 'The sample route could not be loaded. Check your connection.', 'error');
+    if (!state.isSample) $<HTMLSelectElement>('sample-select').value = '';
   }
 }
 
@@ -406,10 +435,21 @@ function rideDurationMs(): number {
   return (totalKm / state.settings.speedKmh) * HOUR + state.settings.stopMinutes * 60_000;
 }
 
+/**
+ * True while power timing waits for the rider to look up elevation or choose a
+ * flat estimate. Until then, timing uses the average speed, labelled as such, so
+ * the wind verdict still shows.
+ */
+function elevationChoicePending(): boolean {
+  const r = state.route;
+  return !!r && state.settings.paceMode === 'power' && !hasCompleteElevation(r.points) && !state.assumeFlat;
+}
+
+/** The pace model in use: power, or the average speed while an elevation choice is pending. */
 function currentPace(): PaceModel {
   const s = state.settings;
   const stops = { stopMinutes: s.stopMinutes };
-  return s.paceMode === 'power'
+  return s.paceMode === 'power' && !elevationChoicePending()
     ? { kind: 'power', rider: s.rider, exposure: s.exposure, ...stops }
     : { kind: 'constant', speedKmh: s.speedKmh, ...stops };
 }
@@ -417,8 +457,8 @@ function currentPace(): PaceModel {
 /** Shows the elevation choice when a power estimate can't run on this route's elevation. */
 function updateElevationGate(): void {
   const r = state.route;
-  const needed = !!r && state.settings.paceMode === 'power' && !hasCompleteElevation(r.points);
-  show('elevation-gate', needed && !state.assumeFlat);
+  const needed = elevationChoicePending();
+  show('elevation-gate', needed);
   if (!needed || !r) return;
   const pct = Math.round((1 - elevationStats(r.points).coverage) * 100);
   const n = elevationLookupCoords(r.points, state.cum).coords.length;
@@ -510,11 +550,12 @@ function renderPresets(): void {
       btn.type = 'button';
       btn.className = 'chip';
       btn.textContent = p.label;
+      btn.dataset.ms = String(p.ms);
       btn.setAttribute('aria-pressed', String(p.ms === state.departureMs));
       btn.addEventListener('click', () => {
-        state.departureMs = p.ms;
-        updateDepartureInput();
-        recompute();
+        setDeparture(p.ms);
+        // The presets are rebuilt above; keep focus on the one just pressed.
+        $('dep-presets').querySelector<HTMLElement>(`[data-ms="${p.ms}"]`)?.focus();
       });
       return btn;
     }),
@@ -589,7 +630,7 @@ function renderComparison(): void {
   const tz = state.tz;
   const pace = currentPace();
   const spacingH = Number(($('compare-spacing') as HTMLSelectElement).value) || 2;
-  const departures = departureOptions(state.departureMs, fc.windowEndMs, rideDurationMs() * 1.3, spacingH * HOUR, 6);
+  const departures = departureOptions(state.compareFromMs ?? state.departureMs, fc.windowEndMs, rideDurationMs() * 1.3, spacingH * HOUR, 6);
   // Columns: the original GPX direction, then reversed.
   const variants = [variantFor(false), variantFor(true)];
   const rows = compareRides(variants, departures, pace, state.assumeFlat);
@@ -651,9 +692,15 @@ function renderComparison(): void {
     btn.type = 'button';
     btn.className = 'btn btn-small';
     btn.textContent = isCurrent ? 'Selected' : 'Use';
-    btn.disabled = isCurrent;
+    // aria-disabled rather than disabled, so focus can land on Selected after Use.
+    if (isCurrent) btn.setAttribute('aria-disabled', 'true');
+    const choice = `${r.departureMs}:${reverse ? 'r' : 'f'}`;
+    btn.dataset.choice = choice;
     btn.setAttribute('aria-label', `Use departure ${formatDateTime(r.departureMs, tz)}, ${reverse ? 'reversed' : 'original'} direction`);
     btn.addEventListener('click', () => {
+      if (isCurrent) return;
+      // Keep the list where it started, so the options already compared stay visible.
+      state.compareFromMs = state.compareFromMs ?? state.departureMs;
       state.departureMs = r.departureMs;
       if (state.reversed !== reverse) {
         state.reversed = reverse;
@@ -661,6 +708,9 @@ function renderComparison(): void {
       } else recompute();
       updateDepartureInput();
       setStatus(`Using ${formatDateTime(r.departureMs, tz)}, ${reverse ? 'reversed' : 'original'} direction.`, 'ok');
+      // The table was rebuilt; move focus to the new Selected button, or the verdict if it's gone.
+      const selected = $('compare-body').querySelector<HTMLElement>(`[data-choice="${choice}"]`);
+      (selected ?? $('verdict-head')).focus();
     });
     td.append(' ', btn);
     return td;
@@ -702,7 +752,7 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
       `A new forecast couldn't be loaded, so this is the one saved ${formatDateTime(fc.fetchedAt, deviceTimeZone())} (your device time). Use Refresh forecast to try again.`,
     );
   if (sim.assumedFlat) warn.push('Timing assumes a flat route because elevation is missing, so climbs and descents are not reflected.');
-  if (state.settings.paceMode === 'power' && sim.stepsWithoutWeather > 0 && plan.summary.samplesWithoutForecast === 0)
+  if (currentPace().kind === 'power' && sim.stepsWithoutWeather > 0 && plan.summary.samplesWithoutForecast === 0)
     warn.push('Some sections had no wind forecast; still air was assumed there.');
   const w = $('window-warning');
   w.textContent = warn.join(' ');
@@ -733,13 +783,14 @@ function renderResults(plan: RidePlan, sim: Simulation): void {
 
   // KPIs
   const s = plan.summary;
-  const power = state.settings.paceMode === 'power';
+  const power = currentPace().kind === 'power';
   $('kpi-time').textContent = formatDuration(plan.durationMs);
   $('kpi-time-tag').textContent = power ? (sim.assumedFlat ? 'physics estimate, flat' : 'physics estimate') : 'estimate';
   const stopNote = sim.stopMs > 0 ? `, including ${formatDuration(sim.stopMs)} of stops` : '';
   $('kpi-finish').textContent = power
     ? `Finish about ${formatClock(plan.finishMs, tz)} · average ${formatSpeed(sim.avgSpeedKmh, u)} at ${state.settings.rider.powerW} W${stopNote}`
-    : `Finish about ${formatClock(plan.finishMs, tz)} at ${formatSpeed(state.settings.speedKmh, u)}${stopNote}`;
+    : `Finish about ${formatClock(plan.finishMs, tz)} at ${formatSpeed(state.settings.speedKmh, u)}${stopNote}` +
+      (elevationChoicePending() ? '. Average speed, because power timing needs elevation.' : '');
   $('kpi-wind').textContent =
     s.windSpeedMin === null ? dash : `${formatSpeed(s.windSpeedMin, u).split(' ')[0]}–${formatSpeed(s.windSpeedMax!, u)}`;
   $('kpi-gust').textContent = s.gustMax === null ? '' : `Gusts up to ${formatSpeed(s.gustMax, u)}`;
@@ -1027,19 +1078,23 @@ function bindPaceForm(): void {
     updateDepartureInput();
   });
   for (const b of document.querySelectorAll('.lookup-ele')) b.addEventListener('click', () => void lookupElevation());
-  $('assume-flat-btn').addEventListener('click', () => {
-    state.assumeFlat = true;
-    recompute();
-    updateDepartureInput();
-    setStatus('Estimating as if the route were flat. Results are labelled accordingly.', 'ok');
-  });
+  for (const b of document.querySelectorAll<HTMLElement>('.assume-flat')) {
+    b.addEventListener('click', () => {
+      state.assumeFlat = true;
+      recompute();
+      updateDepartureInput();
+      setStatus('Estimating as if the route were flat. Results are labelled accordingly.', 'ok');
+      // The button that was pressed is now hidden.
+      $('verdict-head').focus();
+    });
+  }
   $('compare-spacing').addEventListener('change', () => renderComparison());
   let lastWidth = 0;
   new ResizeObserver(([entry]) => {
     const w = Math.round(entry?.contentRect.width ?? 0);
     if (w && Math.abs(w - lastWidth) > 8 && state.sim) {
       lastWidth = w;
-      renderCharts($('charts'), state.sim, { units: units(), power: state.settings.paceMode === 'power' });
+      renderCharts($('charts'), state.sim, { units: units(), power: currentPace().kind === 'power' });
     }
   }).observe($('charts'));
 }
@@ -1147,7 +1202,6 @@ export function initApp(): void {
     const select = ev.target as HTMLSelectElement;
     const opt = select.selectedOptions[0];
     if (opt?.value) void loadSample(opt.value, opt.text);
-    select.value = '';
   });
   $('reverse-btn').addEventListener('click', () => {
     state.reversed = !state.reversed;
@@ -1156,8 +1210,8 @@ export function initApp(): void {
     setStatus(state.reversed ? 'Route reversed.' : 'Route back in its original direction.', 'ok');
   });
   $('save-btn').addEventListener('click', () => void saveCurrentRoute());
-  $('retry-btn').addEventListener('click', () => void loadForecast());
-  $('verdict-retry').addEventListener('click', () => void loadForecast());
+  $('retry-btn').addEventListener('click', () => void retryForecast($('retry-btn')));
+  $('verdict-retry').addEventListener('click', () => void retryForecast($('verdict-retry')));
   $('verdict-refresh').addEventListener('click', () => void loadForecast());
   $('verdict-toggle').addEventListener('click', () => {
     verdictExpanded = !verdictExpanded;
@@ -1190,9 +1244,7 @@ export function initApp(): void {
     const v = (ev.target as HTMLInputElement).value;
     if (!v) return;
     try {
-      state.departureMs = wallTimeToUtc(v, state.tz);
-      updateDepartureInput();
-      recompute();
+      setDeparture(wallTimeToUtc(v, state.tz));
     } catch (e) {
       setStatus(messageFor(e), 'error');
     }
