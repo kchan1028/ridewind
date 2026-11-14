@@ -44,6 +44,6 @@ The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap
 
 - Nothing syncs between devices or browsers. To move data, use **Data & settings → Export data** on one device and **Import data** on the other.
 - Clearing your browser's site data, or using **Delete all local data**, removes everything permanently.
-- Saved routes keep only latitude, longitude and elevation. Timestamps, heart rate and other recorded data in the GPX are thrown away when the file is imported.
+- Saved routes keep only latitude, longitude and elevation, plus the direction you ride them and your usual departure time of day (for example 08:00). Timestamps, heart rate and other recorded data in the GPX are thrown away when the file is imported.
 - Your GPX file is never uploaded. The only things that leave your browser are the rounded sample coordinates sent to Open-Meteo and the map tile requests sent to OpenStreetMap.
 - Export files contain your routes, which can reveal where you live or ride. Don't commit them. `.gitignore` excludes `*.gpx` (except the samples) and `ridewind-export*.json`.
