@@ -18,7 +18,7 @@ function forecast(dirFrom: number, speed: number): LocationForecast {
     windDirection: fill(dirFrom),
     windGusts: fill(speed),
   };
-  return { key: 'k', gridLat: 0, gridLon: 0, series };
+  return { key: 'k', gridLat: 0, gridLon: 0, series, sun: { sunrise: [], sunset: [] } };
 }
 
 /** 20 km due east; elevation from a function of distance fraction, or null. */

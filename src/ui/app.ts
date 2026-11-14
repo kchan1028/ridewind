@@ -6,6 +6,8 @@ import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
 import { RIDER_LIMITS, type Exposure, type RiderParams } from '../lib/physics';
 import { planRide, type RidePlan, type SegmentClass } from '../lib/ride';
 import { simulateRide, type PaceModel, type Simulation } from '../lib/simulate';
+import { rideDaylight } from '../lib/daylight';
+import { departurePresets } from '../lib/presets';
 import { windVerdict } from '../lib/verdict';
 import * as store from '../lib/storage';
 import {
@@ -135,6 +137,10 @@ function renderVerdict(plan: RidePlan, sim: Simulation): void {
     facts.push(s.precipMax < 0.05 ? (p !== null && p >= 30 ? `rain ${Math.round(p)}% chance` : 'dry') : `rain up to ${formatPrecip(s.precipMax, u)}/h`);
   }
   facts.push(`${formatDuration(plan.durationMs)}, finish ${formatClock(plan.finishMs, tz)}${sim.assumedFlat ? ' (flat estimate)' : ''}`);
+  const light = rideDaylight(state.departureMs!, plan.finishMs, forecastsForSamples()[0]?.sun);
+  if (light.kind === 'starts-before-sunrise') facts.push(`starts in the dark (sunrise ${formatClock(light.sunriseMs!, tz)})`);
+  else if (light.kind === 'ends-after-sunset') facts.push(`finishes after sunset (${formatClock(light.sunsetMs!, tz)})`);
+  else if (light.kind === 'daylight') facts.push(`sunset ${formatClock(light.sunsetMs!, tz)}`);
   setVerdictMode('ready', headline, facts.join(' · '));
   $('verdict').dataset.tone = tone;
   $('depart-label').textContent = `Leave ${formatDateTime(state.departureMs!, tz)}`;
@@ -178,6 +184,9 @@ function loadRoute(route: Route, opts: { isSample?: boolean; savedId?: string | 
   state.departureMs = null;
   state.assumeFlat = false;
   state.sim = null;
+  // A pending "Saved ✓" reset must not relabel the newly loaded route.
+  window.clearTimeout(flashTimer);
+  delete $('save-btn').dataset.flash;
   $('save-btn').textContent = state.savedId ? 'Update saved copy' : 'Save on this device';
   applyRoute();
   map.invalidateSize();
@@ -399,34 +408,10 @@ function updateDepartureInput(): void {
   renderPresets();
 }
 
-/** Quick departure choices in the route's timezone, limited to the forecast window. */
-function departurePresets(): Array<{ label: string; ms: number }> {
-  const b = departureBounds();
-  if (!b) return [];
-  const tz = state.tz;
-  const today = utcToWallTime(Date.now(), tz).slice(0, 10);
-  const [y, m, d] = today.split('-').map(Number) as [number, number, number];
-  const dateAt = (addDays: number) => {
-    const dt = new Date(Date.UTC(y, m - 1, d + addDays));
-    return { iso: dt.toISOString().slice(0, 10), weekday: dt.getUTCDay() };
-  };
-  const out: Array<{ label: string; ms: number }> = [{ label: 'Next hour', ms: Math.ceil(Date.now() / HOUR) * HOUR }];
-  out.push({ label: 'Tomorrow 08:00', ms: wallTimeToUtc(`${dateAt(1).iso}T08:00`, tz) });
-  // The coming weekend morning that isn't tomorrow: Saturday, else Sunday.
-  for (let k = 2; k <= 7; k++) {
-    const day = dateAt(k);
-    if (day.weekday === 6 || day.weekday === 0) {
-      const name = day.weekday === 6 ? 'Sat' : 'Sun';
-      out.push({ label: `${name} ${Number(day.iso.slice(8, 10))}, 09:00`, ms: wallTimeToUtc(`${day.iso}T09:00`, tz) });
-      break;
-    }
-  }
-  return out.filter((p) => p.ms >= b.min && p.ms <= b.max);
-}
-
 function renderPresets(): void {
   const box = $('dep-presets');
-  const presets = state.forecast ? departurePresets() : [];
+  const b = departureBounds();
+  const presets = state.forecast && b ? departurePresets(Date.now(), state.tz, b) : [];
   box.hidden = presets.length === 0;
   box.replaceChildren(
     ...presets.map((p) => {
@@ -795,10 +780,13 @@ async function saveCurrentRoute(): Promise<void> {
 }
 
 /** Confirms an action on the control itself, then settles on a follow-up label. */
+let flashTimer = 0;
+
 function flashButton(btn: HTMLButtonElement, flash: string, after: string): void {
+  window.clearTimeout(flashTimer);
   btn.textContent = flash;
   btn.dataset.flash = 'true';
-  window.setTimeout(() => {
+  flashTimer = window.setTimeout(() => {
     btn.textContent = after;
     delete btn.dataset.flash;
   }, 1800);
