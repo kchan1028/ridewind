@@ -50,7 +50,7 @@ export function parseGpx(text: string, fallbackName = 'Imported route'): Route {
     throw new AppError(
       'GPX_NO_POINTS',
       hasWpt
-        ? 'This GPX only contains waypoints. RideWind needs a track or route (trkpt or rtept points).'
+        ? 'This GPX file only has waypoints. RideWind needs a track or a route, which most route planners and bike computers export.'
         : 'No track or route points were found in this GPX file.',
     );
   }
