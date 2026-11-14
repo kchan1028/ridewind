@@ -283,7 +283,23 @@
         <div class="panel-resizer" id="panel-resizer" role="separator" aria-orientation="vertical" aria-controls="controls" aria-label="Resize side panel. Arrow keys change the width, Enter resets it." tabindex="0"></div>
         <div class="draw-bar" id="draw-bar" role="group" aria-labelledby="draw-title" tabindex="-1" hidden>
           <div id="draw-edit">
-            <p class="draw-title" id="draw-title"><strong>Draw a route</strong> <span class="draw-help" id="draw-help">Tap the map to set a start, then tap again to extend the route. Drag a point to move it; drag anywhere else to move the map.</span></p>
+            <p class="draw-title" id="draw-title"><strong>Draw a route</strong> <span class="draw-help" id="draw-help">Tap the map to set a start, then tap again to extend the route. Drag a point to move it, or drag the small dot in the middle of a section to change it in between. Drag anywhere else to move the map.</span></p>
+            <form class="draw-search" id="draw-search" role="search" novalidate>
+              <label for="draw-search-q">Find a place</label>
+              <div class="draw-search-row">
+                <input type="search" id="draw-search-q" maxlength="200" placeholder="Address, town or landmark" autocomplete="off" enterkeyhint="search" />
+                <button type="submit" class="btn btn-small">Search</button>
+              </div>
+              <p class="draw-search-status" id="draw-search-status" aria-live="polite"></p>
+              <ul class="draw-search-results" id="draw-search-results" aria-label="Search results" hidden></ul>
+              <div class="draw-place" id="draw-place" hidden>
+                <p id="draw-place-name"></p>
+                <div class="actions">
+                  <button type="button" class="btn btn-small" id="draw-place-add">Add point here</button>
+                  <button type="button" class="btn btn-small btn-quiet" id="draw-place-clear">Done</button>
+                </div>
+              </div>
+            </form>
             <fieldset class="draw-mode">
               <legend>New sections</legend>
               <label class="radio"><input type="radio" name="draw-mode" value="routed" checked /> Follow roads <span class="hint-inline">(cycling, prefers paved)</span></label>
@@ -308,6 +324,7 @@
               <p id="draw-selected-msg"></p>
               <div class="actions">
                 <button type="button" class="btn btn-small" id="draw-move-centre">Move to centre crosshair</button>
+                <button type="button" class="btn btn-small" id="draw-insert-before">Add point before</button>
                 <button type="button" class="btn btn-small" id="draw-remove">Remove point</button>
                 <button type="button" class="btn btn-small btn-quiet" id="draw-deselect">Done</button>
               </div>

@@ -13,6 +13,7 @@ flowchart LR
   App -. "Only if you press Look up elevation:<br/>up to 200 points, rounded to about 11 m" .-> OME[Open-Meteo<br/>elevation]
   App -- "Map tiles for the area on screen" --> OSM[OpenStreetMap]
   App -. "Only while drawing with Follow roads:<br/>the points you place, unrounded" .-> RT[Routing service<br/>FOSSGIS Valhalla by default]
+  App -. "Only when you press Search:<br/>what you typed" .-> NOM[OpenStreetMap Nominatim<br/>address search]
 ```
 
 Nothing else leaves your browser. There are no analytics, cookies or accounts.
@@ -48,6 +49,10 @@ Drawing a route that follows roads uses the public [Valhalla](https://github.com
 - **Errors:** network failures, timeouts (20 seconds), rate limiting, server errors and "no route" each get their own message, and the drawing goes back to its last complete version.
 
 The endpoint can be changed with `VITE_ROUTING_URL`, for example to Stadia Maps, which authenticates browsers by domain so no key is in the page. Never put a secret key in a `VITE_` variable. See [drawing a route](routing.md).
+
+## Address search (Find a place)
+
+**Find a place** in the draw panel uses the OpenStreetMap Foundation's public Nominatim server, `nominatim.openstreetmap.org`, called from the browser. Checked in November 2026 against its [usage policy](https://operations.osmfoundation.org/policies/nominatim/): at most one request a second across all users, searches only when a person starts them (no search-as-you-type), OSM attribution, moderate traffic, and the ability to switch services on request. RideWind sends a search only when you press Search, spaces searches at least 1.1 seconds apart, reuses answers to repeated searches, and lets the endpoint be changed with `VITE_GEOCODE_URL`. Each search sends what you typed, your browser language and the map area on screen. Searches aren't saved.
 
 ## Your data stays in your browser
 
