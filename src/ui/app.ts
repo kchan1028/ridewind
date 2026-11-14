@@ -571,7 +571,9 @@ function renderComparison(): void {
     outcome;
   if (departures.length === 0) {
     const tr = document.createElement('tr');
+    tr.setAttribute('role', 'row');
     const td = document.createElement('td');
+    td.setAttribute('role', 'cell');
     td.colSpan = 3;
     td.textContent = 'No later departures fit inside the forecast window.';
     tr.append(td);
@@ -580,6 +582,9 @@ function renderComparison(): void {
   }
   const cell = (r: CompareRow | undefined, reverse: boolean) => {
     const td = document.createElement('td');
+    td.setAttribute('role', 'cell');
+    // Shown as a heading for each direction when phones stack the table as cards.
+    td.dataset.label = reverse ? 'Reversed' : 'Original direction';
     if (!r) return td;
     const lines: string[] = [];
     if (pace.kind === 'power') lines.push(formatDuration(r.durationMs));
@@ -622,8 +627,10 @@ function renderComparison(): void {
   };
   for (const t of departures) {
     const tr = document.createElement('tr');
+    tr.setAttribute('role', 'row');
     const th = document.createElement('th');
     th.scope = 'row';
+    th.setAttribute('role', 'rowheader');
     th.textContent = formatDateTime(t, tz);
     tr.append(
       th,

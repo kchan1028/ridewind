@@ -1319,6 +1319,7 @@ dialog[open] {
 }
 .framed-notice .btn {
   text-decoration: none;
+}
 
 /* Inline field errors: empty until a value is out of range */
 .field-error {
@@ -1337,4 +1338,49 @@ dialog[open] {
 input[aria-invalid='true'] {
   border-color: var(--err-line);
   box-shadow: inset 0 0 0 1px var(--err-line);
+}
+
+/* Phones: one card per departure, both directions stacked, instead of a table to scroll sideways */
+@media (max-width: 599px) {
+  .compare thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .compare,
+  .compare caption,
+  .compare tbody,
+  .compare tr,
+  .compare th,
+  .compare td {
+    display: block;
+  }
+  .compare tr {
+    border-top: 1px solid var(--line);
+    padding: 10px 0 4px;
+  }
+  .compare tbody th[scope='row'] {
+    padding: 0 10px 6px;
+    border: 0;
+    font-size: 0.9375rem;
+  }
+  .compare td {
+    min-width: 0;
+    white-space: normal;
+    font-size: 0.9375rem;
+    margin: 0 0 6px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--radius);
+  }
+  .compare td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
 }
