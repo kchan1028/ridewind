@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AppError } from '../src/lib/errors';
-import { buildForecastUrl, coordKey, fetchForecast, parseForecastResponse } from '../src/lib/weather';
+import { buildForecastUrl, coordKey, fetchForecast, openMeteoGet, parseForecastResponse } from '../src/lib/weather';
 
 const coords = [
   { lat: 52.93331, lon: 5.03721 },
@@ -126,6 +126,14 @@ describe('fetchForecast error handling', () => {
     const e = await run(async () => json({ error: true, reason: 'Latitude must be in range of -90 to 90°' }, 400));
     expect(e.code).toBe('WEATHER_REJECTED');
     expect(e.detail).toMatch(/Latitude/);
+  });
+  it('times out a stalled request with a network error', async () => {
+    const hang: typeof fetch = (_u, init) =>
+      new Promise((_res, rej) => init?.signal?.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError'))));
+    await expect(openMeteoGet('https://api.open-meteo.com/x', { fetchImpl: hang, timeoutMs: 20 })).rejects.toMatchObject({
+      code: 'WEATHER_NETWORK',
+      message: expect.stringMatching(/didn't respond/),
+    });
   });
   it('rethrows aborts untouched', async () => {
     const abort = new DOMException('aborted', 'AbortError');

@@ -755,3 +755,141 @@ dialog::backdrop {
     animation: none !important;
   }
 }
+
+/* ---------- phase 2: pace fields, charts, comparison ---------- */
+.grid-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+.grid-fields input {
+  max-width: none;
+}
+select {
+  width: 100%;
+  max-width: 360px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+#elevation-gate p {
+  margin: 0 0 8px;
+}
+.charts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.chart {
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 0 2px;
+  overflow: hidden;
+}
+.chart figcaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 4px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.chart svg {
+  display: block;
+}
+.ch-label {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.ch-note {
+  font-size: 10px;
+  fill: var(--muted);
+  font-style: italic;
+}
+.ch-empty {
+  font-size: 12px;
+  fill: var(--muted);
+}
+.ch-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.ch-zero {
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+}
+.ch-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+.ch-area {
+  fill: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.ch-head-area {
+  fill: color-mix(in srgb, var(--head) 35%, transparent);
+}
+.ch-tail-area {
+  fill: color-mix(in srgb, var(--tail) 35%, transparent);
+}
+.ch-speed {
+  stroke: var(--tail);
+}
+.ch-temp {
+  stroke: var(--head);
+}
+.ch-rain {
+  fill: color-mix(in srgb, var(--tail) 45%, transparent);
+}
+.ch-strip.wb-headwind {
+  fill: var(--head);
+}
+.ch-strip.wb-tailwind {
+  fill: var(--tail);
+}
+.ch-strip.wb-crosswind {
+  fill: var(--cross-fill);
+}
+.ch-strip.wb-calm {
+  fill: var(--calm);
+}
+.ch-strip.wb-unknown {
+  fill: var(--unknown);
+  opacity: 0.5;
+}
+.compare-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.compare-controls label {
+  margin: 0;
+  font-weight: 600;
+}
+.compare-controls select {
+  width: auto;
+}
+.compare td {
+  white-space: normal;
+  min-width: 150px;
+  vertical-align: top;
+}
+.compare td[data-best='true'] {
+  background: color-mix(in srgb, var(--ok) 12%, var(--surface));
+}
+.badge-best {
+  border: 1px solid var(--ok);
+  color: var(--ok);
+}
+.compare .btn-small {
+  min-height: 32px;
+  margin-top: 4px;
+}

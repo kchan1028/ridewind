@@ -151,14 +151,35 @@ export interface FetchForecastOptions {
  * GET an Open-Meteo endpoint and return its JSON body, mapping failures to
  * rider-facing AppErrors (network, rate limit, server error, rejected request).
  */
-export async function openMeteoGet(url: string, opts: { fetchImpl?: typeof fetch; signal?: AbortSignal } = {}): Promise<unknown> {
+export const REQUEST_TIMEOUT_MS = 20_000;
+
+export async function openMeteoGet(
+  url: string,
+  opts: { fetchImpl?: typeof fetch; signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<unknown> {
   const fetchImpl = opts.fetchImpl ?? fetch;
+  // Our own controller so a stalled connection fails with a clear message instead of spinning forever.
+  const ctrl = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    ctrl.abort();
+  }, opts.timeoutMs ?? REQUEST_TIMEOUT_MS);
+  const onAbort = () => ctrl.abort();
+  if (opts.signal?.aborted) ctrl.abort();
+  opts.signal?.addEventListener('abort', onAbort);
   let res: Response;
   try {
-    res = await fetchImpl(url, { signal: opts.signal, headers: { Accept: 'application/json' } });
+    res = await fetchImpl(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
   } catch (e) {
+    if (timedOut) {
+      throw new AppError('WEATHER_NETWORK', "Open-Meteo didn't respond in time. Check your connection and retry. Your route is still loaded.");
+    }
     if ((e as Error)?.name === 'AbortError') throw e;
     throw new AppError('WEATHER_NETWORK', "Couldn't reach Open-Meteo. Check your connection and retry. Your route is still loaded.");
+  } finally {
+    clearTimeout(timer);
+    opts.signal?.removeEventListener('abort', onAbort);
   }
 
   let body: unknown = null;
