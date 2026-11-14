@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bestChoice, compareRides, daylightCutoff, departureOptions, nextDayDepartures, type CompareRow, type RouteVariant } from '../src/lib/compare';
+import { BEST_MAX_RAIN_CHANCE, bestChoice, compareRides, daylightCutoff, departureOptions, nextDayDepartures, type CompareRow, type RouteVariant } from '../src/lib/compare';
 import { cumulativeDistances, sampleRoute, type TrackPoint } from '../src/lib/geo';
 import { DEFAULT_RIDER } from '../src/lib/physics';
 import type { PaceModel } from '../src/lib/simulate';
@@ -150,5 +150,27 @@ describe('nextDayDepartures', () => {
   it('is empty without sun times or a later sunrise', () => {
     expect(nextDayDepartures(S(22), null, S(100), S(3), S(2), 6)).toEqual([]);
     expect(nextDayDepartures(S(40), sun, S(100), S(3), S(2), 6)).toEqual([]);
+  });
+});
+
+describe('bestChoice and rain', () => {
+  const constant: PaceModel = { kind: 'constant', speedKmh: 25 };
+  const row = (departureMs: number, meanHeadwind: number, rain: number | null): CompareRow =>
+    ({ departureMs, direction: 'forward', durationMs: H, finishMs: departureMs + H, headwindShare: 0, meanHeadwind, gustMax: null, precipProbabilityMax: rain, fullyForecast: true, daylight: 'daylight' }) as CompareRow;
+  it('passes over a likely-wet ride while a drier one exists', () => {
+    const choice = bestChoice([row(1, -10, 96), row(2, 2, 10)], constant);
+    expect(choice).toEqual({ kind: 'best', row: expect.objectContaining({ departureMs: 2 }) });
+  });
+  it('treats the threshold itself as likely wet', () => {
+    const choice = bestChoice([row(1, -10, BEST_MAX_RAIN_CHANCE), row(2, 2, BEST_MAX_RAIN_CHANCE - 1)], constant);
+    expect(choice).toEqual({ kind: 'best', row: expect.objectContaining({ departureMs: 2 }) });
+  });
+  it('still picks on wind when every option is likely wet', () => {
+    const choice = bestChoice([row(1, -10, 80), row(2, 2, 90)], constant);
+    expect(choice).toEqual({ kind: 'best', row: expect.objectContaining({ departureMs: 1 }) });
+  });
+  it('treats an unknown chance of rain as dry', () => {
+    const choice = bestChoice([row(1, -10, null), row(2, 2, 10)], constant);
+    expect(choice).toEqual({ kind: 'best', row: expect.objectContaining({ departureMs: 1 }) });
   });
 });
