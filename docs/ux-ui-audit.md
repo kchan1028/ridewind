@@ -64,7 +64,7 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P1-1 · "Best" departure ignores daylight and trivial differences
 
-> **Status: fixed** in [#23](https://github.com/kchan1028/ridewind/pull/23). Dark rides are never Best, each option shows its finish time, and near-equal options get "No clear best". Capping rows at sunset is still open.
+> **Status: fixed** in [#23](https://github.com/kchan1028/ridewind/pull/23). Dark rides are never Best, each option shows its finish time, and near-equal options get "No clear best". The rows now stop at the last departure that finishes in daylight, with **Show later times** for the rest.
 
 - **Where:** Compare departures and directions. `bestRow` in [`src/lib/compare.ts:74`](../src/lib/compare.ts); rows are built in [`src/ui/app.ts:486`](../src/ui/app.ts).
 - **Observed:**
@@ -196,6 +196,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-7 · Wind chart is noisy and axes lack units on a phone
 
+> **Status: fixed.** The wind line is smoothed over 2 km (800 m still left a comb on the PRS route), so headwind and tailwind stretches stand out. The wind and speed chart titles name the unit, and charts under 400 px wide show three distance labels instead of five. The colours already matched the map. The data table and the screen-reader summary still use the unsmoothed values.
+
 - **Where:** [`src/ui/charts.ts`](../src/ui/charts.ts).
 - **Observed:**
   - "Wind along your direction" draws a spike at every change of GPS bearing, which forms a white comb on the PRS and China Camp routes.
@@ -210,6 +212,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 - **Evidence:** [mobile-charts.jpg](ux-ui-audit/mobile-charts.jpg)
 
 ### P2-8 · Secondary touch targets are below 44 px
+
+> **Status: fixed** in [#25](https://github.com/kchan1028/ridewind/pull/25). Buttons, presets, Use, Open and Delete are at least 44 px, −1 h / +1 h are 48 px, Open and Delete are 16 px apart, and the map zoom buttons are 44 px on touch screens.
 
 - **Observed sizes:**
   - Presets: 40 px.
@@ -301,7 +305,7 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 
 | # | Change | Fixes | Impact | Effort | Notes |
 |---|---|---|---|---|---|
-| 1 | ~~Daylight-aware, threshold-based comparison~~ **Done in #23** | P1-1 | High | S–M | Row cap at sunset still open |
+| 1 | ~~Daylight-aware, threshold-based comparison~~ **Done in #23** | P1-1 | High | S–M | Row cap at sunset done too |
 | 2 | Rain wording led by probability, in the verdict, KPI and comparison | P1-2 | High | S | Copy plus `verdict` facts; test the thresholds |
 | 3 | Inline field validation helper (`aria-invalid`, `aria-describedby`, keep the typed value) | P1-3 | High | S | One helper for speed and the six rider fields |
 | 4 | Collapsible, glanceable verdict bar (collapsed on scroll, larger text, 48 px stepper, "Updated X min ago" and Refresh) | P2-1, P2-3 (part), P2-8 (part) | High | M | The biggest change for use outdoors; check with VoiceOver |
@@ -310,9 +314,9 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | 7 | Saved routes remember the direction and usual departure time | P2-4 | Medium | S–M | Schema version bump in `storage.ts` |
 | 8 | Units from the locale, plus an inline speed-unit switch | P2-6 | Medium | S | |
 | 9 | ~~Compact first-run screen on the phone (short map, value sentence, two actions)~~ **Done** | P2-5 | Medium | S | |
-| 10 | Chart smoothing, axis units and tick thinning | P2-7 | Medium | S–M | |
-| 11 | Touch targets of at least 44 px and spacing between Open and Delete | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
-| 12 | De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range | P3-1 to P3-3 | Low | S | |
+| 10 | ~~Chart smoothing, axis units and tick thinning~~ **Done in #56** | P2-7 | Medium | S–M | |
+| 11 | ~~Touch targets of at least 44 px and spacing between Open and Delete~~ **Done in #25** | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
+| 12 | ~~De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range~~ **Done in #59** | P3-1 to P3-3 | Low | S | |
 | 13 | ~~Wider, resizable desktop panel~~ **Done in #49** | P2-9 | Medium | S–M | No change below 900 px |
 
 Before step 4, run the riders' test from section 5, at least questions 2, 6 and 8, because the answers decide what the collapsed bar shows. After the changes, run a screen-reader pass (VoiceOver on iOS, NVDA), 200% zoom, and outdoor readability checks. `ACCESSIBILITY.md` lists all three as untested.

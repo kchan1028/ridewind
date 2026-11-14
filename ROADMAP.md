@@ -14,23 +14,11 @@ Bugs and checks that are open on GitHub.
 
 ## Next
 
-Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-implementation-plan), in its order of impact for the effort. None has an issue yet.
-
-| Item | Status | Size |
-| --- | --- | --- |
-| Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | Done, [#50](https://github.com/kchan1028/ridewind/pull/50) | 1 to 2 days |
-| Load the app itself without a connection (a service worker for RideWind's own files, never map tiles) | In review | Under a day |
-| Saved routes remember the direction and usual departure time | Done, [#43](https://github.com/kchan1028/ridewind/pull/43) | Up to 2 days |
-| Pick units from the browser's locale, with a speed-unit switch next to the field | Done, [#53](https://github.com/kchan1028/ridewind/pull/53) | Under half a day |
-| A shorter first screen on phones, with a one-line explanation and two actions | Done, [#54](https://github.com/kchan1028/ridewind/pull/54) | Under half a day |
+All of the audit's Next items have shipped. New ideas start as [issues](https://github.com/kchan1028/ridewind/issues). Loading the app itself without a connection (a service worker for RideWind's own files, never map tiles) is in review in [#63](https://github.com/kchan1028/ridewind/pull/63).
 
 ## Later
 
-| Item | Status | Size |
-| --- | --- | --- |
-| Smoother charts, units on the axes and fewer tick labels | Proposed | Up to 2 days |
-| Tidy-ups: no repeated status messages, one combined Start/Finish label on loops, one series for the temperature range | Proposed | Under half a day |
-| Limit the comparison to departures that finish before sunset | Proposed | Not sized |
+Nothing is planned yet.
 
 The audit asked for the riders' test in the [usability testing plan](docs/usability-testing.md) to decide what the verdict bar shows. The bar shipped first, so that test should now check it.
 
@@ -62,8 +50,15 @@ From the UX/UI audit's implementation plan:
 - [PR #28](https://github.com/kchan1028/ridewind/pull/28): speed and rider errors show under the field and keep what you typed (step 3).
 - [PR #36](https://github.com/kchan1028/ridewind/pull/36): a glanceable verdict bar with Details, forecast age and Refresh (step 4).
 - [PR #40](https://github.com/kchan1028/ridewind/pull/40): the departure comparison as cards on phones, with both directions visible (most of step 5).
-- The point-by-point table shows Distance, Arrive, Head/tail and Rain on phones, with **Show all columns** for the rest (the rest of step 5).
+- [PR #52](https://github.com/kchan1028/ridewind/pull/52): the point-by-point table shows Distance, Arrive, Head/tail and Rain on phones, with **Show all columns** for the rest (the rest of step 5).
+- [PR #50](https://github.com/kchan1028/ridewind/pull/50): old forecasts refresh automatically, and saved routes keep their last forecast for use offline (step 6).
+- [PR #43](https://github.com/kchan1028/ridewind/pull/43): saved routes remember the direction and usual departure time (step 7).
+- [PR #53](https://github.com/kchan1028/ridewind/pull/53): units follow the browser's locale, with a one-tap switch by the pace (step 8).
+- [PR #54](https://github.com/kchan1028/ridewind/pull/54): a compact first screen on phones (step 9).
+- [PR #56](https://github.com/kchan1028/ridewind/pull/56): clearer charts. The wind line is smoothed over 2 km, the wind and speed charts name their unit, and narrow screens get three distance labels instead of five (step 10).
+- [PR #61](https://github.com/kchan1028/ridewind/pull/61): the comparison lists start times up to the last one that finishes in daylight, with **Show later times** for the rest (the open part of step 1).
 - [PR #25](https://github.com/kchan1028/ridewind/pull/25): touch targets of at least 44 px (step 11).
+- [PR #59](https://github.com/kchan1028/ridewind/pull/59): one forecast message instead of three, one Start/Finish label on loops, and one temperature range for the figure and the chart (step 12).
 
 The design review's P0 to P3 items have all shipped:
 
