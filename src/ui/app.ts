@@ -1,5 +1,5 @@
 import { AppError, isAppError } from '../lib/errors';
-import { BEST_MARGIN, bestChoice, compareRides, departureOptions, type CompareRow, type RouteVariant } from '../lib/compare';
+import { BEST_MARGIN, bestChoice, compareRides, daylightCutoff, departureOptions, type CompareRow, type RouteVariant } from '../lib/compare';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
 import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type Route, type Sample } from '../lib/geo';
 import { MAX_GPX_BYTES, parseGpx } from '../lib/gpx';
@@ -76,6 +76,8 @@ interface State {
   assumeFlat: boolean;
   /** First departure of the comparison list. Use keeps it, so earlier options stay listed; other departure changes clear it. */
   compareFromMs: number | null;
+  /** Whether the comparison lists departures that would finish after dark. */
+  showLateDepartures: boolean;
   elevationBusy: boolean;
   settings: store.Settings;
   abort: AbortController | null;
@@ -103,6 +105,7 @@ const state: State = {
   sim: null,
   assumeFlat: false,
   compareFromMs: null,
+  showLateDepartures: false,
   elevationBusy: false,
   settings: store.loadSettings(),
   abort: null,
@@ -270,6 +273,7 @@ function loadRoute(
   state.forecast = null;
   state.departureMs = null;
   state.compareFromMs = null;
+  state.showLateDepartures = false;
   state.assumeFlat = false;
   state.sim = null;
   // The sample menu shows the sample that's loaded; anything else resets it.
@@ -720,7 +724,17 @@ function renderComparison(): void {
     td.append(' ', btn);
     return td;
   };
-  for (const t of departures) {
+  // Departures that would only finish after dark wait behind "Show later times",
+  // unless the rider has opened them or one of them is the departure in use.
+  const cutoff = daylightCutoff(rows, departures);
+  const hidden = departures.length - cutoff;
+  const selectedLate = departures.indexOf(state.departureMs ?? -1) >= cutoff;
+  const showAll = state.showLateDepartures || selectedLate;
+  const more = $('compare-more');
+  more.hidden = hidden === 0 || selectedLate;
+  more.setAttribute('aria-expanded', String(showAll));
+  more.textContent = showAll ? 'Hide later times' : `Show ${hidden} later ${hidden === 1 ? 'time' : 'times'} (finish after dark)`;
+  for (const t of showAll ? departures : departures.slice(0, cutoff)) {
     const tr = document.createElement('tr');
     tr.setAttribute('role', 'row');
     const th = document.createElement('th');
@@ -1096,6 +1110,11 @@ function bindPaceForm(): void {
     });
   }
   $('compare-spacing').addEventListener('change', () => renderComparison());
+  $('compare-more').addEventListener('click', () => {
+    state.showLateDepartures = !state.showLateDepartures;
+    renderComparison();
+    $('compare-more').focus();
+  });
   // On phones the point-by-point table shows four columns; this reveals the rest.
   $('points-toggle').addEventListener('click', () => {
     const btn = $('points-toggle');
