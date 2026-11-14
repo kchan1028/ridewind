@@ -88,5 +88,6 @@ describe('planRide', () => {
     expect(s.gustMax).toBe(30);
     expect(s.tempMin).toBe(10);
     expect(s.precipProbabilityMax).toBe(5);
+    expect(s.wetDistanceM).toBe(0);
   });
 });
