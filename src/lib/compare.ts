@@ -112,6 +112,14 @@ export const BEST_MARGIN = {
   meanHeadwindKmh: 3,
 };
 
+/** A ride whose highest chance of rain is at or above this (%) is passed over for Best while a drier option exists. */
+export const BEST_MAX_RAIN_CHANCE = 50;
+
+/** Whether rain is likely somewhere on the ride. */
+export function likelyWet(r: CompareRow): boolean {
+  return r.precipProbabilityMax !== null && r.precipProbabilityMax >= BEST_MAX_RAIN_CHANCE;
+}
+
 export type BestChoice =
   | { kind: 'best'; row: CompareRow }
   /** No option is fully forecast and in daylight. */
@@ -124,16 +132,20 @@ export type BestChoice =
  * in daylight (or where daylight is unknown): shortest predicted time for a
  * power model; for a constant-speed model (where every time is equal) the
  * lowest mean headwind. When two or more eligible options differ by less
- * than BEST_MARGIN from best to worst, no winner is named.
+ * than BEST_MARGIN from best to worst, no winner is named. Rides where rain
+ * is likely (see likelyWet) are left out while any eligible ride is drier, so
+ * a few minutes saved never outranks staying dry.
  */
 export function bestChoice(rows: CompareRow[], pace: PaceModel): BestChoice {
-  const eligible = rows.filter(
+  const candidates = rows.filter(
     (r) =>
       r.fullyForecast &&
       (r.daylight === 'daylight' || r.daylight === 'unknown') &&
       (pace.kind === 'power' || r.meanHeadwind !== null),
   );
-  if (eligible.length === 0) return { kind: 'none' };
+  if (candidates.length === 0) return { kind: 'none' };
+  const dry = candidates.filter((r) => !likelyWet(r));
+  const eligible = dry.length > 0 ? dry : candidates;
   const score = (r: CompareRow) => (pace.kind === 'power' ? r.durationMs : r.meanHeadwind!);
   const best = eligible.reduce((a, b) => (score(b) < score(a) ? b : a));
   const worst = eligible.reduce((a, b) => (score(b) > score(a) ? b : a));

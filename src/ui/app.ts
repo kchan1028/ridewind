@@ -1,5 +1,5 @@
 import { AppError, isAppError } from '../lib/errors';
-import { BEST_MARGIN, bestChoice, compareRides, daylightCutoff, departureOptions, nextDayDepartures, type CompareRow, type RouteVariant } from '../lib/compare';
+import { BEST_MARGIN, BEST_MAX_RAIN_CHANCE, bestChoice, likelyWet, compareRides, daylightCutoff, departureOptions, nextDayDepartures, type CompareRow, type RouteVariant } from '../lib/compare';
 import { MAX_DRAWN_POINTS, addDrawnPoint, buildDrawnRoute, drawnDistanceM, gpxFileName, routeToGpx, undoDrawnPoint } from '../lib/draw';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
 import { cumulativeDistances, elevationStats, hasCompleteElevation, reverseRoute, sampleRoute, type LatLon, type Route, type Sample } from '../lib/geo';
@@ -810,13 +810,19 @@ function renderComparison(): void {
   const todayRows = compareRides(variants, departures, pace, state.assumeFlat);
   // When some of these finish after dark, fill the list with the next day's daylight
   // departures, so a plan made at midday in winter still has options to compare.
-  const cutoff = daylightCutoff(todayRows, departures);
-  const nextDay =
-    cutoff < departures.length
-      ? nextDayDepartures(departures[departures.length - 1]!, forecastsForSamples()[0]?.sun, fc.windowEndMs, rideDurationMs() * 1.3, spacingH * HOUR, departures.length - cutoff)
-      : [];
+  // That includes a plan where nothing left today is in daylight.
+  const inLight = (r: CompareRow) => r.daylight === 'daylight' || r.daylight === 'unknown';
+  const anyLight = todayRows.some(inLight);
+  const lastDark = departures.length > 0 && !todayRows.some((r) => r.departureMs === departures[departures.length - 1] && inLight(r));
+  const lightCount = anyLight ? daylightCutoff(todayRows, departures) : 0;
+  const nextDay = lastDark
+    ? nextDayDepartures(departures[departures.length - 1]!, forecastsForSamples()[0]?.sun, fc.windowEndMs, rideDurationMs() * 1.3, spacingH * HOUR, departures.length - lightCount)
+    : [];
   const nextRows = compareRides(variants, nextDay, pace, state.assumeFlat).filter((r) => r.daylight === 'daylight');
   const nextShown = nextDay.filter((t) => nextRows.some((r) => r.departureMs === t));
+  // Dark rows go behind the toggle when there are daylight options to show instead;
+  // with none at all, every row stays listed so a night-time plan still has its options.
+  const cutoff = anyLight || nextShown.length > 0 ? lightCount : departures.length;
   const rows = [...todayRows, ...nextRows];
   const choice = bestChoice(rows, pace);
   const best = choice.kind === 'best' ? choice.row : null;
@@ -827,12 +833,14 @@ function renderComparison(): void {
         : ` No clear best: average wind differs by less than ${formatSpeed(BEST_MARGIN.meanHeadwindKmh, u)} between the daylight options.`
       : choice.kind === 'none'
         ? ' No option here is fully forecast and in daylight, so none is marked Best.'
-        : '';
+        : likelyWet(choice.row)
+          ? ' Rain is likely on every daylight option, so Best goes on wind alone.'
+          : '';
   $('compare-caption').textContent =
     (pace.kind === 'power'
       ? 'Predicted ride time, finish time, share of distance into a headwind and highest chance of rain. Best is the shortest predicted time'
       : 'Finish time, share of distance into a headwind, average wind along the route and highest chance of rain. Best is the least headwind (times are equal at a constant speed)') +
-    ', among rides that start and finish in daylight and differ enough to notice.' +
+    `, among rides that start and finish in daylight, preferring those under a ${BEST_MAX_RAIN_CHANCE}% chance of rain, and that differ enough to notice.` +
     outcome;
   if (departures.length === 0) {
     const tr = document.createElement('tr');
