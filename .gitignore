@@ -17,6 +17,8 @@ coverage/
 *.fit
 *.tcx
 !public/samples/*.gpx
+# Made-up test route for the VoiceOver check (no real ride data)
+!docs/voiceover-check/*.gpx
 ridewind-export*.json
 personal/
 

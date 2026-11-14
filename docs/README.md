@@ -17,6 +17,7 @@ Start with the [README](../README.md) for what RideWind does and how to run it. 
 - [Maintaining RideWind](maintaining.md): branch rules and how changes reach `main`.
 - [Contributing](../CONTRIBUTING.md): proposing changes, conventions and required checks.
 - [Roadmap](../ROADMAP.md): what's planned next and what has shipped.
+- [VoiceOver check](voiceover-check.md): a 15-minute screen-reader test script for the Mac, with a results table.
 - [Usability testing](usability-testing.md): plan for testing RideWind with cyclists, an expert walkthrough of the live site, and the log of findings and retests.
 
 ## Policies
