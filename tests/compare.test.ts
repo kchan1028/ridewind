@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bestChoice, compareRides, departureOptions, type RouteVariant } from '../src/lib/compare';
+import { bestChoice, compareRides, daylightCutoff, departureOptions, type CompareRow, type RouteVariant } from '../src/lib/compare';
 import { cumulativeDistances, sampleRoute, type TrackPoint } from '../src/lib/geo';
 import { DEFAULT_RIDER } from '../src/lib/physics';
 import type { PaceModel } from '../src/lib/simulate';
@@ -113,5 +113,24 @@ describe('bestChoice and daylight', () => {
   it('names no winner when the options are too close to notice', () => {
     const rows = compareRides(both({ windKmh: 1 }), [T0 * 1000], constant);
     expect(bestChoice(rows, constant).kind).toBe('similar');
+  });
+});
+
+describe('daylightCutoff', () => {
+  const row = (departureMs: number, daylight: CompareRow['daylight']): CompareRow =>
+    ({ departureMs, direction: 'forward', daylight }) as CompareRow;
+  it('lists departures up to the last one that finishes in daylight', () => {
+    const rows = [row(1, 'daylight'), row(2, 'daylight'), row(3, 'ends-after-sunset'), row(4, 'ends-after-sunset')];
+    expect(daylightCutoff(rows, [1, 2, 3, 4])).toBe(2);
+  });
+  it('keeps a departure if either direction finishes in daylight', () => {
+    const rows = [row(1, 'daylight'), row(2, 'ends-after-sunset'), { ...row(2, 'daylight'), direction: 'reverse' } as CompareRow];
+    expect(daylightCutoff(rows, [1, 2])).toBe(2);
+  });
+  it('treats unknown daylight as daylight', () => {
+    expect(daylightCutoff([row(1, 'unknown'), row(2, 'ends-after-sunset')], [1, 2])).toBe(1);
+  });
+  it('lists everything when nothing finishes in daylight', () => {
+    expect(daylightCutoff([row(1, 'starts-before-sunrise'), row(2, 'ends-after-sunset')], [1, 2])).toBe(2);
   });
 });

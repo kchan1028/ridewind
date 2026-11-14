@@ -1,8 +1,13 @@
 import type { SimStep, Simulation } from '../lib/simulate';
 import { formatDistance, formatPrecip, kmhToDisplay, speedUnit, type UnitSystem } from '../lib/units';
+import { smoothByDistance } from '../lib/smooth';
 import { classifyWind } from '../lib/wind';
 
 const NS = 'http://www.w3.org/2000/svg';
+/** The wind chart is smoothed over this distance, so each bend in the road doesn't draw a spike. */
+const WIND_SMOOTH_M = 2000;
+/** Below this chart width, the distance axis gets fewer labels so they don't run together. */
+const NARROW_CHART_PX = 400;
 const PAD = { l: 46, r: 10, t: 8, b: 22 };
 
 interface Panel {
@@ -153,21 +158,27 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
   }
 
   // Headwind component
-  const heads = steps.map((s) => s.headwind10Kmh);
+  // Smoothed for drawing and scaling only; the data table and summary keep the per-step values.
+  const rawHeads = steps.map((s) => s.headwind10Kmh).filter((v): v is number => v !== null);
+  const heads = smoothByDistance(
+    steps.map((s) => s.headwind10Kmh),
+    steps.map(mid),
+    WIND_SMOOTH_M,
+  );
   const known = heads.filter((v): v is number => v !== null);
   if (known.length) {
     const mx = Math.max(10, ...known.map(Math.abs));
     const lo = -kmhToDisplay(mx, u);
     const hi = kmhToDisplay(mx, u);
     panels.push({
-      title: 'Wind along your direction (10 m)',
+      title: `Wind along your direction (10 m, ${speedUnit(u)})`,
       tag: 'Calculated',
       height: 90,
       data: {
         heading: `Headwind (${speedUnit(u)}, negative is tailwind)`,
         value: (s) => (s.headwind10Kmh === null ? 'no forecast' : fmt(kmhToDisplay(s.headwind10Kmh, u))),
       },
-      summary: `Headwind component from ${fmt(kmhToDisplay(Math.min(...known), u))} to ${fmt(kmhToDisplay(Math.max(...known), u))} ${speedUnit(u)}. Positive is headwind, negative is tailwind.`,
+      summary: `Headwind component from ${fmt(kmhToDisplay(Math.min(...rawHeads), u))} to ${fmt(kmhToDisplay(Math.max(...rawHeads), u))} ${speedUnit(u)}. Positive is headwind, negative is tailwind. The line is smoothed over ${WIND_SMOOTH_M} m.`,
       draw(g, xs, _w, h) {
         const y = yAxis(g, lo, hi, h, (v) => `${v > 0 ? '+' : ''}${fmt(v)}`);
         el('line', { x1: 0, x2: xs(total), y1: y(0), y2: y(0), class: 'ch-zero' }, g);
@@ -201,7 +212,7 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
     const speeds = steps.map((s) => kmhToDisplay(s.speedKmh, u));
     const hi = Math.max(...speeds) * 1.08;
     panels.push({
-      title: 'Predicted speed',
+      title: `Predicted speed (${speedUnit(u)})`,
       tag: 'Estimate',
       height: 80,
       data: { heading: `Speed (${speedUnit(u)})`, value: (s) => fmt(kmhToDisplay(s.speedKmh, u)) },
@@ -273,7 +284,7 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
     const svg = el('svg', { width, height: p.height + PAD.t + PAD.b, role: 'img', 'aria-label': `${p.title}: ${p.summary}` });
     const g = el('g', { transform: `translate(${PAD.l},${PAD.t})` }, svg);
     p.draw(g, x, innerW, p.height);
-    const ticks = 4;
+    const ticks = width < NARROW_CHART_PX ? 2 : 4;
     for (let k = 0; k <= ticks; k++) {
       const d = (total * k) / ticks;
       text(g, x(d), p.height + 16, formatDistance(d, u), 'ch-label', k === 0 ? 'start' : k === ticks ? 'end' : 'middle');
