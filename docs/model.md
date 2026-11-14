@@ -24,6 +24,18 @@ Values marked **forecast** (solid dot) come straight from Open-Meteo. Values mar
 - **Wind height:** the forecast is for wind 10 m above the ground. It doesn't know about shelter from buildings, trees, hedges, cuttings or hills, and you'll usually feel less wind than this at road level.
 - **Climbing:** small ups and downs under 3 m are ignored as GPS noise. If only some points have elevation, RideWind says so and uses the points that do.
 
+### What blending between hours looks like
+
+If you'd reach a point at 10:40, RideWind takes two thirds of the change between the 10:00 and 11:00 wind speeds. Rain is different, because Open-Meteo reports it for the hour that ends at each timestamp.
+
+![Example: arriving at 10:40, wind speed is blended from 12 km/h at 10:00 and 18 km/h at 11:00 to 16 km/h. Rain reported at 11:00 covers 10:00 to 11:00, so it is used; rain reported at 12:00 is not.](time-matching.svg)
+
+### How the wind gets its label
+
+Wind direction is compared with your direction of travel at that point. The worked example shows the headwind and crosswind sums from the list above.
+
+![A compass centred on the rider. Wind from within 45° of ahead is a headwind, from within 45° of behind a tailwind, and from either side a crosswind. A 20 km/h wind from 30° to the right splits into 17.3 km/h of headwind and 10 km/h of crosswind, so it is labelled headwind.](wind-sectors.svg)
+
 ## Physics model (power mode)
 
 In power mode, RideWind finds the speed at which your power matches the forces slowing you down: air resistance, tyre friction, gravity on climbs, and a little friction in the wheel bearings and drivetrain. It uses the road cycling model from Martin, Milliken, Cobb, McFadden and Coggan (1998), "Validation of a mathematical model for road cycling power", *Journal of Applied Biomechanics* 14(3):276–291. For each step, RideWind finds the ground speed *v* at which your power at the pedals equals:
@@ -39,11 +51,44 @@ P = ( ½·ρ·CdA·v_air·|v_air|·v          aerodynamic drag, v_air = v + head
 
 - **Air density** (ρ) comes from the forecast temperature and the height above sea level. Warm air and high roads mean thinner air and less drag. Humidity is ignored.
 - **Wind at rider height:** the 10 m forecast wind is scaled down to about 1.2 m, roughly where your body is, using v·(1.2/10)^α (the Hellmann power law). You pick how exposed the route is: open (α 0.14, about 74% of the forecast), mixed (α 0.25, about 59%) or sheltered (α 0.33, about 50%). Only the part of the wind along your direction of travel counts. The extra drag from wind hitting you side-on is ignored.
-- **Steps:** RideWind moves along the route 100 m at a time. The slope is measured over 200 m centred on each step and capped at 25% up or down, so a bad elevation reading can't produce a wall. The clock moves forward step by step, so each step meets the forecast for when you'd actually get there.
+- **Steps:** RideWind moves along the route 100 m at a time (the loop is drawn below). The slope is measured over 200 m centred on each step and capped at 25% up or down, so a bad elevation reading can't produce a wall. The clock moves forward step by step, so each step meets the forecast for when you'd actually get there.
 - **Limits:** speed never goes above your **max descent speed**, on the assumption that you brake. On very steep climbs it never drops below 4 km/h, about walking pace.
 - **Left out:** speeding up and slowing down, corners, traffic, stops, riding in a group, getting tired and changing your power. Where a step has no forecast, RideWind assumes still air and 15 °C and warns you.
 - **No silent flat routes.** If the route has no elevation, or only some, power mode asks you to choose before showing results: look up elevation, or **Estimate as if flat**. A flat estimate is labelled "physics estimate, flat", the verdict says "(flat estimate)", and a warning is shown. In average-speed mode, the elevation chart says "No elevation data" instead of drawing a flat line.
 - **Defaults:** 180 W, 75 kg rider, 9 kg bike and kit, CdA 0.32 m² (hands on the hoods), Crr 0.005 (everyday road tyres), 55 km/h max descent, mixed exposure. Change them to match you.
+
+### One step of the simulation
+
+```mermaid
+flowchart TD
+  A[Start at the beginning of the route<br/>clock = departure time] --> B[Take the next 100 m step]
+  B --> C[Find the forecast for this place<br/>at the current clock time]
+  C --> D[Work out the slope over 200 m<br/>and the wind along your direction]
+  D --> E{Pace mode}
+  E -- Average speed --> F[Use your speed]
+  E -- Power --> G[Find the speed where your power<br/>matches air, tyres, gravity and drivetrain]
+  F --> H[Move the clock forward by<br/>the time this step takes]
+  G --> H
+  H --> I{End of route?}
+  I -- No --> B
+  I -- Yes --> J[Ride time, finish time and<br/>arrival time at every point]
+```
+
+Because the clock moves with you, a ride that starts calm can still meet a headwind that arrives later in the day.
+
+### Where your power goes
+
+This chart uses the model with its default settings to show why wind matters so much on the flat. Air resistance takes about three quarters of your power on a flat road, so a headwind costs you speed directly. On a 5% climb you're slower, air resistance drops away, and lifting your weight takes most of the effort.
+
+![Stacked bars at 180 W. Flat, no wind: 32.0 km/h, air 138 W, tyres 37 W, drivetrain 6 W. Flat, 15 km/h headwind: 26.9 km/h, air 144 W, tyres 31 W, drivetrain 5 W. 5% climb: 13.2 km/h, air 10 W, tyres 15 W, gravity 151 W, drivetrain 5 W.](power-split.svg)
+
+| Situation | Speed | Air | Tyres | Gravity | Bearings and drivetrain |
+| --- | --- | --- | --- | --- | --- |
+| Flat road, no wind | 32.0 km/h | 138 W | 37 W | 0 W | 6 W |
+| Flat road, 15 km/h headwind | 26.9 km/h | 144 W | 31 W | 0 W | 5 W |
+| 5% climb, no wind | 13.2 km/h | 10 W | 15 W | 151 W | 5 W |
+
+Settings: 180 W, 75 kg rider, 9 kg bike and kit, CdA 0.32 m², Crr 0.005, 15 °C at sea level, mixed exposure (the 15 km/h forecast wind is about 9 km/h at rider height). Values are rounded.
 
 The tests check the model against sums worked out by hand for each force, check that working back from speed to power gives the same answer, and check that it reacts the right way to more power, wind, slope, drag, tyre friction and weight. A 200 W, 84 kg rider with CdA 0.32 and Crr 0.005 comes out at about 33 km/h on a calm, flat road.
 
