@@ -78,7 +78,7 @@ The roads between them don't connect for bikes in OpenStreetMap, for example acr
 The public server limits one route to about 150 km. Add a point part way along.
 
 **"Couldn't reach the address search."**, **"The address search is busy."** or **"No places found"**
-Find a place uses OpenStreetMap's Nominatim. Check your connection, wait a moment and search again, or add a town or postcode. You can always move the map by hand.
+Find a place uses Photon, a free search on OpenStreetMap data that slows down under heavy use. Check your connection, wait a moment and search again, or add a town or postcode. You can always move the map by hand.
 
 **The route follows a different road than you wanted.**
 Routing picks what the cycling profile prefers. Add a point on the road you want, and check the line in **Review route** before you use it.

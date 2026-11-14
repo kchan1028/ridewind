@@ -13,7 +13,7 @@ flowchart LR
   App -. "Only if you press Look up elevation:<br/>up to 200 points, rounded to about 11 m" .-> OME[Open-Meteo<br/>elevation]
   App -- "Map tiles for the area on screen" --> OSM[OpenStreetMap]
   App -. "Only while drawing with Follow roads:<br/>the points you place, unrounded" .-> RT[Routing service<br/>FOSSGIS Valhalla by default]
-  App -. "Only when you press Search:<br/>what you typed" .-> NOM[OpenStreetMap Nominatim<br/>address search]
+  App -. "Only while you search:<br/>what you typed" .-> NOM[Photon by komoot<br/>address search]
 ```
 
 Nothing else leaves your browser. There are no analytics, cookies or accounts.
@@ -52,7 +52,7 @@ The endpoint can be changed with `VITE_ROUTING_URL`, for example to Stadia Maps,
 
 ## Address search (Find a place)
 
-**Find a place** in the draw panel uses the OpenStreetMap Foundation's public Nominatim server, `nominatim.openstreetmap.org`, called from the browser. Checked in November 2026 against its [usage policy](https://operations.osmfoundation.org/policies/nominatim/): at most one request a second across all users, searches only when a person starts them (no search-as-you-type), OSM attribution, moderate traffic, and the ability to switch services on request. RideWind sends a search only when you press Search, spaces searches at least 1.1 seconds apart, reuses answers to repeated searches, and lets the endpoint be changed with `VITE_GEOCODE_URL`. Each search sends what you typed, your browser language and the map area on screen. Searches aren't saved.
+**Find a place** in the draw panel uses komoot's public [Photon](https://photon.komoot.io/) server, `photon.komoot.io`, called from the browser. It searches OpenStreetMap data and allows suggestions as you type, under fair use (heavy use is throttled; no availability promise). RideWind asks after a 350 ms pause in typing, from three characters, at most every 250 ms, drops out-of-date requests and reuses answers to repeated searches. Each request sends what you've typed so far, your browser language and the map centre. Searches aren't saved. The endpoint can be changed with `VITE_GEOCODE_URL`; a Nominatim URL switches to search-on-submit only, as the [Nominatim policy](https://operations.osmfoundation.org/policies/nominatim/) requires.
 
 ## Your data stays in your browser
 

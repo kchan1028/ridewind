@@ -22,7 +22,7 @@ flowchart LR
   Elev -- "up to 200 coordinates" --> OME[(Open-Meteo<br/>elevation API)]
   UI -- "map tiles" --> OSM[(OpenStreetMap<br/>tile server)]
   UI -. "only while drawing:<br/>control points" .-> RT[(Valhalla<br/>routing server)]
-  UI -. "only on Search:<br/>search text" .-> NOM[(Nominatim<br/>address search)]
+  UI -. "while searching:<br/>search text" .-> NOM[(Photon<br/>address search)]
 ```
 
 Everything inside the box runs in the rider's browser. The services on the right are the only network calls the app makes, and the production build's Content Security Policy ([`src/lib/csp.ts`](../src/lib/csp.ts)) blocks any others.
@@ -67,7 +67,7 @@ These modules are plain TypeScript with no access to the page. Most take numbers
 | [`gpx.ts`](../src/lib/gpx.ts) | Reads GPX track points or route points into a `Route`. Throws on bad files. |
 | [`draw.ts`](../src/lib/draw.ts) | Fills straight legs with points every 100 m, the drawing limits, and writes GPX for **Export GPX** (noting straight sections). |
 | [`route-editor.ts`](../src/lib/route-editor.ts) | Click-to-route editing: add, move, remove, reverse and close-loop operations on control points and legs, joining them into a `Route`, and `RouteSession`, which keeps the undo history, spaces and batches routing requests, caches legs, ignores out-of-date answers and falls back to the last complete route on failure. |
-| [`geocode.ts`](../src/lib/geocode.ts) | **Find a place**: the Nominatim search request and parsing, and `PlaceSearch`, which sends searches only on submit, spaces them and caches answers. |
+| [`geocode.ts`](../src/lib/geocode.ts) | **Find a place**: Photon (default, suggestions as you type) and Nominatim (search on submit only) requests and parsing, and `PlaceSearch`, which spaces, drops and caches searches by provider. |
 | [`routing.ts`](../src/lib/routing.ts), [`routing-config.ts`](../src/lib/routing-config.ts) | The Valhalla request (road-bike cycling profile), polyline decoding, elevation along the shape, error messages, the default endpoint, its CSP origin and its map credit. |
 | [`geo.ts`](../src/lib/geo.ts) | Distances, bearings, forecast sample points, map sections, elevation gain and loss, and reversing a route. |
 | [`weather.ts`](../src/lib/weather.ts) | Builds the Open-Meteo forecast request, checks the response, and turns network problems into `AppError`s. Its `openMeteoGet` is shared with the elevation lookup. |

@@ -20,7 +20,7 @@ import {
   type SessionView,
 } from '../lib/route-editor';
 import { MAX_LOCATIONS_PER_REQUEST, fetchRoutedLegs } from '../lib/routing';
-import { DEFAULT_GEOCODE_URL, PlaceSearch, type Place } from '../lib/geocode';
+import { DEFAULT_GEOCODE_URL, MIN_SUGGEST_LENGTH, PlaceSearch, SUGGEST_DELAY_MS, type Place } from '../lib/geocode';
 import { DEFAULT_ROUTING_MIN_INTERVAL_MS, DEFAULT_ROUTING_URL, routingAttribution, routingProviderName } from '../lib/routing-config';
 import { applyElevations, elevationLookupCoords, fetchElevations } from '../lib/elevation';
 import { cumulativeDistances, elevationStats, hasCompleteElevation, haversineM, reverseRoute, sampleRoute, type LatLon, type Route, type Sample } from '../lib/geo';
@@ -773,7 +773,7 @@ function startDrawing(): void {
       onInsert: insertAt,
     });
     map.setRoutingAttribution(routingCredit);
-    $('draw-privacy').textContent = `Follow roads sends the points you place, unrounded, to ${routingProviderName(routingUrl)} to find the roads between them. Straight-line sections send nothing. Find a place sends what you type to OpenStreetMap's Nominatim search, only when you press Search.`;
+    $('draw-privacy').textContent = `Follow roads sends the points you place, unrounded, to ${routingProviderName(routingUrl)} to find the roads between them. Straight-line sections send nothing. ${placeSearch.provider === 'photon' ? 'Find a place sends what you type to komoot’s Photon search, after a short pause in typing.' : 'Find a place sends what you type to OpenStreetMap’s Nominatim search, only when you press Search.'}`;
     renderEditor();
   }
   // On phones the map moves above the panel while drawing, with the controls under it; bring both into view.
@@ -885,17 +885,32 @@ function confirmDrawing(): void {
 
 /* ---------- finding a place ---------- */
 
-/** Nominatim by default; searches only on submit, spaced and cached as its usage policy asks (see src/lib/geocode.ts). */
+/**
+ * Photon by default: suggestions after a short pause in typing. With a
+ * Nominatim URL (VITE_GEOCODE_URL) it searches only on submit, as that
+ * service's policy requires. See src/lib/geocode.ts.
+ */
 const placeSearch = new PlaceSearch(import.meta.env.VITE_GEOCODE_URL || DEFAULT_GEOCODE_URL);
 let searchCtrl: AbortController | null = null;
+let suggestTimer = 0;
 let shownPlace: Place | null = null;
+/** The places in the open list, and which one the arrow keys have highlighted. */
+let options: Place[] = [];
+let activeOption = -1;
 
 function clearSearchResults(): void {
+  window.clearTimeout(suggestTimer);
+  options = [];
+  activeOption = -1;
   $('draw-search-results').replaceChildren();
   show('draw-search-results', false);
+  const input = $('draw-search-q');
+  input.setAttribute('aria-expanded', 'false');
+  input.removeAttribute('aria-activedescendant');
 }
 
 function showPlace(place: Place): void {
+  searchCtrl?.abort();
   shownPlace = place;
   clearSearchResults();
   map.showPlace(place);
@@ -905,44 +920,78 @@ function showPlace(place: Place): void {
   $('draw-place-add').focus();
 }
 
-async function runSearch(): Promise<void> {
+function setActiveOption(i: number): void {
+  activeOption = i;
+  const input = $('draw-search-q');
+  $('draw-search-results')
+    .querySelectorAll<HTMLElement>('[role="option"]')
+    .forEach((li, k) => {
+      li.setAttribute('aria-selected', String(k === i));
+      if (k === i) li.scrollIntoView({ block: 'nearest' });
+    });
+  if (i >= 0) input.setAttribute('aria-activedescendant', `draw-opt-${i}`);
+  else input.removeAttribute('aria-activedescendant');
+}
+
+function showOptions(places: Place[]): void {
+  options = places;
+  activeOption = -1;
+  const list = $('draw-search-results');
+  list.replaceChildren(
+    ...places.map((p, i) => {
+      const li = document.createElement('li');
+      li.id = `draw-opt-${i}`;
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', 'false');
+      li.className = 'search-result';
+      li.textContent = p.name;
+      // mousedown, not click, so the input keeps focus until the choice is made.
+      li.addEventListener('mousedown', (ev) => ev.preventDefault());
+      li.addEventListener('click', () => showPlace(p));
+      return li;
+    }),
+  );
+  show('draw-search-results', true);
+  $('draw-search-q').setAttribute('aria-expanded', 'true');
+  $('draw-search-q').removeAttribute('aria-activedescendant');
+}
+
+/**
+ * `suggest` runs as the rider types and only lists places; `submit` (Search
+ * or Enter) jumps straight to a single match.
+ */
+async function runSearch(mode: 'suggest' | 'submit'): Promise<void> {
   const q = $<HTMLInputElement>('draw-search-q').value.trim();
   const status = $('draw-search-status');
-  if (q.length < 2) {
-    status.textContent = 'Type an address, town or landmark first.';
+  if (q.length < (mode === 'suggest' ? MIN_SUGGEST_LENGTH : 2)) {
+    searchCtrl?.abort();
+    clearSearchResults();
+    if (mode === 'submit') status.textContent = 'Type an address, town or landmark first.';
+    else status.textContent = '';
     return;
   }
   searchCtrl?.abort();
   const ctrl = new AbortController();
   searchCtrl = ctrl;
-  clearSearchResults();
-  status.textContent = 'Searching…';
+  if (mode === 'submit') {
+    clearSearchResults();
+    status.textContent = 'Searching…';
+  }
   $('draw-search').setAttribute('aria-busy', 'true');
   try {
     const places = await placeSearch.search(q, { language: navigator.language, near: map.center(), signal: ctrl.signal });
     if (ctrl.signal.aborted) return;
     if (places.length === 0) {
+      clearSearchResults();
       status.textContent = `No places found for “${q}”. Try adding a town or postcode.`;
       return;
     }
-    if (places.length === 1) return showPlace(places[0]!);
-    status.textContent = `${places.length} places found. Choose one.`;
-    const list = $('draw-search-results');
-    list.replaceChildren(
-      ...places.map((p) => {
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'search-result';
-        btn.textContent = p.name;
-        btn.addEventListener('click', () => showPlace(p));
-        li.append(btn);
-        return li;
-      }),
-    );
-    show('draw-search-results', true);
+    if (mode === 'submit' && places.length === 1) return showPlace(places[0]!);
+    status.textContent = `${places.length} ${places.length === 1 ? 'place' : 'places'} found. Use the arrow keys or tap one.`;
+    showOptions(places);
   } catch (e) {
     if ((e as Error)?.name === 'AbortError' || ctrl.signal.aborted) return;
+    clearSearchResults();
     status.textContent = messageFor(e);
   } finally {
     if (searchCtrl === ctrl) {
@@ -953,9 +1002,37 @@ async function runSearch(): Promise<void> {
 }
 
 function bindPlaceSearch(): void {
+  const input = $<HTMLInputElement>('draw-search-q');
+  const credit = placeSearch.provider === 'photon'
+    ? 'Suggestions by Photon (komoot), from OpenStreetMap data.'
+    : 'Search by OpenStreetMap Nominatim. Press Search to look up a place.';
+  $('draw-search-credit').textContent = credit;
   $('draw-search').addEventListener('submit', (ev) => {
     ev.preventDefault();
-    void runSearch();
+    window.clearTimeout(suggestTimer);
+    if (activeOption >= 0 && options[activeOption]) return showPlace(options[activeOption]!);
+    void runSearch('submit');
+  });
+  input.addEventListener('input', () => {
+    if (!placeSearch.suggests) return;
+    window.clearTimeout(suggestTimer);
+    suggestTimer = window.setTimeout(() => void runSearch('suggest'), SUGGEST_DELAY_MS);
+  });
+  input.addEventListener('keydown', (ev) => {
+    if (!options.length || (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp')) return;
+    ev.preventDefault();
+    const n = options.length;
+    setActiveOption(ev.key === 'ArrowDown' ? (activeOption + 1) % n : (activeOption - 1 + n) % n);
+  });
+  // The list closes when focus or a tap moves elsewhere on the page, but not when the
+  // window itself loses focus (switching apps), so the suggestions are still there on return.
+  const form = $('draw-search');
+  form.addEventListener('focusout', (ev) => {
+    const next = ev.relatedTarget as Node | null;
+    if (next && !form.contains(next)) clearSearchResults();
+  });
+  document.addEventListener('pointerdown', (ev) => {
+    if (options.length && !form.contains(ev.target as Node)) clearSearchResults();
   });
   $('draw-place-add').addEventListener('click', () => {
     if (!shownPlace) return;
@@ -968,7 +1045,7 @@ function bindPlaceSearch(): void {
     show('draw-place', false);
     map.showPlace(null);
     shownPlace = null;
-    $('draw-search-q').focus();
+    input.focus();
   });
 }
 

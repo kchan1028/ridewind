@@ -6,7 +6,7 @@
 
 | Action | How |
 | --- | --- |
-| Find a place | Type an address, town or landmark in **Find a place** and press Search (or Enter). One match moves the map there with a pin; several give a list to choose from. **Add point here** puts a route point on the pin. Searching uses OpenStreetMap's Nominatim, only when you press Search (see below). |
+| Find a place | Start typing an address, town or landmark in **Find a place**; suggestions appear after a short pause. Tap one (or use the arrow keys and Enter) to move the map there with a pin, or press Search. **Add point here** puts a route point on the pin. Suggestions come from Photon on OpenStreetMap data (see below). |
 | Start a route | Press **Draw a route**, then tap or click the map. |
 | Extend it along roads | Tap again. The new section follows roads using a cycling profile that prefers paved roads. |
 | Draw a section by hand | Choose **Straight line (manual, for missing roads)** under *New sections*, then tap. Use it where the map has no road, path or connection. Straight sections show as dotted amber lines while drawing and as white dots on the finished route. |
@@ -64,14 +64,15 @@ Road snapping follows what OpenStreetMap shows and what the cycling profile pref
 
 ## Address search
 
-**Find a place** uses the OpenStreetMap Foundation's public [Nominatim](https://nominatim.org/) server, chosen by the owner on 14 November 2026 after reviewing its [usage policy](https://operations.osmfoundation.org/policies/nominatim/). The policy's rules, and how RideWind follows them:
+**Find a place** uses komoot's public [Photon](https://photon.komoot.io/) server, which searches OpenStreetMap data and is built for suggestions as you type. The owner chose it on 14 November 2026 over Google (whose results must be shown on a Google map and need a billing account) and Nominatim (whose policy forbids suggestions as you type).
 
-- **At most one request a second, across all users.** RideWind sends a search only when you press Search or Enter, never as you type (search-as-you-type is forbidden and gets a site blocked), waits at least 1.1 seconds between searches, and answers a repeated search from memory.
-- **Moderate use only.** If RideWind's traffic grows, switch to another geocoder (for example Stadia Maps, which authenticates by domain) or a self-hosted Nominatim with `VITE_GEOCODE_URL`. The policy asks that sites can switch at OSMF's request.
-- **Attribution.** Results are OpenStreetMap data under the ODbL, credited in the footer and the map.
-- **Privacy.** What you type, your browser language and the area on screen (to prefer nearby results) go to OSMF under its privacy policy. Don't type personal information you don't want sent. The draw panel says this.
+- **How it asks.** Suggestions are fetched after a 350 ms pause in typing, from three characters, at most one request every 250 ms. A request that's been overtaken by more typing is dropped before it's sent or ignored when it comes back, and repeated searches are answered from memory. Search (or Enter) works too, and jumps straight there when there's one match.
+- **Terms.** Photon's public server is free and asks for fair use; heavy use is throttled, and there's no availability promise. If RideWind's traffic grows, run your own Photon or switch with `VITE_GEOCODE_URL`.
+- **Nominatim fallback.** If `VITE_GEOCODE_URL` points at a Nominatim server, RideWind follows the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/) automatically: no suggestions while typing, searches only on Search, at least 1.1 seconds apart.
+- **Attribution.** Results are OpenStreetMap data under the ODbL, credited in the footer and the map; the search box notes "Suggestions by Photon (komoot)".
+- **Privacy.** What you type (after a pause), your browser language and the map centre (to prefer nearby results) go to komoot's server. Don't type personal information you don't want sent. The draw panel says this.
 
-Results are biased toward the area on screen but not limited to it, so a common name such as "Main Street" can match places elsewhere; add a town or postcode.
+With a keyboard, the box is a combobox: type, use the arrow keys to move through suggestions, Enter to choose, Esc to close the list. Results lean toward the area on screen but aren't limited to it, so a common name can match places elsewhere; add a town or postcode.
 
 ## What the routing service receives
 
@@ -85,7 +86,7 @@ The default needs **no credentials**. Two optional build-time settings change it
 | --- | --- | --- |
 | `VITE_ROUTING_URL` | `https://valhalla1.openstreetmap.de/route` | Any Valhalla `/route` endpoint. The production build adds its origin to the Content Security Policy's `connect-src`. Non-https URLs (other than localhost) are left out, so they're blocked. |
 | `VITE_ROUTING_MIN_INTERVAL_MS` | `1100` | Smallest gap between routing requests. |
-| `VITE_GEOCODE_URL` | `https://nominatim.openstreetmap.org/search` | A Nominatim-compatible search endpoint for **Find a place**. Its origin is added to `connect-src` the same way. |
+| `VITE_GEOCODE_URL` | `https://photon.komoot.io/api/` | The search endpoint for **Find a place**: a Photon server, or a Nominatim one (which turns off suggestions as you type). Its origin is added to `connect-src` the same way. |
 
 `VITE_` variables are compiled into the public JavaScript, so **never put a secret key in them**. To use Stadia Maps, register the site's domain in the Stadia dashboard (domain authentication needs no key in the page) and build with `VITE_ROUTING_URL=https://api.stadiamaps.com/route/v1`. To use a keyed service such as openrouteservice or GraphHopper, keep the key in a small server-side proxy (for example a Cloudflare Worker) that answers in the Valhalla format, and point `VITE_ROUTING_URL` at the proxy. No such proxy is built.
 
@@ -97,7 +98,7 @@ The default needs **no credentials**. Two optional build-time settings change it
 | --- | --- |
 | [`src/lib/routing-config.ts`](../src/lib/routing-config.ts) | Default endpoint, request spacing, CSP origin and map credit. |
 | [`src/lib/routing.ts`](../src/lib/routing.ts) | Builds the Valhalla request, decodes the shape, puts elevation on each point and maps errors to messages. |
-| [`src/lib/geocode.ts`](../src/lib/geocode.ts) | The Nominatim search request, parsing, errors, and `PlaceSearch`, which spaces and caches searches. |
+| [`src/lib/geocode.ts`](../src/lib/geocode.ts) | Photon and Nominatim search requests, parsing, errors, and `PlaceSearch`, which spaces, drops and caches searches by provider. |
 | [`src/lib/route-editor.ts`](../src/lib/route-editor.ts) | Editing operations (add, insert in a section, move, remove, reverse, close loop), joining sections into a `Route`, and `RouteSession`: history, request queue, cache, and the out-of-date and failure rules. |
 | [`src/ui/map.ts`](../src/ui/map.ts) | Draws sections, draggable control points and middle handles, the searched-place pin, and the routing credit. |
 | [`src/ui/app.ts`](../src/ui/app.ts) | The draw panel, the review step and the live update of the wind analysis. |

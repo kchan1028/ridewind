@@ -1926,9 +1926,25 @@ body.drawing .legend {
 .draw-search-results li:last-child .search-result {
   border-bottom: 0;
 }
-.search-result:hover,
-.search-result:focus-visible {
+.search-result:hover {
   background: var(--paper);
+}
+.search-result[aria-selected='true'] {
+  background: var(--line);
+  box-shadow: inset 4px 0 0 var(--focus);
+  font-weight: 600;
+}
+.draw-search-results li.search-result {
+  display: flex;
+  align-items: center;
+}
+.draw-search-results li.search-result:last-child {
+  border-bottom: 0;
+}
+.draw-search-credit {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 .draw-place {
   margin-top: 6px;
