@@ -34,7 +34,7 @@ There are four optional environment variables. None of them is a secret, and non
 | `BASE_PATH` | [`vite.config.ts`](../vite.config.ts) at build time | Sets the URL path the site is served from. Defaults to `/`. The GitHub Pages workflow sets it to `/ridewind/`. |
 | `VITE_ROUTING_URL` | [`src/ui/app.ts`](../src/ui/app.ts) and the CSP in [`vite.config.ts`](../vite.config.ts) | The Valhalla `/route` endpoint used to draw routes along roads. Defaults to the FOSSGIS server. See [drawing a route](routing.md). |
 | `VITE_ROUTING_MIN_INTERVAL_MS` | [`src/ui/app.ts`](../src/ui/app.ts) | Smallest gap between routing requests. Defaults to 1100. |
-| `VITE_GEOCODE_URL` | [`src/ui/app.ts`](../src/ui/app.ts) and the CSP | The Nominatim-compatible search endpoint for **Find a place**. Defaults to OSMF's Nominatim; see [drawing a route](routing.md#address-search). |
+| `VITE_GEOCODE_URL` | [`src/ui/app.ts`](../src/ui/app.ts) and the CSP | The search endpoint for **Find a place**. Defaults to komoot's Photon (suggestions as you type); a Nominatim URL switches to search on submit only. See [drawing a route](routing.md#address-search). |
 
 ```bash
 BASE_PATH=/ridewind/ npm run build

@@ -12,7 +12,7 @@ Bugs and checks that are open on GitHub.
 | --- | --- | --- |
 | Test with screen readers and in Windows high contrast mode. Zoom and reflow are done. | Open | [#12](https://github.com/kchan1028/ridewind/issues/12) |
 | Click-to-route drawing: routes follow roads (FOSSGIS Valhalla, road-bike profile), with drag to move, select and remove points, undo and redo, reverse, close loop, protected clear, straight sections by hand, a review step, GPX export and live wind recalculation. See [drawing a route](docs/routing.md). | Live since 14 November 2026, with the operator contact email the FOSSGIS routing terms require in the footer ([#90](https://github.com/kchan1028/ridewind/pull/90)) | [PR #88](https://github.com/kchan1028/ridewind/pull/88) |
-| **Find a place** (address search with OpenStreetMap's Nominatim, on submit only) and changing a section in between by dragging its middle handle (or **Add point before** with a keyboard). | Live since 14 November 2026 | [PR #91](https://github.com/kchan1028/ridewind/pull/91) |
+| **Find a place** (address search on OpenStreetMap data, now with suggestions as you type from Photon) and changing a section in between by dragging its middle handle (or **Add point before** with a keyboard). | Live since 14 November 2026 ([PR #91](https://github.com/kchan1028/ridewind/pull/91)). Suggestions as you type: in review ([PR #93](https://github.com/kchan1028/ridewind/pull/93)) | [PR #91](https://github.com/kchan1028/ridewind/pull/91) |
 
 ## Next
 
