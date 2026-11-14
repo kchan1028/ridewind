@@ -508,8 +508,9 @@ function applySettingsToInputs(): void {
   const u = units();
   const speed = $<HTMLInputElement>('speed');
   $('speed-unit').textContent = speedUnit(u);
-  speed.min = String(Math.round(kmhToDisplay(5, u)));
-  speed.max = String(Math.round(kmhToDisplay(60, u)));
+  // Round inward so every value the field allows also passes the km/h validation.
+  speed.min = String(Math.ceil(kmhToDisplay(5, u)));
+  speed.max = String(Math.floor(kmhToDisplay(60, u)));
   speed.value = String(Math.round(kmhToDisplay(state.settings.speedKmh, u) * 2) / 2);
   for (const r of document.querySelectorAll<HTMLInputElement>('input[name="units"]')) r.checked = r.value === u;
 }
