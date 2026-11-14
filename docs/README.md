@@ -16,7 +16,7 @@ Start with the [README](../README.md) for what RideWind does and how to run it. 
 - [Deploying RideWind](deployment.md): building, publishing with GitHub Pages, checking and rolling back.
 - [Maintaining RideWind](maintaining.md): branch rules and how changes reach `main`.
 - [Contributing](../CONTRIBUTING.md): proposing changes, conventions and required checks.
-- [Roadmap](../ROADMAP.md): proposed priorities, none approved yet.
+- [Roadmap](../ROADMAP.md): what's planned next and what has shipped.
 - [Usability testing](usability-testing.md): plan for testing RideWind with cyclists, and the log of findings and retests.
 
 ## Policies

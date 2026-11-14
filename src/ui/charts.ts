@@ -10,6 +10,8 @@ interface Panel {
   tag: 'Forecast' | 'Calculated' | 'Estimate' | 'From route';
   height: number;
   summary: string;
+  /** Column heading and value for the chart's data table, or none when there's nothing to list. */
+  data?: { heading: string; value: (s: SimStep) => string };
   draw: (g: SVGGElement, x: (d: number) => number, w: number, h: number) => void;
 }
 
@@ -53,10 +55,48 @@ function mid(s: SimStep): number {
   return (s.startM + s.endM) / 2;
 }
 
+/** About this many rows in each chart's data table, so it stays readable on long routes. */
+const TABLE_ROWS = 20;
+
+/** The numbers behind a chart, in a collapsed table that screen readers and keyboard users can open. */
+function dataTable(title: string, data: NonNullable<Panel['data']>, steps: SimStep[], u: UnitSystem): HTMLDetailsElement {
+  const details = document.createElement('details');
+  details.className = 'chart-data';
+  const summary = document.createElement('summary');
+  summary.textContent = `${title}: show the data`;
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  const table = document.createElement('table');
+  table.className = 'samples';
+  const head = table.createTHead().insertRow();
+  for (const label of ['Distance', data.heading]) {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = label;
+    head.append(th);
+  }
+  const body = table.createTBody();
+  const stride = Math.max(1, Math.ceil(steps.length / TABLE_ROWS));
+  for (let i = 0; i < steps.length; i += stride) {
+    const s = steps[i]!;
+    const row = body.insertRow();
+    const th = document.createElement('th');
+    th.scope = 'row';
+    th.textContent = formatDistance(mid(s), u);
+    row.append(th);
+    row.insertCell().textContent = data.value(s);
+  }
+  wrap.append(table);
+  details.append(summary, wrap);
+  return details;
+}
+
 /** Renders elevation, wind, speed and weather along the route as small multiples sharing a distance axis. */
 export function renderCharts(container: HTMLElement, sim: Simulation, opts: { units: UnitSystem; power: boolean }): void {
   const u = opts.units;
   const steps = sim.steps;
+  // Charts redraw on resize; keep any data table the reader had opened.
+  const open = new Set([...container.querySelectorAll<HTMLDetailsElement>('details.chart-data[open]')].map((d) => d.dataset.chart));
   container.replaceChildren();
   if (steps.length === 0) return;
   const total = steps[steps.length - 1]!.endM;
@@ -80,6 +120,14 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
       tag: 'From route',
       height: 90,
       summary: `Elevation from ${fmt(Math.min(...eles))} to ${fmt(Math.max(...eles))} ${unit} over ${formatDistance(total, u)}. A strip below shows headwind, crosswind and tailwind sections.`,
+      data: {
+        heading: `Elevation (${unit}) and wind`,
+        value: (s) => {
+          const w = s.weather;
+          const cls = w && w.windSpeed !== null && w.windDirection !== null ? classifyWind(w.windSpeed, w.windDirection, s.bearing) : 'no forecast';
+          return `${fmt(toU(s.eleM!))} · ${cls}`;
+        },
+      },
       draw(g, xs, _w, h) {
         const y = yAxis(g, lo, hi, h - 8, (v) => `${fmt(v)} ${unit}`);
         const pts = steps.map((s) => [xs(mid(s)), y(toU(s.eleM!))] as [number, number]);
@@ -115,6 +163,10 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
       title: 'Wind along your direction (10 m)',
       tag: 'Calculated',
       height: 90,
+      data: {
+        heading: `Headwind (${speedUnit(u)}, negative is tailwind)`,
+        value: (s) => (s.headwind10Kmh === null ? 'no forecast' : fmt(kmhToDisplay(s.headwind10Kmh, u))),
+      },
       summary: `Headwind component from ${fmt(kmhToDisplay(Math.min(...known), u))} to ${fmt(kmhToDisplay(Math.max(...known), u))} ${speedUnit(u)}. Positive is headwind, negative is tailwind.`,
       draw(g, xs, _w, h) {
         const y = yAxis(g, lo, hi, h, (v) => `${v > 0 ? '+' : ''}${fmt(v)}`);
@@ -152,6 +204,7 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
       title: 'Predicted speed',
       tag: 'Estimate',
       height: 80,
+      data: { heading: `Speed (${speedUnit(u)})`, value: (s) => fmt(kmhToDisplay(s.speedKmh, u)) },
       summary: `Predicted speed from ${fmt(Math.min(...speeds))} to ${fmt(Math.max(...speeds))} ${speedUnit(u)}, averaging ${fmt(kmhToDisplay(sim.avgSpeedKmh, u))}.`,
       draw(g, xs, _w, h) {
         const y = yAxis(g, 0, hi, h, (v) => fmt(v));
@@ -173,6 +226,13 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
       title: 'Temperature and rain',
       tag: 'Forecast',
       height: 80,
+      data: {
+        heading: `Temperature (${unit}) and rain (mm/h)`,
+        value: (s) => {
+          const t = s.weather?.temperature;
+          return t === null || t === undefined ? 'no forecast' : `${fmt(toU(t))} · ${(s.weather?.precipitation ?? 0).toFixed(1)}`;
+        },
+      },
       summary: `Temperature from ${fmt(Math.min(...kt.map(toU)))} to ${fmt(Math.max(...kt.map(toU)))}${unit}. ${rainMax > 0.05 ? `Rain up to ${rainMax.toFixed(1)} mm per hour.` : 'No rain forecast.'}`,
       draw(g, xs, _w, h) {
         if (rainMax > 0.05) {
@@ -219,6 +279,12 @@ export function renderCharts(container: HTMLElement, sim: Simulation, opts: { un
       text(g, x(d), p.height + 16, formatDistance(d, u), 'ch-label', k === 0 ? 'start' : k === ticks ? 'end' : 'middle');
     }
     fig.append(cap, svg);
+    if (p.data) {
+      const details = dataTable(p.title, p.data, steps, u);
+      details.dataset.chart = p.title;
+      details.open = open.has(p.title);
+      fig.append(details);
+    }
     container.append(fig);
   }
 }

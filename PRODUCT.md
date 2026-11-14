@@ -50,8 +50,8 @@ There are four core journeys:
 | Area | What works now |
 | --- | --- |
 | Routes | Imports GPX track or route points. Three Bay Area sample routes. Can reverse the route. |
-| Forecast | Hourly wind, gusts, temperature and rain from Open-Meteo, up to 16 days ahead, at up to 20 points per route. Sunrise and sunset. |
-| Timing | Constant average speed, or a power-based physics model that uses gradient, wind, weight, drag and rolling resistance. |
+| Forecast | Hourly wind, gusts, temperature and rain from Open-Meteo, up to 16 days ahead, at up to 40 points per route. Sunrise and sunset. |
+| Timing | Constant average speed, or a power-based physics model that uses gradient, wind, weight, drag and rolling resistance. Optional planned stop time. |
 | Elevation | Uses the GPX elevation when there is some. Optional lookup when there isn't. Never quietly treats a route as flat. |
 | Results | One-line verdict, a map coloured by wind type, charts along the route, a departure comparison and a point-by-point table. |
 | Daylight | Notes when a ride starts before sunrise or finishes after sunset. |
@@ -68,7 +68,7 @@ These come from choices already made in the code and in earlier pull requests.
 - **Keep the rider's data private.** There's no backend and no account. The GPX file never leaves the browser, and only coordinates rounded to about 100 m go to the weather service.
 - **Use the free weather service lightly.** One forecast request per route, cached in memory. Changing the time, pace or direction doesn't call the service again. The elevation lookup only runs when you ask, and it tells you its cost first.
 - **Don't depend on colour.** Wind type is also shown by line style, patterns and text.
-- **Be honest about limits.** Forecast wind doesn't account for shelter from trees, buildings or terrain, and the estimates haven't been checked against real rides. The app and the docs both say so.
+- **Be honest about limits.** Forecast wind doesn't account for shelter from trees, buildings or terrain, and the estimates have only been checked against five real rides, where they came within about 11%. The app and the docs both say so.
 
 ## What is RideWind not trying to be?
 

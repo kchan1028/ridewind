@@ -35,6 +35,14 @@ describe('settings', () => {
     localStorage.setItem('ridewind:settings:v1', 'not json');
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
   });
+  it('keeps valid planned stops and rejects out-of-range ones', () => {
+    expect(saveSettings({ ...DEFAULT_SETTINGS, stopMinutes: 45 })).toBe(true);
+    expect(loadSettings().stopMinutes).toBe(45);
+    localStorage.setItem('ridewind:settings:v1', '{"stopMinutes":-5}');
+    expect(loadSettings().stopMinutes).toBe(0);
+    localStorage.setItem('ridewind:settings:v1', '{"stopMinutes":9999}');
+    expect(loadSettings().stopMinutes).toBe(0);
+  });
   it('reads phase-1 settings (speed and units only) with phase-2 defaults', () => {
     localStorage.setItem('ridewind:settings:v1', '{"speedKmh":28,"units":"metric"}');
     expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, speedKmh: 28 });

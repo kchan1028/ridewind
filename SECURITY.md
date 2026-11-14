@@ -41,7 +41,7 @@ Repository protections:
 
 ## Known limitations
 
-- **No clickjacking protection.** The Content Security Policy is delivered as a `<meta>` tag because GitHub Pages can't send custom headers, and `frame-ancestors` doesn't work from a `<meta>` tag. Another site could embed RideWind in a frame. The app has no accounts or actions that could be abused that way.
+- **Framing is blocked by a script, not a header.** GitHub Pages can't send custom headers, and `frame-ancestors` doesn't work from a `<meta>` tag. Instead, RideWind checks at startup whether it's inside another site's frame. If it is, it shows a notice with a link to open RideWind directly, and the app doesn't start. A browser with JavaScript turned off would still show the page in a frame, but the app can't run without JavaScript anyway.
 - **Local data isn't encrypted.** Anyone with access to your browser profile can read your saved routes. Export files contain your routes too, so treat them as personal.
 - **Third parties see some data.** Open-Meteo and OpenStreetMap see your IP address and the rounded coordinates or map areas they serve, under their own privacy policies.
 - **Actions pinned by tag.** The CI and deploy workflows use major-version tags (for example `actions/checkout@v4`), not commit SHAs.
