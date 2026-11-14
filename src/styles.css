@@ -1447,6 +1447,18 @@ input[aria-invalid='true'] {
   gap: 8px;
 }
 
+/* Units at a glance, with a one-tap switch */
+.units-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.units-line .hint {
+  margin: 0;
+}
+
 /* Point-by-point table on phones: Distance, Arrive, Head/tail and Rain, with the rest behind a toggle */
 .points-toggle {
   display: none;

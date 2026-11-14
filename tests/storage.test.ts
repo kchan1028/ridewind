@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { defaultUnits } from '../src/lib/units';
 import {
   buildExport,
   clearRoutes,
@@ -28,15 +29,17 @@ const route = {
 
 describe('settings', () => {
   beforeEach(() => localStorage.clear());
+  // With no saved choice, units start from the browser's locale.
+  const localeDefaults = { ...DEFAULT_SETTINGS, units: defaultUnits() };
   it('round-trips and validates', () => {
-    expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+    expect(loadSettings()).toEqual(localeDefaults);
     const custom = { ...DEFAULT_SETTINGS, speedKmh: 30, units: 'imperial' as const, paceMode: 'power' as const, exposure: 'open' as const, rider: { ...DEFAULT_SETTINGS.rider, powerW: 240 } };
     expect(saveSettings(custom)).toBe(true);
     expect(loadSettings()).toEqual(custom);
     localStorage.setItem('ridewind:settings:v1', '{"speedKmh":-4,"units":"furlongs","paceMode":"warp","rider":{"cda":9}}');
-    expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+    expect(loadSettings()).toEqual(localeDefaults);
     localStorage.setItem('ridewind:settings:v1', 'not json');
-    expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+    expect(loadSettings()).toEqual(localeDefaults);
   });
   it('keeps valid planned stops and rejects out-of-range ones', () => {
     expect(saveSettings({ ...DEFAULT_SETTINGS, stopMinutes: 45 })).toBe(true);
