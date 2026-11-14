@@ -192,6 +192,8 @@ Severity: **P0** blocks the task; **P1** is a major problem or misleading result
 
 ### P2-7 · Wind chart is noisy and axes lack units on a phone
 
+> **Status: fixed.** The wind line is smoothed over 2 km (800 m still left a comb on the PRS route), so headwind and tailwind stretches stand out. The wind and speed chart titles name the unit, and charts under 400 px wide show three distance labels instead of five. The colours already matched the map. The data table and the screen-reader summary still use the unsmoothed values.
+
 - **Where:** [`src/ui/charts.ts`](../src/ui/charts.ts).
 - **Observed:**
   - "Wind along your direction" draws a spike at every change of GPS bearing, which forms a white comb on the PRS and China Camp routes.
@@ -300,7 +302,7 @@ Ordered by user impact relative to effort. "S" is under half a day, "M" is one t
 | 7 | Saved routes remember the direction and usual departure time | P2-4 | Medium | S–M | Schema version bump in `storage.ts` |
 | 8 | Units from the locale, plus an inline speed-unit switch | P2-6 | Medium | S | |
 | 9 | Compact first-run screen on the phone (short map, value sentence, two actions) | P2-5 | Medium | S | |
-| 10 | Chart smoothing, axis units and tick thinning | P2-7 | Medium | S–M | |
+| 10 | ~~Chart smoothing, axis units and tick thinning~~ **Done** | P2-7 | Medium | S–M | |
 | 11 | Touch targets of at least 44 px and spacing between Open and Delete | P2-8 | Low–Med | S | Update `ACCESSIBILITY.md` |
 | 12 | De-duplicated status and alerts; a merged Start/Finish label; one series for the temperature range | P3-1 to P3-3 | Low | S | |
 | 13 | ~~Wider, resizable desktop panel~~ **Done in #49** | P2-9 | Medium | S–M | No change below 900 px |
