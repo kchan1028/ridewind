@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 468" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <title id="t">How RideWind labels headwind, crosswind and tailwind</title>
+  <desc id="d">A compass centred on the rider, who faces up the page. Wind coming from within 45 degrees of straight ahead is a headwind, from within 45 degrees of straight behind is a tailwind, and from either side is a crosswind. Wind under 5 km/h is calm. Worked example: a 20 km/h wind from 30 degrees to the right has a headwind part of 17.3 km/h and a crosswind part of 10 km/h from the right, so it is labelled headwind.</desc>
+  <style>
+    .bg { fill: #ffffff; }
+    .h { fill: #14213d; font-weight: 700; font-size: 17px; }
+    .sub { fill: #3b4659; font-size: 13px; }
+    .lbl { fill: #14213d; font-size: 14px; font-weight: 600; }
+    .p { fill: #3b4659; font-size: 13px; }
+    .m { fill: #5f6b7a; font-size: 12px; }
+    .axis { stroke: #8a95a8; stroke-width: 1.5; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0d1117; }
+      .h, .lbl { fill: #e6edf3; }
+      .sub, .p { fill: #9da7b3; }
+      .m { fill: #8b949e; }
+      .axis { stroke: #6e7681; }
+    }
+    .hw { fill: #c8102e; fill-opacity: .16; stroke: #c8102e; stroke-width: 2; }
+    .tw { fill: #1f6fb2; fill-opacity: .16; stroke: #1f6fb2; stroke-width: 2; }
+    .cw { fill: url(#stripe); stroke: #d98e04; stroke-width: 2; }
+    .stripe { stroke: #d98e04; stroke-opacity: .45; stroke-width: 3; }
+    .calm { fill: #ffffff; stroke: #5f6b7a; stroke-width: 1.5; stroke-dasharray: 2 4; }
+    .wind { stroke: #14213d; stroke-width: 3; fill: none; }
+    .windhead, .rider { fill: #14213d; }
+    .ex { fill: #f4f6fa; stroke: #d5dbe5; }
+    @media (prefers-color-scheme: dark) {
+      .hw { fill: #ff6b7d; stroke: #ff6b7d; }
+      .tw { fill: #6fb3ee; stroke: #6fb3ee; }
+      .cw { stroke: #f2b544; } .stripe { stroke: #f2b544; }
+      .calm { fill: #0d1117; stroke: #8b949e; }
+      .wind { stroke: #e6edf3; } .windhead, .rider { fill: #e6edf3; }
+      .ex { fill: #161b22; stroke: #30363d; }
+    }
+  </style>
+  <rect class="bg" width="760" height="468" rx="12"/>
+  <defs>
+    <pattern id="stripe" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line class="stripe" x1="0" y1="0" x2="0" y2="10"/>
+    </pattern>
+  </defs>
+  <text class="h" x="24.0" y="38.0" text-anchor="start">RideWind names the wind by the direction it comes from, compared with yours.</text>
+  <path class="hw" d="M210,250 L103.9,143.9 A150,150 0 0 1 316.1,143.9 Z"/>
+  <path class="cw" d="M210,250 L316.1,143.9 A150,150 0 0 1 316.1,356.1 Z"/>
+  <path class="tw" d="M210,250 L316.1,356.1 A150,150 0 0 1 103.9,356.1 Z"/>
+  <path class="cw" d="M210,250 L103.9,356.1 A150,150 0 0 1 103.9,143.9 Z"/>
+  <circle class="calm" cx="210" cy="250" r="34"/>
+  <path class="rider" d="M210,226 l10,20 h-6 v18 h-8 v-18 h-6 Z"/>
+  <text class="lbl" x="210.0" y="136.0" text-anchor="middle">Headwind</text>
+  <text class="m" x="210.0" y="153.0" text-anchor="middle">45° either side</text>
+  <text class="lbl" x="210.0" y="356.0" text-anchor="middle">Tailwind</text>
+  <text class="m" x="210.0" y="373.0" text-anchor="middle">45° either side</text>
+  <text class="lbl" x="306.0" y="255.0" text-anchor="middle">Crosswind</text>
+  <text class="lbl" x="114.0" y="255.0" text-anchor="middle">Crosswind</text>
+  <text class="m" x="92.6" y="136.6" text-anchor="middle">45°</text>
+  <text class="m" x="327.4" y="136.6" text-anchor="middle">45°</text>
+  <line class="wind" x1="300.0" y1="94.1" x2="232.0" y2="211.9"/>
+  <path class="windhead" transform="translate(232.0,211.9) rotate(120.0)" d="M0,0 l-13,-7 v14 Z"/>
+  <text class="lbl" x="310.0" y="98.1" text-anchor="start">Example wind</text>
+  <rect class="ex" x="440" y="92" width="296" height="300" rx="10"/>
+  <text class="lbl" x="458.0" y="124.0" text-anchor="start">Worked example</text>
+  <text class="p" x="458.0" y="154.0" text-anchor="start">Wind 20 km/h, coming from 30°</text>
+  <text class="p" x="458.0" y="174.0" text-anchor="start">to the right of your direction.</text>
+  <text class="lbl" x="458.0" y="204.0" text-anchor="start">Headwind part</text>
+  <text class="p" x="458.0" y="224.0" text-anchor="start">20 × cos 30° = 17.3 km/h</text>
+  <text class="lbl" x="458.0" y="254.0" text-anchor="start">Crosswind part</text>
+  <text class="p" x="458.0" y="274.0" text-anchor="start">20 × sin 30° = 10 km/h, from your right</text>
+  <text class="lbl" x="458.0" y="304.0" text-anchor="start">Label</text>
+  <text class="p" x="458.0" y="324.0" text-anchor="start">Headwind, because 30° is within 45°</text>
+  <text class="p" x="458.0" y="344.0" text-anchor="start">of straight ahead.</text>
+  <text class="m" x="24.0" y="432.0" text-anchor="start">The arrow in the middle is you, riding up the page. Wind under 5 km/h counts as calm whatever its direction.</text>
+  <text class="m" x="24.0" y="450.0" text-anchor="start">Colours match the map: red headwind, striped amber crosswind, blue tailwind.</text>
+</svg>

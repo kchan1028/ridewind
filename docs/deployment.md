@@ -24,6 +24,18 @@ The workflow is [`.github/workflows/deploy-pages.yml`](../.github/workflows/depl
 
 This one-time setup is already done for this repository: in **Settings → Pages → Build and deployment**, **Source** is set to **GitHub Actions**.
 
+```mermaid
+flowchart LR
+  A[Run workflow<br/>on main] --> B
+  subgraph B[build job]
+    B1[npm ci] --> B2[npm test] --> B3["npm run build<br/>BASE_PATH=/ridewind/"] --> B4[Upload dist/]
+  end
+  B --> C[deploy job<br/>publish to Pages]
+  C --> D[Live at<br/>kchan1028.github.io/ridewind]
+```
+
+If any step in the `build` job fails, nothing is published and the live site stays as it was.
+
 To publish:
 
 1. Make sure the change you want is merged into `main`.

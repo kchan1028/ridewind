@@ -74,6 +74,19 @@ npx vitest run -t "headwind"
 
 ## Make a change
 
+```mermaid
+flowchart LR
+  A[Branch from main] --> B[Edit code<br/>and tests]
+  B --> C[npm test<br/>npm run build]
+  C -- fails --> B
+  C -- passes --> D[Check in the browser]
+  D --> E[Open a pull request]
+  E --> F[CI runs test-build]
+  F -- fails --> B
+  F -- passes --> G[Owner merges]
+  G --> H[Owner runs the deploy<br/>workflow by hand]
+```
+
 1. Create a branch from `main`.
 2. If the change is to a calculation, put it in `src/lib/` and add or update a test in `tests/`. Keep DOM code out of `src/lib/` (GPX parsing is the one exception, because it uses `DOMParser`).
 3. If the change is to the interface, edit [`index.html`](../index.html) for markup, [`src/styles.css`](../src/styles.css) for styling and [`src/ui/app.ts`](../src/ui/app.ts) for behaviour.

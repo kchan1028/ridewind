@@ -2,6 +2,20 @@
 
 Most RideWind problems come from three places: the GPX file, the free weather service's limits, or the browser blocking storage. Each section below starts with the message you'll see, then explains the cause and the fix. Messages are quoted from the code, so you can search this page for the exact text.
 
+If the results don't appear at all, this shows where RideWind usually stops:
+
+```mermaid
+flowchart TD
+  A{Did the route load<br/>and show on the map?} -- No --> A1[See Importing a route]
+  A -- Yes --> B{Is there a forecast error<br/>with a Retry button?}
+  B -- Yes --> B1[See Getting the forecast]
+  B -- No --> C{Power mode, and it says<br/>Elevation needed?}
+  C -- Yes --> C1[Look up elevation, or<br/>Estimate as if flat]
+  C -- No --> D{Do parts show<br/>No forecast?}
+  D -- Yes --> D1[Pick an earlier departure,<br/>inside the 16-day forecast]
+  D -- No --> E[Open an issue with<br/>your browser and steps]
+```
+
 If your problem isn't here, [open an issue](https://github.com/kchan1028/ridewind/issues/new/choose) and include the message, your browser, and (if you can share it) the GPX file. Report security problems privately as described in [SECURITY.md](../SECURITY.md).
 
 ## Importing a route
