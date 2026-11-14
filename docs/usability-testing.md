@@ -128,7 +128,8 @@ Score every task as **Success** (done without help), **Partial** (done with a hi
 
 - **Start:** any sample with the comparison in view; ideally a day when the **Best** row finishes after dark (check during setup).
 - **Success:** picks a departure and a direction, applies it, and gives a reason. On a phone, considers the reversed direction without being prompted.
-- **Observe:** what the choice is based on (headwind, tailwind on the way home, rain, daylight, temperature); whether they follow the **Best** mark, question it or ignore it; whether they find the reversed column on a phone.
+- **Observe:** what the choice is based on (headwind, tailwind on the way home, rain, daylight, temperature); whether they follow the **Best** mark, question it or ignore it; whether they find the reversed column on a phone; whether the earlier options are still there after they press **Use** a few times, and what they do if not ([W5](#w5--comparison-restarts-at-the-chosen-departure-p2-new), [#32](https://github.com/kchan1028/ridewind/issues/32)).
+- **Keyboard or screen-reader participants:** after each **Use** or preset, note where focus lands and whether they can carry on without going back to the top ([W4](#w4--keyboard-focus-lost-after-use-presets-and-retry-p2-new), [#31](https://github.com/kchan1028/ridewind/issues/31)).
 - **Not a success criterion:** agreeing with the **Best** mark. The aim is to learn how riders choose.
 
 ### T5 · A more accurate ride time (R6, R7)
@@ -139,7 +140,7 @@ Only for riders who train with power. Others skip to T6.
 
 - **Start:** a sample route with elevation, then again with the prepared no-elevation GPX file.
 - **Success:** switches to the power model, enters plausible values (a made-up weight is fine) and gets a new finish time. With the no-elevation file, makes a deliberate choice between looking up elevation and treating the route as flat, and can say what that choice means.
-- **Observe:** whether they know their CdA and Crr or rely on the hints; whether the new time would change any decision.
+- **Observe:** whether they know their CdA and Crr or rely on the hints; whether the new time would change any decision. With the no-elevation file: whether they notice that the wind answer has disappeared, and whether they find the elevation buttons on a phone ([W6](#w6--no-wind-verdict-for-a-route-without-elevation-in-power-mode-p2-new), [#33](https://github.com/kchan1028/ridewind/issues/33)).
 
 ### T6 · Your usual pace (R8, R10)
 
@@ -271,7 +272,7 @@ Severity uses the audit's scale: **P0** blocks the task, **P1** is a major probl
 | --- | --- | --- | --- | --- |
 | W1 | **Best** goes to rides that finish in the dark, and to differences of a minute or two | P1 | P1-1 | Fixed on `main` by [PR #23](https://github.com/kchan1028/ridewind/pull/23); not deployed |
 | W2 | The verdict states a rain amount without its chance | P1 | P1-2 | Fixed on `main` by [PR #27](https://github.com/kchan1028/ridewind/pull/27); not deployed |
-| W3 | Speed error appears far from the field and the typed value is reverted | P1 | P1-3 | Fix open in [PR #28](https://github.com/kchan1028/ridewind/pull/28) |
+| W3 | Speed error appears far from the field and the typed value is reverted | P1 | P1-3 | Fixed on `main` by [PR #28](https://github.com/kchan1028/ridewind/pull/28); not deployed |
 | W4 | Keyboard focus is lost after **Use**, a preset, or **Retry forecast** | P2 | *New* | Open: [#31](https://github.com/kchan1028/ridewind/issues/31) |
 | W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Open: [#32](https://github.com/kchan1028/ridewind/issues/32) |
 | W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Open: [#33](https://github.com/kchan1028/ridewind/issues/33) |
@@ -279,7 +280,7 @@ Severity uses the audit's scale: **P0** blocks the task, **P1** is a major probl
 | W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Open |
 | W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Open |
 | W10 | Phone: the first screen is an empty map | P2 | P2-5 | Open |
-| W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Fix open in [PR #25](https://github.com/kchan1028/ridewind/pull/25) |
+| W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Fixed on `main` by [PR #25](https://github.com/kchan1028/ridewind/pull/25); not deployed |
 | W12 | One forecast error shown three times | P3 | P3-1 | Open |
 | W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Open: [#34](https://github.com/kchan1028/ridewind/issues/34) |
 | W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Open: [#35](https://github.com/kchan1028/ridewind/issues/35) |
@@ -399,7 +400,7 @@ These held up and are worth keeping:
 ### What should happen next
 
 1. Deploy `main`, then rerun W1 and W2 on the live site and log the results in the [retesting log](#retesting-log) as walkthrough rechecks, not participant retests.
-2. Add W4, W5 and W6 to the participant tasks: T4 covers W5, T5 covers W6, and a keyboard or screen-reader participant covers W4.
+2. Done: T4 now checks W5 and keyboard focus (W4), and T5 checks W6.
 3. Issues are open for the new findings: [#31](https://github.com/kchan1028/ridewind/issues/31) (W4), [#32](https://github.com/kchan1028/ridewind/issues/32) (W5), [#33](https://github.com/kchan1028/ridewind/issues/33) (W6), [#34](https://github.com/kchan1028/ridewind/issues/34) (W13) and [#35](https://github.com/kchan1028/ridewind/issues/35) (W14). Each says it came from an expert walkthrough. W4 is an accessibility defect and doesn't need participant evidence. The others should be validated, under the rule above, before they go on the roadmap.
 
 ## Completed research
