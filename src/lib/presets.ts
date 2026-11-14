@@ -1,4 +1,4 @@
-import { utcToWallTime, wallTimeToUtc } from './time';
+import { formatDateTime, formatWallClock, utcToWallTime, wallTimeToUtc } from './time';
 
 const HOUR = 3600_000;
 
@@ -34,13 +34,13 @@ export function departurePresets(nowMs: number, tz: string, bounds: { min: numbe
   };
   const out: DeparturePreset[] = [
     { label: 'Next hour', ms: Math.ceil(nowMs / HOUR) * HOUR },
-    { label: 'Tomorrow 08:00', ms: wallTimeToUtc(`${dateAt(1).iso}T08:00`, tz) },
+    { label: `Tomorrow ${formatWallClock('08:00')}`, ms: wallTimeToUtc(`${dateAt(1).iso}T08:00`, tz) },
   ];
   for (let k = 2; k <= 7; k++) {
     const day = dateAt(k);
     if (day.weekday === 6 || day.weekday === 0) {
-      const name = day.weekday === 6 ? 'Sat' : 'Sun';
-      out.push({ label: `${name} ${Number(day.iso.slice(8, 10))}, 09:00`, ms: wallTimeToUtc(`${day.iso}T09:00`, tz) });
+      const ms = wallTimeToUtc(`${day.iso}T09:00`, tz);
+      out.push({ label: formatDateTime(ms, tz), ms });
       break;
     }
   }
