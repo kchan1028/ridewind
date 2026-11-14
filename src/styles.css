@@ -854,8 +854,13 @@ dialog::backdrop {
   font-size: 1.0625rem;
   line-height: 1.45;
 }
-.no-route .intro {
+.no-route .intro-new,
+.no-route.has-saved .intro-back {
   display: block;
+}
+/* A rider with saved routes has seen the pitch; point them at their routes instead. */
+.no-route.has-saved .intro-new {
+  display: none;
 }
 /* On phones, lead with the sentence and the two actions; the empty map becomes a short strip below. */
 @media (max-width: 899px) {

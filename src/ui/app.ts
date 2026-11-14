@@ -1080,11 +1080,19 @@ function describePoint(i: number): string {
 
 /* ---------- saved routes ---------- */
 
+/** Saved routes open by themselves once per visit, for a rider coming back with nothing loaded yet. */
+let savedAutoOpened = false;
+
 async function renderSaved(): Promise<void> {
   const list = $('saved-list');
   try {
     const routes = await store.listRoutes();
     $('saved-count').textContent = `(${routes.length})`;
+    document.body.classList.toggle('has-saved', routes.length > 0);
+    if (routes.length > 0 && !savedAutoOpened && !state.original) {
+      savedAutoOpened = true;
+      ($('saved') as HTMLDetailsElement).open = true;
+    }
     list.replaceChildren();
     if (routes.length === 0) {
       const li = document.createElement('li');

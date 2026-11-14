@@ -49,6 +49,9 @@ function rotatedSvg(viewBox: string, size: number, d: string, degrees: number): 
  * clearPlan() removes them again. Tiles come from tile.openstreetmap.org, which
  * the Content Security Policy in src/lib/csp.ts must allow.
  */
+/** Smallest on-screen gap between two wind arrows. */
+const ARROW_SPACING_PX = 44;
+
 export class RouteMap {
   private map: L.Map;
   private baseLine: L.Polyline | null = null;
@@ -56,6 +59,9 @@ export class RouteMap {
   private planLayer = L.layerGroup();
   private drawLayer = L.layerGroup();
   private drawOff: (() => void) | null = null;
+  /** Wind arrows (and their rain tags), shown inside planLayer only where they don't crowd each other. */
+  private arrowLayer = L.layerGroup();
+  private arrowItems: Array<{ latlng: L.LatLng; layers: L.Layer[] }> = [];
 
   constructor(el: HTMLElement) {
     this.map = L.map(el, { zoomControl: true, attributionControl: true }).setView([37.85, -122.2], 9); // San Francisco Bay Area
@@ -67,6 +73,7 @@ export class RouteMap {
     this.map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     this.routeLayer.addTo(this.map);
     this.planLayer.addTo(this.map);
+    this.map.on('zoomend', () => this.placeArrows());
   }
 
   showRoute(points: LatLon[]): void {
@@ -194,10 +201,28 @@ export class RouteMap {
 
   clearPlan(): void {
     this.planLayer.clearLayers();
+    this.arrowItems = [];
+  }
+
+  /**
+   * Shows only arrows at least ARROW_SPACING_PX from every arrow already shown,
+   * in route order, so at a wide zoom they don't hide the wind colours; zooming
+   * in brings the rest back. The point-by-point table always has every point.
+   */
+  private placeArrows(): void {
+    this.arrowLayer.clearLayers();
+    const shown: L.Point[] = [];
+    for (const item of this.arrowItems) {
+      const p = this.map.latLngToLayerPoint(item.latlng);
+      if (shown.some((q) => q.distanceTo(p) < ARROW_SPACING_PX)) continue;
+      shown.push(p);
+      for (const layer of item.layers) this.arrowLayer.addLayer(layer);
+    }
   }
 
   showPlan(plan: RidePlan, describePoint: (index: number) => string, rainLabel: (mmPerH: number) => string): void {
     this.planLayer.clearLayers();
+    this.arrowItems = plan.samples.map((r) => ({ latlng: L.latLng(r.sample.lat, r.sample.lon), layers: [] }));
     for (const seg of plan.segments) {
       if (seg.rain === 'none') continue;
       L.polyline(seg.latlngs, { ...RAIN_STYLE[seg.rain], color: RAIN_COLOR, lineCap: 'round', interactive: false }).addTo(this.planLayer);
@@ -219,22 +244,26 @@ export class RouteMap {
         iconAnchor: [13, 13],
       });
       // Not a tab stop: the point-by-point table carries the same data for keyboard users.
-      L.marker([r.sample.lat, r.sample.lon], { icon, keyboard: false, title: `Point ${i + 1} wind details` })
-        .bindPopup(describePoint(i))
-        .addTo(this.planLayer);
+      this.arrowItems[i]!.layers.push(
+        L.marker([r.sample.lat, r.sample.lon], { icon, keyboard: false, title: `Point ${i + 1} wind details` }).bindPopup(describePoint(i)),
+      );
     });
     // Raindrop tags beside each wet point, offset so they sit next to the wind arrow rather than on it.
-    plan.samples.forEach((r) => {
+    plan.samples.forEach((r, i) => {
       const mm = r.weather?.precipitation;
       if (mm === null || mm === undefined || rainLevel(mm) === 'none') return;
       const tag = document.createElement('span');
       tag.className = `rain-tag rain-${rainLevel(mm)}`;
       tag.append(rotatedSvg('0 0 12 16', 10, 'M6 1 C6 1 1 7.5 1 10.5 A5 5 0 0 0 11 10.5 C11 7.5 6 1 6 1 Z', 0), rainLabel(mm));
-      L.marker([r.sample.lat, r.sample.lon], {
-        icon: L.divIcon({ className: 'rain-tag-icon', html: tag, iconSize: undefined, iconAnchor: [-14, 24] }),
-        interactive: false,
-        keyboard: false,
-      }).addTo(this.planLayer);
+      this.arrowItems[i]!.layers.push(
+        L.marker([r.sample.lat, r.sample.lon], {
+          icon: L.divIcon({ className: 'rain-tag-icon', html: tag, iconSize: undefined, iconAnchor: [-14, 24] }),
+          interactive: false,
+          keyboard: false,
+        }),
+      );
     });
+    this.arrowLayer.addTo(this.planLayer);
+    this.placeArrows();
   }
 }
