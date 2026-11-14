@@ -51,7 +51,7 @@ There are four core journeys:
 
 | Area | What works now |
 | --- | --- |
-| Routes | Imports GPX track or route points. Three Bay Area sample routes. Can reverse the route. Draws routes on the map that follow roads (FOSSGIS Valhalla, road-bike profile), with straight sections by hand, undo and redo, reverse, close loop, a review step and GPX export. See [drawing a route](docs/routing.md). |
+| Routes | Imports GPX track or route points. Three Bay Area sample routes. Can reverse the route. Draws routes on the map that follow roads (FOSSGIS Valhalla, road-bike profile), with straight sections by hand, inserting points in a section by dragging its middle, address search (Nominatim), undo and redo, reverse, close loop, a review step and GPX export. See [drawing a route](docs/routing.md). |
 | Forecast | Hourly wind, gusts, temperature and rain from Open-Meteo, up to 16 days ahead, at up to 40 points per route. Sunrise and sunset. |
 | Timing | Constant average speed, or a power-based physics model that uses gradient, wind, weight, drag and rolling resistance. Optional planned stop time. |
 | Elevation | Uses the GPX elevation when there is some. Optional lookup when there isn't. Never quietly treats a route as flat. |

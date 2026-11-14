@@ -2,14 +2,20 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { bearingAtDistance, cumulativeDistances, haversineM, pointAtDistance, type LatLon } from '../lib/geo';
 import { rainLevel, type RainLevel, type RidePlan, type SegmentClass } from '../lib/ride';
-import type { EditorRoute, LegMode } from '../lib/route-editor';
+import { legMidpoint, type EditorRoute, type LegMode } from '../lib/route-editor';
+import type { Place } from '../lib/geocode';
 
 export interface EditorHandlers {
   onMapTap(p: LatLon): void;
   onCentreKey(): void;
   onSelect(index: number): void;
   onDragEnd(index: number, p: LatLon): void;
+  /** A point dragged out of (or tapped at) the middle of leg `leg`. */
+  onInsert(leg: number, p: LatLon): void;
 }
+
+/** Sections shorter than this on screen get no middle handle, so short legs don't fill with handles. */
+const MID_HANDLE_MIN_PX = 70;
 
 /** Leg styles in the editor: colour and pattern both differ, so they don't rely on colour alone. */
 export const EDITOR_STYLE: Record<LegMode | 'pending', L.PolylineOptions> = {
@@ -88,6 +94,8 @@ export class RouteMap {
   private deferred: { r: EditorRoute; selected: number | null } | null = null;
   private preview: L.Polyline | null = null;
   private routingCredit: string | null = null;
+  private lastEditor: { r: EditorRoute; selected: number | null } | null = null;
+  private placeLayer = L.layerGroup();
   /** Wind arrows, shown inside planLayer only where they don't crowd each other. Rain tags declutter separately. */
   private arrowLayer = L.layerGroup();
   private arrowItems: Array<{ latlng: L.LatLng; layers: L.Layer[] }> = [];
@@ -104,6 +112,8 @@ export class RouteMap {
     this.planLayer.addTo(this.map);
     this.manualLayer.addTo(this.map);
     this.map.on('zoomend', () => {
+      // Middle handles depend on how long each section is on screen.
+      if (this.drawOff && this.lastEditor && !this.dragging) this.showEditor(this.lastEditor.r, this.lastEditor.selected);
       this.placeArrows();
       this.declutterRainTags();
     });
@@ -196,6 +206,7 @@ export class RouteMap {
     this.map.removeLayer(this.planLayer);
     this.map.removeLayer(this.manualLayer);
     this.drawLayer.clearLayers().addTo(this.map);
+    this.placeLayer.clearLayers().addTo(this.map);
     this.map.doubleClickZoom.disable();
     container.classList.add('is-drawing');
     const label = container.getAttribute('aria-label') ?? '';
@@ -221,6 +232,8 @@ export class RouteMap {
       container.setAttribute('aria-label', label);
       this.map.doubleClickZoom.enable();
       this.map.removeLayer(this.drawLayer);
+      this.map.removeLayer(this.placeLayer);
+      this.lastEditor = null;
       this.routeLayer.addTo(this.map);
       this.planLayer.addTo(this.map);
       this.manualLayer.addTo(this.map);
@@ -265,6 +278,7 @@ export class RouteMap {
       this.deferred = { r, selected };
       return;
     }
+    this.lastEditor = { r, selected };
     this.drawLayer.clearLayers();
     r.legs.forEach((leg, i) => {
       const a = r.controls[i]!;
@@ -283,6 +297,7 @@ export class RouteMap {
       L.polyline(latlngs, { color: '#ffffff', weight: 9, opacity: 0.85, interactive: false }).addTo(this.drawLayer);
       L.polyline(latlngs, { ...EDITOR_STYLE[leg.mode], interactive: false }).addTo(this.drawLayer);
     });
+    this.addMidHandles(r);
     const n = r.controls.length;
     const loop = n > 2 && haversineM(r.controls[0]!, r.controls[n - 1]!) < 2;
     r.controls.forEach((p, i) => {
@@ -321,6 +336,84 @@ export class RouteMap {
       });
       marker.addTo(this.drawLayer);
     });
+  }
+
+  /**
+   * A small handle in the middle of each finished section. Dragging it pulls
+   * the section onto another road by adding a point there; tapping it adds a
+   * point at the handle and selects it.
+   */
+  private addMidHandles(r: EditorRoute): void {
+    r.legs.forEach((leg, i) => {
+      if (!leg.points) return;
+      const a = this.map.latLngToLayerPoint([r.controls[i]!.lat, r.controls[i]!.lon]);
+      const b = this.map.latLngToLayerPoint([r.controls[i + 1]!.lat, r.controls[i + 1]!.lon]);
+      if (a.distanceTo(b) < MID_HANDLE_MIN_PX) return;
+      const mid = legMidpoint(r, i);
+      if (!mid) return;
+      const el = document.createElement('span');
+      el.className = 'mid-dot';
+      const marker = L.marker([mid.lat, mid.lon], {
+        icon: L.divIcon({ className: 'ctrl-mid', html: el, iconSize: [32, 32], iconAnchor: [16, 16] }),
+        draggable: true,
+        autoPan: true,
+        keyboard: false,
+        title: `Drag to change section ${i + 1} in between its points`,
+        zIndexOffset: -100,
+      });
+      const done = (ll: L.LatLng) => {
+        const w = ll.wrap();
+        this.handlers?.onInsert(i, { lat: w.lat, lon: w.lng });
+      };
+      marker.on('click', () => done(marker.getLatLng()));
+      marker.on('dragstart', () => {
+        this.dragging = true;
+        el.classList.add('is-dragging');
+      });
+      marker.on('drag', () => {
+        const ll = marker.getLatLng();
+        const pts: [number, number][] = [
+          [r.controls[i]!.lat, r.controls[i]!.lon],
+          [ll.lat, ll.lng],
+          [r.controls[i + 1]!.lat, r.controls[i + 1]!.lon],
+        ];
+        if (!this.preview) this.preview = L.polyline(pts, { ...EDITOR_STYLE.pending, interactive: false }).addTo(this.drawLayer);
+        else this.preview.setLatLngs(pts);
+      });
+      marker.on('dragend', () => {
+        this.dragging = false;
+        this.preview?.remove();
+        this.preview = null;
+        const pending = this.deferred;
+        this.deferred = null;
+        if (pending) this.showEditor(pending.r, pending.selected);
+        done(marker.getLatLng());
+      });
+      marker.addTo(this.drawLayer);
+    });
+  }
+
+  /** Moves the map to a searched place and marks it with a pin until the next search or the end of drawing. */
+  showPlace(place: Place | null): void {
+    this.placeLayer.clearLayers();
+    if (!place) return;
+    if (place.bounds) {
+      const [s, n, w, e] = place.bounds;
+      this.map.fitBounds(
+        [
+          [s, w],
+          [n, e],
+        ],
+        { maxZoom: 16, padding: [24, 24] },
+      );
+    } else this.map.setView([place.lat, place.lon], 15);
+    const el = document.createElement('span');
+    el.className = 'place-pin';
+    L.marker([place.lat, place.lon], {
+      icon: L.divIcon({ className: 'place-pin-icon', html: el, iconSize: [22, 30], iconAnchor: [11, 30] }),
+      interactive: false,
+      keyboard: false,
+    }).addTo(this.placeLayer);
   }
 
   /** While dragging: straight dashed lines from the neighbours to the marker, until the drag ends and the legs are routed. */

@@ -11,7 +11,8 @@ Bugs and checks that are open on GitHub.
 | Item | Status | Tracked in |
 | --- | --- | --- |
 | Test with screen readers and in Windows high contrast mode. Zoom and reflow are done. | Open | [#12](https://github.com/kchan1028/ridewind/issues/12) |
-| Click-to-route drawing: routes follow roads (FOSSGIS Valhalla, road-bike profile), with drag to move, select and remove points, undo and redo, reverse, close loop, protected clear, straight sections by hand, a review step, GPX export and live wind recalculation. See [drawing a route](docs/routing.md). | Merged on 14 November 2026. The footer now shows the operator contact email the FOSSGIS routing terms require, so it can go live with the next deploy | [PR #88](https://github.com/kchan1028/ridewind/pull/88) |
+| Click-to-route drawing: routes follow roads (FOSSGIS Valhalla, road-bike profile), with drag to move, select and remove points, undo and redo, reverse, close loop, protected clear, straight sections by hand, a review step, GPX export and live wind recalculation. See [drawing a route](docs/routing.md). | Live since 14 November 2026, with the operator contact email the FOSSGIS routing terms require in the footer ([#90](https://github.com/kchan1028/ridewind/pull/90)) | [PR #88](https://github.com/kchan1028/ridewind/pull/88) |
+| **Find a place** (address search with OpenStreetMap's Nominatim, on submit only) and changing a section in between by dragging its middle handle (or **Add point before** with a keyboard). | Built and checked locally (14 November 2026). In review | This branch |
 
 ## Next
 
@@ -22,7 +23,6 @@ All of the audit's Next items have shipped. New ideas start as [issues](https://
 Deferred parts of route drawing, *Proposed*:
 
 - Freehand sketching that snaps to roads (draw a line with a finger and turn it into a routed course).
-- Inserting a point by dragging the middle of a section, rather than only at the end.
 - Editing a saved drawn route. Saved routes keep only their geometry, not their control points, so today a change means drawing again.
 - Switching a single section between road-following and straight line after it's drawn (today the choice applies to new sections, and to a gap that failed to route).
 - A server-side proxy, only if a keyed routing service is ever needed. None is needed for the default.
