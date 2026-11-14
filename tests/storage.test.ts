@@ -10,8 +10,10 @@ import {
   packRoute,
   parseImport,
   saveRoute,
+  saveRouteForecast,
   saveSettings,
   unpackRoute,
+  validCachedForecast,
   validRoutePrefs,
 } from '../src/lib/storage';
 
@@ -117,5 +119,56 @@ describe('route preferences', () => {
     const saved = packRoute(r, 'x', 1, { reversed: true, departTime: '07:30' });
     const back = parseImport(JSON.stringify(buildExport(DEFAULT_SETTINGS, [saved])));
     expect(back.routes[0]!.prefs).toEqual({ reversed: true, departTime: '07:30' });
+  });
+});
+
+describe('cached forecasts on saved routes', () => {
+  const pts = [
+    { lat: 37.8, lon: -122.3, ele: 10 },
+    { lat: 37.9, lon: -122.2, ele: 20 },
+  ];
+  const route = { name: 'Loop', source: 'track' as const, points: pts };
+  const forecast = {
+    fetchedAt: 1_800_000_000_000,
+    timezone: 'America/Los_Angeles',
+    timezoneAbbreviation: 'PST',
+    windowStartMs: 1_800_000_000_000,
+    windowEndMs: 1_800_000_000_000 + 3600_000,
+    locations: [
+      {
+        key: '37.800,-122.300',
+        gridLat: 37.8,
+        gridLon: -122.3,
+        series: { time: [1_800_000_000], temperature: [12], precipitation: [0], precipitationProbability: [0], windSpeed: [10], windDirection: [270], windGusts: [15] },
+        sun: { sunrise: [], sunset: [] },
+      },
+    ],
+  };
+
+  beforeEach(async () => {
+    await clearRoutes();
+  });
+
+  it('keeps the forecast with an existing saved route', async () => {
+    await saveRoute(packRoute(route, 'loop', 1));
+    await saveRouteForecast('loop', forecast);
+    const [saved] = await listRoutes();
+    expect(saved!.forecast?.fetchedAt).toBe(forecast.fetchedAt);
+  });
+
+  it('does nothing for a route that is no longer saved', async () => {
+    await saveRouteForecast('gone', forecast);
+    expect(await listRoutes()).toHaveLength(0);
+  });
+
+  it('leaves cached forecasts out of exports', () => {
+    const file = buildExport(DEFAULT_SETTINGS, [{ ...packRoute(route, 'loop', 1), forecast }]);
+    expect(file.routes[0]).not.toHaveProperty('forecast');
+  });
+
+  it('accepts a well-formed cached forecast and rejects anything else', () => {
+    expect(validCachedForecast(forecast)).toBe(forecast);
+    expect(validCachedForecast({ ...forecast, locations: 'nope' })).toBeNull();
+    expect(validCachedForecast(undefined)).toBeNull();
   });
 });

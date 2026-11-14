@@ -1,6 +1,6 @@
 # RideWind roadmap
 
-**Status, 14 November 2026:** the first nine roadmap items have all shipped except screen reader testing. The open work now comes from the [UX/UI audit](docs/ux-ui-audit.md) and the bugs found in testing. Items marked *Proposed* are recommendations the owner hasn't approved, and nothing on this page has a date.
+**Status, 14 November 2026:** the first nine roadmap items have all shipped except screen reader testing. The open work now comes from the [UX/UI audit](docs/ux-ui-audit.md). Items marked *Proposed* are recommendations the owner hasn't approved, and nothing on this page has a date.
 
 Each item links to its [GitHub issue](https://github.com/kchan1028/ridewind/issues) or pull request, where the detailed work is tracked. For what the product is and isn't meant to do, see [PRODUCT.md](PRODUCT.md).
 
@@ -10,11 +10,6 @@ Bugs and checks that are open on GitHub.
 
 | Item | Status | Tracked in |
 | --- | --- | --- |
-| Keyboard focus is lost after **Use**, a departure preset or **Retry forecast** | Open bug | [#31](https://github.com/kchan1028/ridewind/issues/31) |
-| The comparison restarts at the chosen departure, so earlier options disappear | Open bug | [#32](https://github.com/kchan1028/ridewind/issues/32) |
-| No wind verdict for a route without elevation in power mode | Open | [#33](https://github.com/kchan1028/ridewind/issues/33) |
-| The status line keeps an out-of-date "Using …" message | Open bug | [#34](https://github.com/kchan1028/ridewind/issues/34) |
-| The sample menu goes back to "Try a sample route…" after a sample loads | Open bug | [#35](https://github.com/kchan1028/ridewind/issues/35) |
 | Test with screen readers and in Windows high contrast mode. Zoom and reflow are done. | Open | [#12](https://github.com/kchan1028/ridewind/issues/12) |
 
 ## Next
@@ -24,7 +19,7 @@ Remaining steps from the [audit's implementation plan](docs/ux-ui-audit.md#6-imp
 | Item | Status | Size |
 | --- | --- | --- |
 | Fewer columns in the point-by-point table on phones (the rest of audit step 5) | Proposed | Under a day |
-| Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | Proposed | 1 to 2 days |
+| Refresh the forecast automatically when it's old, and keep the last forecast for saved routes so they work offline | In review | 1 to 2 days |
 | Saved routes remember the direction and usual departure time | In review | Up to 2 days |
 | Pick units from the browser's locale, with a speed-unit switch next to the field | Proposed | Under half a day |
 | A shorter first screen on phones, with a one-line explanation and two actions | Proposed | Under half a day |
@@ -51,6 +46,14 @@ Roadmap items shipped in November 2026:
 - [#18](https://github.com/kchan1028/ridewind/issues/18): up to 40 forecast points per route, keeping 5 km spacing on rides up to about 195 km.
 - [#19](https://github.com/kchan1028/ridewind/issues/19): RideWind shows a notice instead of the app when another site puts it in a frame.
 - [#20](https://github.com/kchan1028/ridewind/issues/20): an optional planned stop time that moves later arrival times and the finish.
+
+Bugs from the expert walkthrough in the [usability testing plan](docs/usability-testing.md), fixed in November 2026:
+
+- [#31](https://github.com/kchan1028/ridewind/issues/31): keyboard focus stays in place after **Use**, a departure preset or **Retry forecast**.
+- [#32](https://github.com/kchan1028/ridewind/issues/32): the comparison keeps its first departure after **Use**, so earlier options stay listed.
+- [#33](https://github.com/kchan1028/ridewind/issues/33): in power mode, a route without elevation still gets a wind verdict, timed at your average speed and labelled, with the elevation buttons in the verdict.
+- [#34](https://github.com/kchan1028/ridewind/issues/34): an old "Using …" status clears when the departure changes another way.
+- [#35](https://github.com/kchan1028/ridewind/issues/35): the sample menu shows the sample that's loaded.
 
 From the UX/UI audit's implementation plan:
 

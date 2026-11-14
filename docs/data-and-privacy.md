@@ -21,7 +21,7 @@ Weather comes from the [Open-Meteo Forecast API](https://open-meteo.com/en/docs)
 
 - **Terms:** the free API is for non-commercial use only. It is limited to fewer than 10,000 calls a day, 5,000 an hour and 600 a minute (300,000 a month), and needs no API key. Each location in a request counts as one call. A 16-day request for one point with 6 hourly variables plus daily sunrise and sunset costs 1 call, which was confirmed from the `X-RateLimit-Cost` header.
 - **Daylight:** the same request returns sunrise and sunset. The verdict uses the start point's times to note when a ride starts before sunrise or finishes after sunset; otherwise it shows the sunset time.
-- **Usage per route:** RideWind sends one request per loaded route, covering points about 5 km apart along it, up to 40, so loading a route costs one call per point: about 21 calls for a 100 km ride and at most 40. The 16-day hourly forecast is cached in memory, so changing the departure time, speed or direction doesn't call the API again. **Refresh forecast**, under the results, fetches a new one with the same single request and keeps your departure time and settings.
+- **Usage per route:** RideWind sends one request per loaded route, covering points about 5 km apart along it, up to 40, so loading a route costs one call per point: about 21 calls for a 100 km ride and at most 40. The 16-day hourly forecast is cached in memory, so changing the departure time, speed or direction doesn't call the API again. **Refresh forecast**, under the results, fetches a new one with the same single request and keeps your departure time and settings. If you come back to the tab and the forecast is over an hour old, RideWind fetches a new one automatically (only when the browser reports it's online).
 - **Privacy:** coordinates are rounded to 3 decimal places (about 100 m) before they're sent.
 - **Licence:** the data is [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The app shows "Weather data by Open-Meteo.com" with links wherever forecast data appears, and notes that RideWind derives its estimates from that data.
 - **Errors:** rate limiting (HTTP 429 or a "limit exceeded" reason), network failures, server errors and malformed responses each get their own message. Requests time out after 20 seconds instead of loading forever. The imported route stays loaded, and a retry button is shown.
@@ -40,7 +40,7 @@ The map uses the standard OpenStreetMap tile server, `https://tile.openstreetmap
 | --- | --- | --- |
 | Settings (speed, units, pace model, rider and bike setup, exposure) | `localStorage` | Key `ridewind:settings:v1` |
 | Saved routes | IndexedDB database `ridewind` | Only saved when you press **Save on this device** |
-| Forecast | Memory only | Gone when you reload |
+| Forecast | Memory; for saved routes, also IndexedDB with the route | The last forecast is kept with a saved route so it opens without a connection. It isn't included in exports |
 
 - Nothing syncs between devices or browsers. To move data, use **Data & settings → Export data** on one device and **Import data** on the other.
 - Clearing your browser's site data, or using **Delete all local data**, removes everything permanently.

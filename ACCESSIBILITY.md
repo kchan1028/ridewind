@@ -11,6 +11,7 @@ RideWind aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. It has
 - Wind markers on the map aren't tab stops. The point-by-point table holds the same information.
 - **Data & settings** is a native dialog: focus moves into it, and Esc closes it.
 - Focused elements get a 3 px outline.
+- Focus isn't lost when the page redraws. After **Use** in the comparison it moves to the new **Selected** button, after a departure preset it stays on that preset, and after **Retry forecast** or **Estimate as if flat** it moves to the verdict heading.
 
 **Screen readers**
 - The verdict ("Mostly tailwind…") is announced in a polite live region when results arrive. So are the status line and the data-settings messages.

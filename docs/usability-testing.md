@@ -273,17 +273,17 @@ Severity uses the audit's scale: **P0** blocks the task, **P1** is a major probl
 | W1 | **Best** goes to rides that finish in the dark, and to differences of a minute or two | P1 | P1-1 | Fixed on `main` by [PR #23](https://github.com/kchan1028/ridewind/pull/23); not deployed |
 | W2 | The verdict states a rain amount without its chance | P1 | P1-2 | Fixed on `main` by [PR #27](https://github.com/kchan1028/ridewind/pull/27); not deployed |
 | W3 | Speed error appears far from the field and the typed value is reverted | P1 | P1-3 | Fixed on `main` by [PR #28](https://github.com/kchan1028/ridewind/pull/28); not deployed |
-| W4 | Keyboard focus is lost after **Use**, a preset, or **Retry forecast** | P2 | *New* | Open: [#31](https://github.com/kchan1028/ridewind/issues/31) |
-| W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Open: [#32](https://github.com/kchan1028/ridewind/issues/32) |
-| W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Open: [#33](https://github.com/kchan1028/ridewind/issues/33) |
+| W4 | Keyboard focus is lost after **Use**, a preset, or **Retry forecast** | P2 | *New* | Fixed: [#31](https://github.com/kchan1028/ridewind/issues/31) |
+| W5 | The comparison restarts at the chosen time, so earlier options disappear | P2 | *New* | Fixed: [#32](https://github.com/kchan1028/ridewind/issues/32) |
+| W6 | In power mode, a route with no elevation shows no wind verdict | P2 | *New* | Fixed: [#33](https://github.com/kchan1028/ridewind/issues/33) |
 | W7 | A saved route forgets its direction and departure | P2 | P2-4 | Open |
 | W8 | Phone: the fixed verdict bar takes 178 px of 812 | P2 | P2-1 | Open |
 | W9 | Phone: the **Reversed** column is cut off | P2 | P2-2 | Open |
 | W10 | Phone: the first screen is an empty map | P2 | P2-5 | Open |
 | W11 | Small touch targets: stepper, presets, **Use**, **Open**, **Delete** | P2 | P2-8 | Fixed on `main` by [PR #25](https://github.com/kchan1028/ridewind/pull/25); not deployed |
 | W12 | One forecast error shown three times | P3 | P3-1 | Open |
-| W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Open: [#34](https://github.com/kchan1028/ridewind/issues/34) |
-| W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Open: [#35](https://github.com/kchan1028/ridewind/issues/35) |
+| W13 | The status line keeps an out-of-date "Using ..." message | P3 | *New* | Fixed: [#34](https://github.com/kchan1028/ridewind/issues/34) |
+| W14 | The sample menu goes back to "Try a sample route…" after loading | P3 | *New* | Fixed: [#35](https://github.com/kchan1028/ridewind/issues/35) |
 
 #### W1 · Best goes to dark rides and to trivial differences (P1)
 

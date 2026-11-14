@@ -3,6 +3,7 @@ import type { Route, TrackPoint } from './geo';
 import { DEFAULT_RIDER, validRiderParams, type Exposure, type RiderParams } from './physics';
 import { MAX_STOP_MINUTES } from './simulate';
 import type { UnitSystem } from './units';
+import type { ForecastBundle } from './weather';
 
 export type PaceMode = 'constant' | 'power';
 
@@ -85,6 +86,8 @@ export interface SavedRoute {
   elevationSource?: Route['elevationSource'];
   points: PackedPoint[];
   prefs?: RoutePrefs;
+  /** The last forecast fetched for this route, kept so it still opens without a connection. Not exported. */
+  forecast?: ForecastBundle;
 }
 
 const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -168,6 +171,26 @@ export async function saveRoute(saved: SavedRoute, idb?: IDBFactory): Promise<vo
   await withStore('readwrite', (s) => s.put(saved), idb);
 }
 
+/** Keeps `forecast` with a saved route. Does nothing if the route is no longer saved. */
+export async function saveRouteForecast(id: string, forecast: ForecastBundle, idb?: IDBFactory): Promise<void> {
+  const saved = await withStore<SavedRoute | undefined>('readonly', (s) => s.get(id) as IDBRequest<SavedRoute | undefined>, idb);
+  if (saved) await saveRoute({ ...saved, forecast }, idb);
+}
+
+/** A cached forecast read back from storage, or null if it doesn't have the expected shape. */
+export function validCachedForecast(v: unknown): ForecastBundle | null {
+  const f = v as Partial<ForecastBundle> | null | undefined;
+  if (!f || typeof f !== 'object') return null;
+  const ok =
+    typeof f.fetchedAt === 'number' &&
+    typeof f.timezone === 'string' &&
+    typeof f.windowStartMs === 'number' &&
+    typeof f.windowEndMs === 'number' &&
+    Array.isArray(f.locations) &&
+    f.locations.every((l) => typeof l?.key === 'string' && Array.isArray(l.series?.time));
+  return ok ? (f as ForecastBundle) : null;
+}
+
 export async function deleteRoute(id: string, idb?: IDBFactory): Promise<void> {
   await withStore('readwrite', (s) => s.delete(id), idb);
 }
@@ -187,7 +210,9 @@ export interface ExportFile {
 }
 
 export function buildExport(settings: Settings, routes: SavedRoute[], now = new Date()): ExportFile {
-  return { app: 'ridewind', version: 1, exportedAt: now.toISOString(), settings, routes };
+  // Cached forecasts are large and go stale, so exports carry only the routes themselves.
+  const stripped = routes.map(({ forecast: _forecast, ...r }) => r);
+  return { app: 'ridewind', version: 1, exportedAt: now.toISOString(), settings, routes: stripped };
 }
 
 function validPoint(p: unknown): p is PackedPoint {
