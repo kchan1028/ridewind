@@ -1,6 +1,6 @@
 # RideWind roadmap
 
-**Status, 14 November 2026:** eight of the nine proposed items have shipped, with the owner choosing the approach for each. One is still open, and nothing below has a date.
+**Status, 14 November 2026:** eight of the nine proposed items have shipped, with the owner choosing the approach for each. One is still open, one new item is proposed and not yet approved, and nothing below has a date.
 
 Each item links to its [GitHub issue](https://github.com/kchan1028/ridewind/issues), where the detailed work is tracked. For what the product is and isn't meant to do, see [PRODUCT.md](PRODUCT.md).
 
@@ -9,6 +9,7 @@ Each item links to its [GitHub issue](https://github.com/kchan1028/ridewind/issu
 | Item | Status | What's left | Source |
 | --- | --- | --- | --- |
 | Test with screen readers and in Windows high contrast mode | Open, [#12](https://github.com/kchan1028/ridewind/issues/12) | Reflow at 200% and 400% zoom and control labels have been checked. It still needs a person to try VoiceOver, NVDA or TalkBack, and Windows high contrast mode. | [Accessibility](ACCESSIBILITY.md#known-limitations) |
+| Keep keyboard focus in place after **Use**, a departure preset or **Retry forecast** | Proposed, [#31](https://github.com/kchan1028/ridewind/issues/31) | Focus jumps back to the top of the page after these actions (WCAG 2.4.3). Found in an expert walkthrough; as an accessibility defect it doesn't need participant evidence first. | [Usability testing, W4](docs/usability-testing.md#w4--keyboard-focus-lost-after-use-presets-and-retry-p2-new) |
 
 ## Next
 
