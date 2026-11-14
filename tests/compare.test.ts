@@ -86,7 +86,7 @@ describe('bestChoice and daylight', () => {
     const rows = compareRides(both({ sun }), [T0 * 1000, (T0 + 2 * 3600) * 1000], constant);
     const at = (h: number) => rows.find((r) => r.departureMs === (T0 + h * 3600) * 1000)!;
     expect(at(0).daylight).toBe('daylight');
-    expect(at(2).daylight).toBe('starts-before-sunrise');
+    expect(at(2).daylight).toBe('starts-after-sunset');
   });
 
   it('never marks a ride that finishes after sunset as best, however favourable', () => {

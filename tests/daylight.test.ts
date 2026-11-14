@@ -19,8 +19,11 @@ describe('rideDaylight', () => {
   it('flags a ride that starts before sunrise', () => {
     expect(rideDaylight(day0 + 6 * H, day0 + 9 * H, sun)).toMatchObject({ kind: 'starts-before-sunrise', sunriseMs: day0 + 7 * H });
   });
-  it('an evening departure after sunset uses the next day and counts as before sunrise', () => {
-    expect(rideDaylight(day0 + 19 * H, day0 + 21 * H, sun)).toMatchObject({ kind: 'starts-before-sunrise', sunriseMs: day0 + 31 * H });
+  it('an evening departure soon after sunset counts as starting after sunset', () => {
+    expect(rideDaylight(day0 + 19 * H, day0 + 21 * H, sun)).toMatchObject({ kind: 'starts-after-sunset', sunsetMs: day0 + 17 * H, sunriseMs: day0 + 31 * H });
+  });
+  it('a late-night departure nearer the next sunrise counts as before sunrise', () => {
+    expect(rideDaylight(day0 + 26 * H, day0 + 28 * H, sun)).toMatchObject({ kind: 'starts-before-sunrise', sunriseMs: day0 + 31 * H });
   });
   it('returns unknown without sun data (e.g. polar day/night)', () => {
     expect(rideDaylight(day0, day0 + H, { sunrise: [], sunset: [] }).kind).toBe('unknown');
