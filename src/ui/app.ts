@@ -500,10 +500,16 @@ function bindDrawing(): void {
     draft = [];
     renderDraft('All points cleared.');
   });
-  $('draw-cancel').addEventListener('click', () => {
+  const cancelDrawing = () => {
     stopDrawing();
     map.fit();
     $('draw-start').focus();
+  };
+  $('draw-cancel').addEventListener('click', cancelDrawing);
+  // Escape leaves draw mode too, unless it's closing something else first (a dialog, the date picker).
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape' || !drawing || ev.defaultPrevented || document.querySelector('dialog[open]')) return;
+    cancelDrawing();
   });
   $('draw-finish').addEventListener('click', finishDrawing);
   $('draw-name').addEventListener('keydown', (ev) => {
