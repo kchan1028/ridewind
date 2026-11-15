@@ -1627,37 +1627,70 @@ input[aria-invalid='true'] {
 
 /* ---------- draw a route ---------- */
 .draw-bar {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  margin-bottom: 8px;
+}
+/* While drawing, the verdict steps aside so it can't cover the editor. */
+body.drawing .verdict {
+  display: none;
+}
+/* While drawing, the editor takes the Route section's place. */
+body.drawing .route-step > :not(.draw-bar) {
+  display: none;
+}
+.draw-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.draw-head .draw-title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+.draw-help {
+  margin: 4px 0;
+  font-size: 0.9375rem;
+}
+.draw-tips {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.draw-tips summary {
+  cursor: pointer;
+  color: var(--focus);
+  font-weight: 600;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+.draw-tips p {
+  margin: 4px 0 8px;
 }
 .draw-bar:focus:not(:focus-visible) {
   outline: none;
 }
-.draw-title,
 .draw-status {
-  margin: 0 0 6px;
-  font-size: 0.875rem;
-}
-.draw-status {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .draw-finish {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 .draw-finish label {
   font-weight: 600;
   font-size: 0.875rem;
 }
 .draw-finish input {
-  flex: 1 1 6rem;
-  min-width: 0;
-  width: auto;
+  width: 100%;
 }
 #map.is-drawing {
   cursor: crosshair;
@@ -1683,20 +1716,60 @@ body.drawing .legend {
 }
 /* Click-to-route editor */
 .draw-mode {
-  margin: 4px 0 6px;
+  margin: 0 0 12px;
   padding: 0;
   border: 0;
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 16px;
+  min-width: 0;
 }
 .draw-mode legend {
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0;
+  margin-bottom: 4px;
 }
-.draw-mode .radio {
+.draw-mode .hint {
+  margin: 6px 0 0;
+}
+/* Two radios drawn as one switch */
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.segmented label {
+  position: relative;
+  display: flex;
+}
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.segmented span {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 4px 8px;
   font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+}
+.segmented label + label span {
+  border-left: 1px solid var(--ink);
+}
+.segmented input:checked + span {
+  background: var(--ink);
+  color: var(--surface);
+}
+.segmented input:focus-visible + span {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
 }
 .hint-inline {
   color: var(--muted);
@@ -1705,7 +1778,7 @@ body.drawing .legend {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 14px;
-  margin: 0 0 6px;
+  margin: -4px 0 12px;
   padding: 0;
   list-style: none;
   font-size: 0.8125rem;
@@ -1742,7 +1815,10 @@ body.drawing .legend {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 6px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: var(--surface);
   font-size: 0.875rem;
   color: var(--muted);
 }
@@ -1761,7 +1837,7 @@ body.drawing .legend {
 }
 .draw-error,
 .draw-selected {
-  margin: 0 0 8px;
+  margin: 0;
   padding: 8px 10px;
   border-radius: var(--radius);
   font-size: 0.875rem;
@@ -1778,8 +1854,108 @@ body.drawing .legend {
 .draw-selected p {
   margin: 0 0 6px;
 }
+/* Tools that float over the map while drawing */
+.map-pane {
+  container-type: inline-size;
+}
+.draw-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* Clears Leaflet's zoom buttons on the left and the attribution at the bottom. */
+  padding: 10px 10px 28px 54px;
+}
+.draw-overlay[hidden] {
+  display: none;
+}
+.draw-overlay-top,
+.draw-overlay-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.draw-overlay-bottom {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.draw-overlay-top > *,
+.draw-overlay-bottom > * {
+  pointer-events: auto;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.draw-overlay-bottom > * {
+  max-width: min(100%, 26rem);
+}
+.draw-overlay .draw-search {
+  flex: 1 1 16rem;
+  max-width: 24rem;
+  margin: 0;
+  padding: 6px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
 .draw-tools {
-  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 2px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  justify-content: center;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tool:hover {
+  background: var(--paper);
+}
+.tool[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--tail) 20%, var(--surface));
+}
+.tool[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.tool-icon {
+  flex: none;
+}
+.tool-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 8px 2px;
+  background: var(--line);
+}
+/* Narrow maps show icons only; the label stays as the button's name. */
+@container (max-width: 820px) {
+  .tool {
+    padding: 0;
+  }
+  .tool-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 .draw-privacy {
   margin: 8px 0 0;
@@ -1902,6 +2078,7 @@ body.drawing .legend {
 }
 .draw-search-results {
   margin: 6px 0 0;
+  background: var(--surface);
   padding: 0;
   list-style: none;
   border: 1px solid var(--line);
@@ -1940,6 +2117,10 @@ body.drawing .legend {
 }
 .draw-search-results li.search-result:last-child {
   border-bottom: 0;
+}
+/* The search credit shows with the suggestions it applies to. */
+.draw-search-results[hidden] ~ .draw-search-credit {
+  display: none;
 }
 .draw-search-credit {
   margin: 4px 0 0;
@@ -1993,19 +2174,11 @@ body.drawing .legend {
   transform: scale(1.4);
   opacity: 1;
 }
-/* Wide screens: the panel scrolls rather than squeezing the map. */
-@media (min-width: 900px) {
-  .draw-bar {
-    max-height: 42vh;
-    overflow-y: auto;
-    flex: none;
-  }
-}
 /* While drawing, the route card's actions belong to the finished route. */
 body.drawing #route-card .actions {
   display: none;
 }
-/* Phones: while drawing, the map leads with room to tap, and the verdict bar steps aside. */
+/* Phones: while drawing, the map leads with room to tap. */
 @media (max-width: 899px) {
   body.drawing .layout {
     grid-template-areas: 'map' 'panel';
@@ -2019,38 +2192,24 @@ body.drawing #route-card .actions {
     height: 55vh;
     min-height: 260px;
   }
-  /* The map comes first so there's room to tap; the controls you use most sit right under it. */
-  body.drawing .map-pane {
-    display: flex;
-    flex-direction: column;
+  /* Name and Review stay in reach while the rest of the editor scrolls. */
+  .draw-finish {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 8px 0;
+    background: var(--paper);
   }
-  body.drawing .draw-bar {
-    order: 2;
-    border-bottom: 0;
-    border-top: 1px solid var(--line);
+  .draw-finish label {
+    flex-basis: 100%;
   }
-  #draw-edit {
-    display: flex;
-    flex-direction: column;
-  }
-  #draw-edit[hidden] {
-    display: none;
-  }
-  .draw-title {
-    order: 5;
-    margin-top: 8px;
-  }
-  .draw-mode {
-    order: 4;
-  }
-  .draw-key {
-    order: 6;
-  }
-  .draw-privacy {
-    order: 7;
-  }
-  body.drawing .verdict {
-    display: none;
+  .draw-finish input {
+    flex: 1 1 8rem;
+    width: auto;
+    min-width: 0;
   }
   body.drawing.has-verdict {
     padding-bottom: 16px;

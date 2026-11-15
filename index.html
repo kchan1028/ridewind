@@ -79,8 +79,54 @@
         </section>
         <div id="verdict-live" class="visually-hidden" aria-live="polite"></div>
 
-        <section class="step" aria-labelledby="h-route">
+        <section class="step route-step" aria-labelledby="h-route">
           <h2 id="h-route">Route</h2>
+          <div class="draw-bar" id="draw-bar" role="group" aria-labelledby="draw-title" tabindex="-1" hidden>
+            <div id="draw-edit">
+              <div class="draw-head">
+                <h3 class="draw-title" id="draw-title">Draw a route</h3>
+                <button type="button" class="btn btn-small btn-quiet" id="draw-cancel">Cancel</button>
+              </div>
+              <p class="draw-help" id="draw-help">Tap the map to add points. Drag a point, or the small dot in the middle of a section, to reshape the route.</p>
+              <details class="draw-tips">
+                <summary>More tips</summary>
+                <p>Drag anywhere else on the map to move it. Search for a place on the map to jump there. Select a point to move, remove or add one before it. Ctrl+Z undoes and Ctrl+Shift+Z redoes.</p>
+                <p>To add points without tapping, move the map so the crosshair sits where you want the point, then press Enter or use this button.</p>
+                <button type="button" class="btn btn-small" id="draw-add">Add point at centre</button>
+              </details>
+              <fieldset class="draw-mode">
+                <legend>New sections</legend>
+                <div class="segmented">
+                  <label><input type="radio" name="draw-mode" value="routed" checked /><span>Follow roads</span></label>
+                  <label><input type="radio" name="draw-mode" value="manual" /><span>Straight line</span></label>
+                </div>
+                <p class="hint">Follow roads finds a cycling route that prefers paved roads. Use a straight line where the map is missing a road.</p>
+              </fieldset>
+              <p class="draw-status" id="draw-status" aria-live="polite">No points yet.</p>
+              <ul class="draw-key" id="draw-key" aria-label="Line styles" hidden>
+                <li><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="dk dk-routed" /></svg>Follows roads</li>
+                <li><svg width="28" height="8" aria-hidden="true"><line x1="2" y1="4" x2="28" y2="4" class="dk dk-manual" /></svg>Straight line, drawn by hand</li>
+                <li><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="dk dk-pending" /></svg>Finding roads…</li>
+              </ul>
+              <div class="draw-finish">
+                <label for="draw-name">Route name</label>
+                <input type="text" id="draw-name" maxlength="100" placeholder="Drawn route" autocomplete="off" enterkeyhint="done" />
+                <button type="button" class="btn btn-primary" id="draw-finish" aria-disabled="true">Review route</button>
+              </div>
+              <p class="hint draw-privacy" id="draw-privacy"></p>
+            </div>
+            <div class="draw-review" id="draw-review" hidden>
+              <h3 class="draw-title" id="draw-review-title" tabindex="-1">Review your route</h3>
+              <p id="draw-review-facts"></p>
+              <p class="note" id="draw-review-manual" hidden></p>
+              <p class="hint">Following roads uses OpenStreetMap data and a cycling profile that prefers paved roads. It does not confirm that a road is open, legal to ride or approved for an event or race course. Check the line and its direction on the map before you use it.</p>
+              <label class="checkbox"><input type="checkbox" id="draw-review-ok" /> I've checked the route and its direction on the map</label>
+              <div class="actions">
+                <button type="button" class="btn btn-primary btn-small" id="draw-confirm" aria-disabled="true">Use this route</button>
+                <button type="button" class="btn btn-small" id="draw-back">Keep editing</button>
+              </div>
+            </div>
+          </div>
           <p class="intro" id="intro">See the wind you'll ride into, timed to when you reach each part of your route. Import a GPX file, draw a route on the map or try a sample to start.</p>
           <div class="actions">
             <label class="btn btn-primary file-btn">
@@ -281,13 +327,12 @@
 
       <section class="map-pane" aria-label="Route map">
         <div class="panel-resizer" id="panel-resizer" role="separator" aria-orientation="vertical" aria-controls="controls" aria-label="Resize side panel. Arrow keys change the width, Enter resets it." tabindex="0"></div>
-        <div class="draw-bar" id="draw-bar" role="group" aria-labelledby="draw-title" tabindex="-1" hidden>
-          <div id="draw-edit">
-            <p class="draw-title" id="draw-title"><strong>Draw a route</strong> <span class="draw-help" id="draw-help">Tap the map to set a start, then tap again to extend the route. Drag a point to move it, or drag the small dot in the middle of a section to change it in between. Drag anywhere else to move the map.</span></p>
+        <div class="draw-overlay" id="draw-overlay" hidden>
+          <div class="draw-overlay-top">
             <form class="draw-search" id="draw-search" role="search" novalidate>
-              <label for="draw-search-q">Find a place</label>
+              <label for="draw-search-q" class="visually-hidden">Find a place</label>
               <div class="draw-search-row">
-                <input type="search" id="draw-search-q" maxlength="200" placeholder="Address, town or landmark" autocomplete="off" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="draw-search-results" aria-describedby="draw-search-credit" />
+                <input type="search" id="draw-search-q" maxlength="200" placeholder="Find a place" autocomplete="off" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="draw-search-results" aria-describedby="draw-search-credit" />
                 <button type="submit" class="btn btn-small">Search</button>
               </div>
               <p class="draw-search-status" id="draw-search-status" aria-live="polite"></p>
@@ -301,17 +346,19 @@
                 </div>
               </div>
             </form>
-            <fieldset class="draw-mode">
-              <legend>New sections</legend>
-              <label class="radio"><input type="radio" name="draw-mode" value="routed" checked /> Follow roads <span class="hint-inline">(cycling, prefers paved)</span></label>
-              <label class="radio"><input type="radio" name="draw-mode" value="manual" /> Straight line <span class="hint-inline">(manual, for missing roads)</span></label>
-            </fieldset>
-            <ul class="draw-key" aria-label="Line styles">
-              <li><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="dk dk-routed" /></svg>Follows roads</li>
-              <li><svg width="28" height="8" aria-hidden="true"><line x1="2" y1="4" x2="28" y2="4" class="dk dk-manual" /></svg>Straight line, drawn by hand</li>
-              <li><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" class="dk dk-pending" /></svg>Finding roads…</li>
-            </ul>
-            <p class="draw-status" id="draw-status" aria-live="polite">No points yet.</p>
+            <div class="draw-tools" role="toolbar" aria-label="Drawing tools">
+              <button type="button" class="tool" id="draw-tap" aria-pressed="true" title="Tap adds points"><svg class="tool-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.904 17.563a1.2 1.2 0 0 0 2.228 .308l2.09 -3.093l4.907 4.907a1.067 1.067 0 0 0 1.509 0l1.047 -1.047a1.067 1.067 0 0 0 0 -1.509l-4.907 -4.907l3.113 -2.09a1.2 1.2 0 0 0 -.309 -2.228l-13.582 -3.904l3.904 13.563z"/></svg><span class="tool-label">Tap adds points</span></button>
+              <span class="tool-sep" aria-hidden="true"></span>
+              <button type="button" class="tool" id="draw-undo" aria-disabled="true" aria-keyshortcuts="Control+Z Meta+Z" title="Undo"><svg class="tool-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14l-4 -4l4 -4"/><path d="M5 10h11a4 4 0 1 1 0 8h-1"/></svg><span class="tool-label">Undo</span></button>
+              <button type="button" class="tool" id="draw-redo" aria-disabled="true" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y" title="Redo"><svg class="tool-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l4 -4l-4 -4"/><path d="M19 10h-11a4 4 0 1 0 0 8h1"/></svg><span class="tool-label">Redo</span></button>
+              <span class="tool-sep" aria-hidden="true"></span>
+              <button type="button" class="tool" id="draw-reverse" aria-disabled="true" title="Reverse"><svg class="tool-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10h14l-4 -4"/><path d="M17 14h-14l4 4"/></svg><span class="tool-label">Reverse</span></button>
+              <button type="button" class="tool" id="draw-loop" aria-disabled="true" title="Close loop"><svg class="tool-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3"/><path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3 -3l3 -3"/></svg><span class="tool-label">Close loop</span></button>
+              <span class="tool-sep" aria-hidden="true"></span>
+              <button type="button" class="tool" id="draw-clear" aria-disabled="true" title="Clear"><svg class="tool-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l16 0"/><path d="M10 11l0 6"/><path d="M14 11l0 6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/></svg><span class="tool-label">Clear…</span></button>
+            </div>
+          </div>
+          <div class="draw-overlay-bottom">
             <p class="draw-routing" id="draw-routing" hidden><span class="spinner" aria-hidden="true"></span> Following roads…</p>
             <div class="draw-error" id="draw-error" role="alert" hidden>
               <p id="draw-error-msg"></p>
@@ -329,33 +376,6 @@
                 <button type="button" class="btn btn-small" id="draw-remove">Remove point</button>
                 <button type="button" class="btn btn-small btn-quiet" id="draw-deselect">Done</button>
               </div>
-            </div>
-            <div class="actions draw-tools">
-              <button type="button" class="btn btn-small" id="draw-tap" aria-pressed="true">Tap adds points</button>
-              <button type="button" class="btn btn-small" id="draw-add">Add point at centre</button>
-              <button type="button" class="btn btn-small" id="draw-undo" aria-disabled="true" aria-keyshortcuts="Control+Z Meta+Z">Undo</button>
-              <button type="button" class="btn btn-small" id="draw-redo" aria-disabled="true" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y">Redo</button>
-              <button type="button" class="btn btn-small" id="draw-reverse" aria-disabled="true">Reverse</button>
-              <button type="button" class="btn btn-small" id="draw-loop" aria-disabled="true">Close loop</button>
-              <button type="button" class="btn btn-small" id="draw-clear" aria-disabled="true">Clear…</button>
-            </div>
-            <div class="draw-finish">
-              <label for="draw-name">Route name</label>
-              <input type="text" id="draw-name" maxlength="100" placeholder="Drawn route" autocomplete="off" enterkeyhint="done" />
-              <button type="button" class="btn btn-primary btn-small" id="draw-finish" aria-disabled="true">Review route</button>
-              <button type="button" class="btn btn-small btn-quiet" id="draw-cancel">Cancel</button>
-            </div>
-            <p class="hint draw-privacy" id="draw-privacy"></p>
-          </div>
-          <div class="draw-review" id="draw-review" hidden>
-            <h3 class="draw-title" id="draw-review-title" tabindex="-1">Review your route</h3>
-            <p id="draw-review-facts"></p>
-            <p class="note" id="draw-review-manual" hidden></p>
-            <p class="hint">Following roads uses OpenStreetMap data and a cycling profile that prefers paved roads. It does not confirm that a road is open, legal to ride or approved for an event or race course. Check the line and its direction on the map before you use it.</p>
-            <label class="checkbox"><input type="checkbox" id="draw-review-ok" /> I've checked the route and its direction on the map</label>
-            <div class="actions">
-              <button type="button" class="btn btn-primary btn-small" id="draw-confirm" aria-disabled="true">Use this route</button>
-              <button type="button" class="btn btn-small" id="draw-back">Keep editing</button>
             </div>
           </div>
         </div>
