@@ -14,6 +14,24 @@ As of 15 November 2026, repository documentation records keyboard checks in Chro
 | Desktop browser at actual 200% zoom | Not run | Use browser zoom, then complete the core journey and check content/focus visibility. |
 | Windows contrast theme + Edge | Not run | Enable a Windows contrast theme, then follow the high-contrast checks below. |
 
+## User-reported Chrome spot check
+
+Reported on 15 November 2026 against the [live site](https://kchan1028.github.io/ridewind/) using the ChatGPT Chrome extension. Browser/OS versions and deployed commit were not supplied. These results are user-provided browser observations, not a screen-reader walkthrough.
+
+| Check | Reported result |
+| --- | --- |
+| Skip-link focus | Passed |
+| Labelled form controls | Passed |
+| Keyboard-operated chart data tables | Passed |
+| Settings dialog Escape and focus return | Passed |
+| Keyboard panel resizing | Passed |
+| Narrow-screen reflow at 390 px | Passed |
+| Drawing start/finish marker names | Failed: exposed as “S” and “F” |
+
+The marker fix adds an explicit accessible name to each focusable drawing marker, including start/finish, point position and selected state. Example: “Start, point 1 of 4” and “Finish, point 4 of 4”. Names are regenerated after edits, reversal and selection. A browser recheck of the fix remains pending.
+
+Automated axe/Lighthouse checks, new contrast measurements, actual browser zoom and a screen-reader walkthrough were not verified by this spot check. The platform checks above remain open.
+
 ## Core journey
 
 1. Open the app with the assistive technology already active. Reach the ride controls.

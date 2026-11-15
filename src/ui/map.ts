@@ -335,6 +335,9 @@ export class RouteMap {
         this.handlers?.onDragEnd(i, { lat: ll.lat, lon: ll.lng });
       });
       marker.addTo(this.drawLayer);
+      // DivIcon content (S/F/⟲) takes precedence over title as a button name;
+      // Leaflet's alt option only labels image icons. Name the focusable wrapper.
+      marker.getElement()?.setAttribute('aria-label', `${title}${selected === i ? ', selected' : ''}`);
     });
   }
 
