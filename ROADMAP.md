@@ -1,5 +1,7 @@
 # RideWind roadmap
 
+See [requirements](REQUIREMENTS.md), [features](FEATURES.md), [setup](SETUP.md) and [design](DESIGN.md). The statuses below preserve the recorded roadmap history; they are not a fresh check of GitHub or production. [FEATURES.md](FEATURES.md) inventories the local checkout on 15 November 2026.
+
 **Status, 14 November 2026:** the first nine roadmap items have all shipped except screen reader testing. The open work now comes from the [UX/UI audit](docs/ux-ui-audit.md). Items marked *Proposed* are recommendations the owner hasn't approved, and nothing on this page has a date.
 
 Each item links to its [GitHub issue](https://github.com/kchan1028/ridewind/issues) or pull request, where the detailed work is tracked. For what the product is and isn't meant to do, see [PRODUCT.md](PRODUCT.md).
