@@ -22,6 +22,7 @@ RideWind aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. It has
 - Each chart is an image with a text summary, for example the elevation range and the headwind range. Below each chart, **show the data** opens a table of the values at about 20 points along the route.
 - The map has a text description that points to the table. While drawing, it changes to explain the arrow keys, Enter and the crosshair.
 - While drawing, each change is announced in a polite live region with the point count, distance and climbing, for example "Point 3 added. 3 points · 12.4 km · ↗ 210 m". Routing errors are announced with `role="alert"`, and the drawing bar is `aria-busy` while roads are being found.
+- Drawing markers have explicit accessible names such as "Start, point 1 of 4" and "Finish, point 4 of 4", including the selected state, rather than relying on the visible S/F symbols.
 - The page language is set to English.
 
 **Colour and contrast**
