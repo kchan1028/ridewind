@@ -654,10 +654,12 @@ function renderEditor(view: SessionView | undefined = session?.view()): void {
   const n = r.controls.length;
   const u = units();
   let summary: string;
+  let hasManual = false;
   if (n === 0) summary = tapAdds ? 'No points yet. Tap the map to set the start.' : 'No points yet. Use Add point at centre, or turn on Tap adds points.';
   else if (n === 1) summary = '1 point. Tap the map again to extend the route.';
   else {
     const st = editorStats(r);
+    hasManual = st.manualM > 0;
     let dist = formatDistance(st.totalM, u);
     if (st.manualM > 0 && st.routedM > 0) dist += ` (${formatDistance(st.routedM, u)} on roads, ${formatDistance(st.manualM, u)} straight)`;
     else if (st.manualM > 0) dist += ' (all straight lines)';
@@ -668,6 +670,7 @@ function renderEditor(view: SessionView | undefined = session?.view()): void {
   }
   $('draw-status').textContent = drawNote ? `${drawNote} ${summary}` : summary;
   drawNote = '';
+  show('draw-key', hasManual);
   show('draw-routing', view.routing);
   $('draw-bar').setAttribute('aria-busy', String(view.routing));
   show('draw-error', !!view.error);
@@ -760,6 +763,7 @@ function startDrawing(): void {
     $<HTMLInputElement>('draw-name').value = '';
     document.body.classList.add('drawing');
     show('draw-bar', true);
+    show('draw-overlay', true);
     show('draw-edit', true);
     show('draw-review', false);
     $('draw-start').setAttribute('aria-expanded', 'true');
@@ -794,6 +798,7 @@ function stopDrawing(): void {
   map.stopDrawing();
   document.body.classList.remove('drawing');
   show('draw-bar', false);
+  show('draw-overlay', false);
   $('draw-start').setAttribute('aria-expanded', 'false');
 }
 
@@ -842,6 +847,7 @@ function openReview(): void {
   $<HTMLInputElement>('draw-review-ok').checked = false;
   setAriaDisabled('draw-confirm', true);
   show('draw-edit', false);
+  show('draw-overlay', false);
   show('draw-review', true);
   map.fitDrawing(r);
   $('draw-review-title').focus();
@@ -850,6 +856,7 @@ function openReview(): void {
 function backToEditing(): void {
   show('draw-review', false);
   show('draw-edit', true);
+  show('draw-overlay', true);
   $('draw-finish').focus();
 }
 
