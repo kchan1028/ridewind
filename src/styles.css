@@ -1998,7 +1998,9 @@ body.drawing .legend {
   outline: none;
 }
 .ctrl-pt:focus-visible .ctrl-dot {
-  box-shadow: 0 0 0 3px var(--focus);
+  /* Unlike box-shadow, outlines remain visible in forced-colors mode. */
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
 .ctrl-dot {
   display: flex;
@@ -2110,6 +2112,24 @@ body.drawing .legend {
   background: var(--line);
   box-shadow: inset 4px 0 0 var(--focus);
   font-weight: 600;
+}
+
+/* System colours preserve selected states when backgrounds/shadows are forced. */
+@media (forced-colors: active) {
+  .btn[aria-pressed='true'],
+  .tool[aria-pressed='true'],
+  .search-result[aria-selected='true'],
+  .ctrl-dot.is-selected {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .btn[aria-pressed='true']:focus-visible,
+  .tool[aria-pressed='true']:focus-visible,
+  .ctrl-pt:focus-visible .ctrl-dot {
+    outline: 3px solid CanvasText;
+    outline-offset: 2px;
+  }
 }
 .draw-search-results li.search-result {
   display: flex;
