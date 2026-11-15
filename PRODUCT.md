@@ -39,7 +39,7 @@ flowchart LR
   E -- Yes --> G[Save on<br/>this device]
 ```
 
-There are four core journeys:
+There are five core journeys:
 
 1. **Check a planned ride.** Load the route, keep the default departure, and read the verdict, for example *Mostly crosswind · gusts 43 km/h · rain up to 4.3 mm/h · finish 1:35 PM · sunset 4:57 PM*.
 2. **Choose the best time or direction.** Step the departure time an hour at a time, use a preset such as *Tomorrow 8:00 AM*, or compare up to six times in both directions. RideWind marks the best option, and **Use** applies it.
@@ -79,7 +79,16 @@ These limits follow from the current design, the data licence and the project's 
 
 - Not a service with accounts. There's no sign-in and no cloud sync. Moving data between devices is a manual export and import.
 - Not a commercial product. It's a personal, non-commercial project, which the free Open-Meteo plan requires.
-- Not race or pacing advice. The ride time is a planning estimate. The model leaves out stops, corners, traffic, drafting and fatigue.
+- Not race or pacing advice. The ride time is a planning estimate. Planned stops can be entered explicitly; the model does not automatically predict unplanned pauses, corners, traffic, group drafting or fatigue.
 - Not a full route planner. RideWind draws routes along roads so it can show their wind, but it has no turn-by-turn directions, surface or traffic data, route suggestions, freehand sketching that snaps to roads, or editing of a saved route.
 - Not a course approval. Following roads shows what OpenStreetMap and a cycling profile suggest; it doesn't confirm road access, closures or permission for an event.
 - Not a copy of any commercial cycling weather service. It isn't affiliated with one and makes no claim to match one.
+
+## Planning documents
+
+- [Product](PRODUCT.md): audience, purpose and scope.
+- [Requirements](REQUIREMENTS.md): expected behavior and acceptance criteria.
+- [Features](FEATURES.md): implementation inventory in the local checkout.
+- [Roadmap](ROADMAP.md): recorded delivery history and proposed work.
+- [Setup](SETUP.md): local commands and configuration.
+- [Design](DESIGN.md): interface conventions and review criteria.
