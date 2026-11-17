@@ -1,0 +1,21 @@
+name: Human contributor attribution
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check commit and squash attribution
+        run: python3 .github/scripts/check-attribution.py "$GITHUB_EVENT_PATH"
