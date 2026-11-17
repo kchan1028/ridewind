@@ -234,8 +234,25 @@ export async function openMeteoGet(
   return body;
 }
 
-/** One request for every sample location. Throws AppError with a rider-facing message on failure. */
+/** Keep each 16-day response small enough to finish within the request timeout. */
+export const FORECAST_BATCH_SIZE = 8;
+
+/** Fetch bounded batches in route order; stop on failure or cancellation. */
 export async function fetchForecast(coords: LatLon[], opts: FetchForecastOptions = {}): Promise<ForecastBundle> {
-  const body = await openMeteoGet(buildForecastUrl(coords, opts.forecastDays), opts);
-  return parseForecastResponse(body, coords, (opts.now ?? Date.now)());
+  if (coords.length === 0) throw bad('no forecast locations requested');
+  let combined: ForecastBundle | undefined;
+  for (let start = 0; start < coords.length; start += FORECAST_BATCH_SIZE) {
+    opts.signal?.throwIfAborted();
+    const batch = coords.slice(start, start + FORECAST_BATCH_SIZE);
+    const body = await openMeteoGet(buildForecastUrl(batch, opts.forecastDays), opts);
+    const forecast = parseForecastResponse(body, batch, (opts.now ?? Date.now)());
+    if (!combined) {
+      combined = forecast;
+    } else {
+      combined.locations.push(...forecast.locations);
+      combined.windowStartMs = Math.max(combined.windowStartMs, forecast.windowStartMs);
+      combined.windowEndMs = Math.min(combined.windowEndMs, forecast.windowEndMs);
+    }
+  }
+  return combined!;
 }
