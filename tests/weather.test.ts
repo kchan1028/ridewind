@@ -94,6 +94,32 @@ describe('parseForecastResponse', () => {
 });
 
 describe('fetchForecast error handling', () => {
+  it('splits a long route into bounded requests and preserves location order', async () => {
+    const points = Array.from({ length: 19 }, (_, i) => ({ lat: 38 + i / 100, lon: -122 }));
+    const sizes: number[] = [];
+    const impl: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      const latitudes = url.searchParams.get('latitude')!.split(',').map(Number);
+      sizes.push(latitudes.length);
+      const data = latitudes.map((lat) => loc(lat, -122));
+      return json(data.length === 1 ? data[0] : data);
+    };
+    const result = await fetchForecast(points, { fetchImpl: impl });
+    expect(sizes).toEqual([8, 8, 3]);
+    expect(result.locations.map((location) => location.key)).toEqual(points.map(coordKey));
+  });
+
+  it('does not request another batch after cancellation', async () => {
+    const controller = new AbortController();
+    const points = Array.from({ length: 9 }, () => coords[0]!);
+    const impl = vi.fn(async () => {
+      controller.abort();
+      return json(points.slice(0, 8).map((point) => loc(point.lat, point.lon)));
+    });
+    await expect(fetchForecast(points, { fetchImpl: impl, signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
+    expect(impl).toHaveBeenCalledTimes(1);
+  });
+
   const run = async (impl: typeof fetch) => {
     try {
       await fetchForecast(coords, { fetchImpl: impl });
